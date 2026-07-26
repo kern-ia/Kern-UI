@@ -108,12 +108,18 @@ resynchronise from the snapshot and must not treat the stream as an event log.**
 
 ### Consumed
 
+One contract exists. Nine more are needed for the interface to stop saying "this view waits
+for a brick" — each one is stated, with its producer and what it unlocks, in
+[docs/expected-contracts.md](docs/expected-contracts.md).
+
 | Brick | Contract | Status |
 |---|---|---|
 | `kern-orch` | Pushes `kern.step-event/v1` to `POST /api/v1/steps`. See `../Kern-Orch/README.md`. | in use |
-| `kern-pilot` | Steering channel (steer · queue · replan · nudge). | not defined yet |
-| `kern-obs` | Observability signals and process analysis. | not defined yet |
-| `kern-memory` | Agnostic memory (`.okf` · RAG · DAG). | not defined yet |
+| `kern-orch` | Run topology · per-node status · skills and tools registry | needed |
+| `kern-pilot` | Steering channel (steer · queue · replan · nudge) | needed |
+| `kern-memory` | Memory graph · documents | needed |
+| `kern-exec` | Browser session and approval queue | needed |
+| `kern-obs` | Live activity signal | needed |
 
 `kern-ui` does not own run state or memory: `kern-orch` checkpoints, `kern-memory`
 remembers. Its local storage holds only what belongs to it — widget layout, preferences,
