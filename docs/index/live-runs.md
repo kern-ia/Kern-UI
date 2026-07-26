@@ -93,3 +93,15 @@ kern-orch aboutissent, code de sortie 0.
 **Limite observée** : les graphes d'exemple se terminent instantanément, donc tous les runs
 apparaissent directement en « Terminé ». L'état « En cours » n'a pas pu être observé sur un
 run réel — seulement sur des events injectés à la main.
+
+## Contrat exécutable (2026-07-26)
+
+`contracts/kern.step-event.v1.json` — même fichier dans Kern-UI et Kern-Orch.
+`internal/httpapi/contract_test.go` fait passer la fixture par la vraie route d'ingestion
+(donc à travers `DisallowUnknownFields`) et vérifie que chaque champ arrive avec le sens
+documenté. Côté kern-orch, un test miroir capture ce que le reporter met réellement sur le
+fil. Vérifié en cassant délibérément `graph` → `graph_name` : les deux suites rougissent.
+
+Décision : **la dérive de contrat est attrapée par des tests, pas par de la discipline.**
+Le commentaire « lance ce diff » reposait sur le fait de s'en souvenir — précisément la
+panne qu'il prétendait éviter. Il est remplacé.
