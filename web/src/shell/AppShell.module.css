@@ -1,4 +1,5 @@
 .shell {
+  position: relative;
   display: flex;
   flex-direction: column;
   min-height: 100%;
@@ -143,45 +144,6 @@
   .main {
     padding: var(--space-5) var(--space-5) var(--space-6);
   }
-}
-
-/* Conversation bar — present on every view in the mockup. */
-.chat {
-  position: sticky;
-  bottom: 0;
-  display: grid;
-  gap: var(--space-1);
-  padding: var(--space-3) var(--space-4);
-  background: rgba(10, 8, 6, 0.72);
-  backdrop-filter: blur(10px);
-  border-top: 1px solid var(--border-soft);
-}
-
-.chatInput {
-  width: 100%;
-  padding: var(--space-3) var(--space-4);
-  color: var(--text);
-  font-family: var(--font-body);
-  font-size: 13px;
-  background: var(--surface-veil);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-}
-
-.chatInput::placeholder {
-  color: var(--text-dim);
-}
-
-.chatInput:disabled {
-  cursor: not-allowed;
-  opacity: 0.55;
-}
-
-.chatNote {
-  margin: 0;
-  padding-left: var(--space-4);
-  font-size: 11px;
-  color: var(--text-dim);
 }
 
 /* Mobile navigation: the reduced set, docked under the conversation bar. */

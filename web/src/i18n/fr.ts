@@ -37,6 +37,8 @@ export const fr = {
     // The conversation bar is part of the design but has nothing to talk to: steering an
     // agent is kern-pilot's job, and that brick is not started.
     unavailable: 'La conversation attend la brique kern-pilot.',
+    stoneHide: 'Ranger la conversation sur le côté',
+    stoneShow: 'Déplier la conversation',
   },
 
   missing: {
