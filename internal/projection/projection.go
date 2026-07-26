@@ -25,7 +25,73 @@ type Status string
 const (
 	StatusRunning  Status = "running"
 	StatusFinished Status = "finished"
+	StatusFailed   Status = "failed"
 )
+
+// validKinds are the node kinds a producer may declare.
+var validKinds = map[string]bool{"tool": true, "agent": true, "subgraph": true}
+
+// Topology is the shape of a run's graph, sent once at its start.
+//
+// A router picks its targets at run time, so such an edge arrives with no targets and
+// Dynamic set: the picture is knowingly incomplete rather than wrong.
+type Topology struct {
+	Entry string         `json:"entry"`
+	Nodes []TopologyNode `json:"nodes"`
+	Edges []TopologyEdge `json:"edges,omitempty"`
+}
+
+// TopologyNode is one unit of work in the graph.
+type TopologyNode struct {
+	ID   string `json:"id"`
+	Kind string `json:"kind"`
+}
+
+// TopologyEdge leaves a node towards its declared targets.
+type TopologyEdge struct {
+	From    string   `json:"from"`
+	To      []string `json:"to,omitempty"`
+	Dynamic bool     `json:"dynamic,omitempty"`
+}
+
+// Validate checks a declared topology hangs together.
+func (t Topology) Validate() error {
+	if strings.TrimSpace(t.Entry) == "" {
+		return fmt.Errorf("%w: topology.entry is required", ErrInvalidEvent)
+	}
+	if len(t.Nodes) == 0 {
+		return fmt.Errorf("%w: topology declares no node", ErrInvalidEvent)
+	}
+
+	known := make(map[string]bool, len(t.Nodes))
+	for i, n := range t.Nodes {
+		if strings.TrimSpace(n.ID) == "" {
+			return fmt.Errorf("%w: topology.nodes[%d] has no id", ErrInvalidEvent, i)
+		}
+		if !validKinds[n.Kind] {
+			return fmt.Errorf("%w: topology.nodes[%d] kind %q is not tool, agent or subgraph",
+				ErrInvalidEvent, i, n.Kind)
+		}
+		known[n.ID] = true
+	}
+	if !known[t.Entry] {
+		return fmt.Errorf("%w: topology.entry %q is not among the nodes", ErrInvalidEvent, t.Entry)
+	}
+
+	// Targets are not checked: a dynamic edge may reach a node the declaration never named.
+	for i, e := range t.Edges {
+		if !known[e.From] {
+			return fmt.Errorf("%w: topology.edges[%d] leaves unknown node %q",
+				ErrInvalidEvent, i, e.From)
+		}
+	}
+	return nil
+}
+
+// Failure ends a run that did not complete.
+type Failure struct {
+	Message string `json:"message"`
+}
 
 // StepEvent is the ingestion contract: one graph level completed in kern-orch. It mirrors
 // graph.StepInfo plus the identity of the run and the merged state.
@@ -36,6 +102,12 @@ type StepEvent struct {
 	Frontier []string        `json:"frontier"`
 	State    json.RawMessage `json:"state,omitempty"`
 	At       time.Time       `json:"at"`
+
+	// Topology rides on the first event of a run only.
+	Topology *Topology `json:"topology,omitempty"`
+
+	// Error is set on the terminal event of a run that failed.
+	Error *Failure `json:"error,omitempty"`
 }
 
 // Validate checks the event against the ingestion contract.
@@ -60,6 +132,15 @@ func (e StepEvent) Validate() error {
 	if len(e.State) > 0 && !json.Valid(e.State) {
 		return fmt.Errorf("%w: state is not valid JSON", ErrInvalidEvent)
 	}
+
+	if e.Topology != nil {
+		if err := e.Topology.Validate(); err != nil {
+			return err
+		}
+	}
+	if e.Error != nil && strings.TrimSpace(e.Error.Message) == "" {
+		return fmt.Errorf("%w: error.message is required when error is present", ErrInvalidEvent)
+	}
 	return nil
 }
 
@@ -74,6 +155,21 @@ type Run struct {
 	StartedAt time.Time       `json:"started_at"`
 	UpdatedAt time.Time       `json:"updated_at"`
 	EndedAt   time.Time       `json:"ended_at,omitzero"`
+
+	// Visited lists every node the run has reached, sorted. Derived from the frontiers
+	// seen so far, so the interface can tell a node that is done from one that never ran.
+	Visited []string `json:"visited,omitempty"`
+
+	// Topology is captured from the first event that carries it and kept for the run.
+	Topology *Topology `json:"topology,omitempty"`
+
+	// Error is set when the run failed.
+	Error *Failure `json:"error,omitempty"`
+}
+
+// terminal reports whether a run can still move.
+func (r Run) terminal() bool {
+	return r.Status == StatusFinished || r.Status == StatusFailed
 }
 
 // Projection holds the current state of every known run. It is safe for concurrent use.
@@ -99,7 +195,10 @@ func (p *Projection) Apply(ev StepEvent) (Run, bool, error) {
 	defer p.mu.Unlock()
 
 	run, known := p.runs[ev.RunID]
-	if known && (run.Status == StatusFinished || ev.Step <= run.Step) {
+	// A failure arrives after the last successful level, so its step may equal the current
+	// one. Treating it as stale would lose the failure entirely.
+	stale := known && ev.Step <= run.Step && ev.Error == nil
+	if known && (run.terminal() || stale) {
 		return run, false, nil
 	}
 
@@ -109,14 +208,29 @@ func (p *Projection) Apply(ev StepEvent) (Run, bool, error) {
 
 	run.Step = ev.Step
 	run.Frontier = slices.Clone(ev.Frontier)
-	run.State = slices.Clone(ev.State)
 	run.UpdatedAt = ev.At
+	if len(ev.State) > 0 {
+		run.State = slices.Clone(ev.State)
+	}
+	run.Visited = mergeVisited(run.Visited, ev.Frontier)
+	// The topology rides on the first event only; keep it for the rest of the run.
+	if ev.Topology != nil {
+		run.Topology = ev.Topology
+		// A frontier names what runs *next*, so the entry never appears in one — yet the
+		// run began by executing it.
+		run.Visited = mergeVisited(run.Visited, []string{ev.Topology.Entry})
+	}
 
+	switch {
+	case ev.Error != nil:
+		run.Status = StatusFailed
+		run.Error = ev.Error
+		run.EndedAt = ev.At
 	// kern-orch reports the *next* frontier: an empty one means the run is over.
-	if len(ev.Frontier) == 0 {
+	case len(ev.Frontier) == 0:
 		run.Status = StatusFinished
 		run.EndedAt = ev.At
-	} else {
+	default:
 		run.Status = StatusRunning
 	}
 
@@ -151,4 +265,21 @@ func (p *Projection) List() []Run {
 		return runs[i].StartedAt.After(runs[j].StartedAt)
 	})
 	return runs
+}
+
+// mergeVisited folds a frontier into the set of nodes already reached, keeping it sorted so
+// the order never depends on map iteration.
+func mergeVisited(visited, frontier []string) []string {
+	if len(frontier) == 0 {
+		return visited
+	}
+
+	merged := slices.Clone(visited)
+	for _, node := range frontier {
+		if !slices.Contains(merged, node) {
+			merged = append(merged, node)
+		}
+	}
+	slices.Sort(merged)
+	return merged
 }

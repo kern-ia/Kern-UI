@@ -1,6 +1,7 @@
 package projection
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"sync"
@@ -214,3 +215,5 @@ func mustApply(t *testing.T, p *Projection, ev StepEvent) Run {
 	}
 	return run
 }
+
+func bytesReader(b []byte) *bytes.Reader { return bytes.NewReader(b) }

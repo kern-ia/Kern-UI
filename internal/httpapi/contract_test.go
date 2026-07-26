@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 
 	"github.com/yoann/kern-ui/internal/projection"
@@ -100,5 +101,94 @@ func TestContractFixtureMatchesThePublishedSchema(t *testing.T) {
 
 	if err := ev.Validate(); err != nil {
 		t.Errorf("the fixture fails our own validation: %v", err)
+	}
+}
+
+// v2 adds the run's shape and its failures. Both fixtures are byte-identical to the ones in
+// Kern-Orch/contracts/, where mirror tests assert the reporter emits exactly them.
+const (
+	contractV2        = "../../contracts/kern.step-event.v2.json"
+	contractV2Failure = "../../contracts/kern.step-event.v2.failure.json"
+)
+
+func readFile(t *testing.T, path string) []byte {
+	t.Helper()
+	body, err := os.ReadFile(filepath.FromSlash(path))
+	if err != nil {
+		t.Fatalf("read %s: %v", path, err)
+	}
+	return body
+}
+
+func TestContractV2CarriesTheTopologyThrough(t *testing.T) {
+	h := NewRouter(Config{})
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/steps", bytes.NewReader(readFile(t, contractV2)))
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusAccepted {
+		t.Fatalf("status = %d, want %d: %s", rec.Code, http.StatusAccepted, rec.Body)
+	}
+
+	rec = httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/v1/runs/a23ead5373d9b746", nil))
+	var run projection.Run
+	if err := json.NewDecoder(rec.Body).Decode(&run); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+
+	if run.Topology == nil {
+		t.Fatal("the run has no topology")
+	}
+	if run.Topology.Entry != "greet" || len(run.Topology.Nodes) != 3 {
+		t.Errorf("topology = %+v", run.Topology)
+	}
+	if !run.Topology.Edges[1].Dynamic {
+		t.Error("the router-driven edge lost its dynamic flag")
+	}
+	// The entry never appears in a frontier, yet the run began by running it.
+	if !slices.Contains(run.Visited, "greet") {
+		t.Errorf("Visited = %v, want the entry among them", run.Visited)
+	}
+}
+
+func TestContractV2FailureMarksTheRunFailed(t *testing.T) {
+	h := NewRouter(Config{})
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/steps", bytes.NewReader(readFile(t, contractV2Failure)))
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusAccepted {
+		t.Fatalf("status = %d, want %d: %s", rec.Code, http.StatusAccepted, rec.Body)
+	}
+
+	rec = httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/v1/runs/a23ead5373d9b746", nil))
+	var run projection.Run
+	_ = json.NewDecoder(rec.Body).Decode(&run)
+
+	if run.Status != projection.StatusFailed {
+		t.Errorf("Status = %q, want %q", run.Status, projection.StatusFailed)
+	}
+	if run.Error == nil || run.Error.Message == "" {
+		t.Errorf("Error = %+v, want the failure message", run.Error)
+	}
+	// The frontier that was running is what tells the interface *where* it broke.
+	if len(run.Frontier) != 1 || run.Frontier[0] != "synthese" {
+		t.Errorf("Frontier = %v, want [synthese]", run.Frontier)
+	}
+}
+
+// v1 payloads must keep working: the new fields are optional, so an old producer is still
+// a valid one.
+func TestContractV1StillIngests(t *testing.T) {
+	h := NewRouter(Config{})
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/steps", bytes.NewReader(readFixture(t)))
+	h.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusAccepted {
+		t.Errorf("status = %d, want %d — v1 producers must not be broken by v2", rec.Code, http.StatusAccepted)
 	}
 }

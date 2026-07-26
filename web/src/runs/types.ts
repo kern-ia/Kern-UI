@@ -1,5 +1,30 @@
 /** Mirrors projection.Run in the Go backend. Keep both sides in step. */
-export type RunStatus = 'running' | 'finished'
+export type RunStatus = 'running' | 'finished' | 'failed'
+
+/** How a node stands within its run, derived from the frontier and what came before. */
+export type NodeStatus = 'pending' | 'active' | 'done' | 'failed'
+
+export interface TopologyNode {
+  id: string
+  kind: 'tool' | 'agent' | 'subgraph'
+}
+
+export interface TopologyEdge {
+  from: string
+  to?: string[]
+  /** A router picks the targets at run time, so none are declared. */
+  dynamic?: boolean
+}
+
+export interface Topology {
+  entry: string
+  nodes: TopologyNode[]
+  edges?: TopologyEdge[]
+}
+
+export interface Failure {
+  message: string
+}
 
 export interface Run {
   id: string
@@ -11,6 +36,10 @@ export interface Run {
   started_at: string
   updated_at: string
   ended_at?: string
+  /** Every node the run has reached so far, sorted. */
+  visited?: string[]
+  topology?: Topology
+  error?: Failure
 }
 
 /** State of the browser's link to the server. */

@@ -46,12 +46,12 @@ Base URL defaults to `http://127.0.0.1:7777` (`KERN_UI_ADDR`).
 A producer should target `POST /api/v1/steps`: the run id travels in the body, so the
 producer needs one configured URL and stays unaware of our route shape.
 
-#### `StepEvent` — contract `kern.step-event/v1`
+#### `StepEvent` — contract `kern.step-event/v2`
 
 <!-- CANONICAL BLOCK — mirrored verbatim in Kern-UI/README.md and Kern-Orch/README.md.
-     Drift is caught by tests, not by discipline: the same payload lives in
-     contracts/kern.step-event.v1.json in both repos, and each side asserts against it
-     on every CI run — kern-orch that its reporter emits exactly this, kern-ui that its
+     Drift is caught by tests, not by discipline: the same payloads live in
+     contracts/kern.step-event.v2*.json in both repos, and each side asserts against them on
+     every CI run — kern-orch that its reporter emits exactly this, kern-ui that its
      ingestion accepts exactly this. Change the contract and both suites go red. -->
 
 ```json
@@ -61,7 +61,12 @@ producer needs one configured URL and stays unaware of our route shape.
   "step": 2,
   "frontier": ["synthese", "critique"],
   "state": { "echo": "..." },
-  "at": "2026-07-26T12:00:02Z"
+  "at": "2026-07-26T12:00:02Z",
+  "topology": {
+    "entry": "greet",
+    "nodes": [{ "id": "greet", "kind": "agent" }],
+    "edges": [{ "from": "greet", "to": ["synthese"] }]
+  }
 }
 ```
 
@@ -73,6 +78,11 @@ producer needs one configured URL and stays unaware of our route shape.
 | `frontier` | string[] | yes | The nodes to execute **next**. An empty list means the run is over. |
 | `state` | object | no | Flat business data. Never a producer's internal envelope. |
 | `at` | RFC 3339 | yes | When the level completed. |
+| `topology` | object | no | The graph's shape. Sent **once**, on the run's first event. |
+| `topology.entry` | string | yes | Entry node id. Never appears in a frontier — it ran first. |
+| `topology.nodes[]` | object | yes | `id` and `kind` (`tool` / `agent` / `subgraph`). |
+| `topology.edges[]` | object | no | `from`, `to[]`, or `dynamic: true` when a router picks the targets at run time. |
+| `error` | object | no | Set on the terminal event of a run that failed; `message` is required. |
 
 On `POST /api/v1/steps` the `run_id` must be in the body. On
 `POST /api/v1/runs/{id}/steps` it may be omitted, and a body value contradicting the path
@@ -114,7 +124,7 @@ for a brick" — each one is stated, with its producer and what it unlocks, in
 
 | Brick | Contract | Status |
 |---|---|---|
-| `kern-orch` | Pushes `kern.step-event/v1` to `POST /api/v1/steps`. See `../Kern-Orch/README.md`. | in use |
+| `kern-orch` | Pushes `kern.step-event/v2` to `POST /api/v1/steps`. See `../Kern-Orch/README.md`. | in use |
 | `kern-orch` | Run topology · per-node status · skills and tools registry | needed |
 | `kern-pilot` | Steering channel (steer · queue · replan · nudge) | needed |
 | `kern-memory` | Memory graph · documents | needed |

@@ -3,11 +3,11 @@ import styles from './AppShell.module.css'
 import { fr } from '../i18n/fr'
 import { ConversationStone } from './ConversationStone'
 import { MissingSource } from '../views/MissingSource'
-import { RunList } from '../runs/RunList'
+import { AgentsView } from '../views/AgentsView'
 import { useRunStream } from '../runs/useRunStream'
 import { systemState, type SystemState } from './systemState'
 import { DEFAULT_VIEW, VIEWS, mobileViews, viewById, type ViewDef, type ViewId } from './views'
-import type { Connection } from '../runs/types'
+import type { Connection, Run } from '../runs/types'
 
 const STREAM_URL = '/api/v1/stream'
 
@@ -121,20 +121,11 @@ function Tab({
   )
 }
 
-function ViewBody({ view, runs }: { view: ViewId; runs: Parameters<typeof RunList>[0]['runs'] }) {
+function ViewBody({ view, runs }: { view: ViewId; runs: Run[] }) {
   const def = viewById(view)
 
   if (def.source.kind !== 'live') {
     return <MissingSource view={view} source={def.source} />
   }
-
-  return (
-    <section>
-      <div className={styles.sectionHead}>
-        <h2 className={styles.heading}>{fr.runs.heading}</h2>
-        {runs.length > 0 && <span className={styles.count}>{fr.runs.count(runs.length)}</span>}
-      </div>
-      <RunList runs={runs} />
-    </section>
-  )
+  return <AgentsView runs={runs} />
 }

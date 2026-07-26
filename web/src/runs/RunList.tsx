@@ -6,9 +6,16 @@ import type { Run } from './types'
 const statusColour: Record<Run['status'], string> = {
   running: 'var(--state-action)',
   finished: 'var(--state-idle)',
+  failed: 'var(--state-error)',
 }
 
-export function RunList({ runs }: { runs: Run[] }) {
+interface RunListProps {
+  runs: Run[]
+  selected?: string
+  onSelect?: (id: string) => void
+}
+
+export function RunList({ runs, selected, onSelect }: RunListProps) {
   if (runs.length === 0) {
     return (
       <div className={styles.empty}>
@@ -21,17 +28,30 @@ export function RunList({ runs }: { runs: Run[] }) {
   return (
     <ul className={styles.list}>
       {runs.map((run) => (
-        <RunCard key={run.id} run={run} />
+        <RunCard
+          key={run.id}
+          run={run}
+          selected={run.id === selected}
+          onSelect={onSelect}
+        />
       ))}
     </ul>
   )
 }
 
-function RunCard({ run }: { run: Run }) {
+function RunCard({
+  run,
+  selected,
+  onSelect,
+}: {
+  run: Run
+  selected: boolean
+  onSelect?: (id: string) => void
+}) {
   const label = fr.runs.status[run.status]
 
-  return (
-    <li className={`${styles.card}`} aria-label={`${run.graph} — ${label}`}>
+  const body = (
+    <>
       <div className={styles.head}>
         <h3 className={styles.graph}>{run.graph}</h3>
         <span className={styles.step}>{fr.runs.step(run.step)}</span>
@@ -57,6 +77,24 @@ function RunCard({ run }: { run: Run }) {
         </p>
       ) : (
         <p className={styles.idle}>{fr.runs.idle}</p>
+      )}
+    </>
+  )
+
+  return (
+    <li className={styles.card} data-selected={selected} aria-label={`${run.graph} — ${label}`}>
+      {onSelect ? (
+        <button
+          type="button"
+          className={styles.pick}
+          aria-pressed={selected}
+          aria-label={fr.runs.select(run.graph)}
+          onClick={() => onSelect(run.id)}
+        >
+          {body}
+        </button>
+      ) : (
+        body
       )}
     </li>
   )
