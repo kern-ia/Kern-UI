@@ -1,0 +1,46 @@
+.panel {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: center;
+  align-content: center;
+  min-height: 55vh;
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+}
+
+.glyph {
+  font-size: 34px;
+  line-height: 1;
+  color: var(--gold-faint);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: var(--tracking-label);
+  color: var(--gold-muted);
+}
+
+.reason {
+  margin: 0;
+  max-width: 46ch;
+  color: var(--text-muted);
+}
+
+.why {
+  margin: 0;
+  max-width: 46ch;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.roadmap {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  font-size: 11px;
+  color: var(--gold-faint);
+  border: 1px dashed var(--border-soft);
+  border-radius: var(--radius);
+}

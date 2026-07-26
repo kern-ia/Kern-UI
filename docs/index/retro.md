@@ -91,3 +91,26 @@ Ce qui a fonctionné ou non, noté au moment où ça mord. Append only.
 **Règle à retenir**
 - Un contrat entre deux briques autonomes doit être exécutable des deux côtés. Si on ne peut
   pas le tester, ce n'est pas un contrat, c'est un vœu.
+
+## 2026-07-26 — coquille, et ce que j'avais manqué
+
+**Ce que Yoann a relevé**
+- J'avais livré une vue « Runs » et présenté la feature comme close, alors que la maquette
+  contient six vues, une barre de conversation et une navigation mobile propre. Pire : la
+  vue « Runs » ne figure dans aucune maquette. Je l'avais inventée parce que c'était ce que
+  kern-orch savait alimenter, ce qui était défendable — mais l'annoncer comme l'interface
+  ne l'était pas.
+- Correction de cadrage : les serveurs MCP ne sont pas une brique, ce sont des tools/skills
+  que l'agent câble à la demande. L'Espace attend donc le même contrat que le Grimoire, pas
+  une brique inexistante. J'avais failli inventer une brique `kern-mcp` absente de la roadmap.
+
+**À surveiller**
+- Deux contrats manquent, et ils débloquent quatre vues à eux deux :
+  1. **Topologie de graphe** dans `kern.step-event/v1` (nodes + edges au démarrage du run) →
+     permet de dessiner la ruche SVG de la maquette au lieu de cartes.
+  2. **Registre skills/tools** exposé par kern-orch → débloque Grimoire ET Espace.
+- `Options.dc.html` contient trois directions artistiques (Grimoire Ambré, Abysse
+  Bioluminescent, Obsidienne Circuit). Ambré confirmé. Les deux autres ne coûteraient qu'un
+  `tokens.css` puisque aucun composant ne code de couleur en dur — la contrainte a payé.
+- Cerveau, Navigateur et Rédaction attendent des briques qui n'existent pas. Ne pas les
+  construire tant qu'aucune donnée réelle ne les alimente.
