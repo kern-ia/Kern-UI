@@ -57,3 +57,19 @@ Ce qui a fonctionné ou non, noté au moment où ça mord. Append only.
   la session. À contrôler sur un vrai téléphone avant de considérer le responsive acquis.
 - Les polices sont un actif binaire dans le repo (72 Ko). Si un jour une locale a besoin
   d'un autre subset, régénérer depuis l'API Google Fonts, ne pas bricoler les fichiers.
+
+## 2026-07-26 — branchement kern-orch
+
+**A fonctionné**
+- Ouvrir un endpoint de collection (`POST /api/v1/steps`) AVANT d'écrire le reporter : le
+  reporter n'a plus qu'une URL à connaître, et kern-orch reste ignorant de nos routes.
+  C'est kern-ui qui absorbe le couplage, pas la brique en amont.
+- Tester les modes de panne du reporter avant le chemin heureux.
+
+**À surveiller**
+- Le contrat StepEvent est maintenant dupliqué de fait : `projection.StepEvent` ici,
+  `report.StepEvent` chez kern-orch. C'est volontaire — deux briques autonomes ne partagent
+  pas de types — mais toute évolution doit toucher les deux côtés. Si ça devient pénible,
+  c'est le signal qu'il faut un contrat publié (schéma JSON versionné), pas un package commun.
+- Le reporter est synchrone chez kern-orch : un kern-ui lent ralentit les graphes, borné à
+  2 s par niveau.
