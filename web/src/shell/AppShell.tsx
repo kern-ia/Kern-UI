@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import styles from './AppShell.module.css'
 import { fr } from '../i18n/fr'
+import { ConversationStone } from './ConversationStone'
 import { MissingSource } from '../views/MissingSource'
 import { RunList } from '../runs/RunList'
 import { useRunStream } from '../runs/useRunStream'
@@ -76,20 +77,9 @@ export function AppShell() {
         <ViewBody view={view} runs={runs} />
       </main>
 
-      {/* Present on every view in the mockup — and inert, because steering an agent is
-          kern-pilot's job and that brick is not started. Showing a working-looking input
-          that swallows what the user types would be worse than showing none. */}
-      <div className={styles.chat}>
-        <input
-          className={styles.chatInput}
-          placeholder={fr.chat.placeholder}
-          disabled
-          aria-describedby="chat-note"
-        />
-        <p className={styles.chatNote} id="chat-note">
-          {fr.chat.unavailable}
-        </p>
-      </div>
+      {/* Floats over the content and can be tidied against either edge — the mockup's
+          rune stone is the handle. */}
+      <ConversationStone stateColour={stateColour[state]} />
 
       <nav className={styles.mobileNav} aria-label={fr.nav.compact}>
         {mobileViews().map((v) => (

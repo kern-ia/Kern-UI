@@ -114,3 +114,21 @@ Ce qui a fonctionné ou non, noté au moment où ça mord. Append only.
   `tokens.css` puisque aucun composant ne code de couleur en dur — la contrainte a payé.
 - Cerveau, Navigateur et Rédaction attendent des briques qui n'existent pas. Ne pas les
   construire tant qu'aucune donnée réelle ne les alimente.
+
+## 2026-07-26 — pierre de conversation
+
+**Ce que Yoann a relevé**
+- J'avais livré une barre de chat fixe en bas alors que la maquette a une pierre runique
+  déplaçable, amarrable sur le côté pour se ranger. J'avais lu `onStoneMouseDown` et
+  `showChat` dans le code de la maquette sans en tirer le comportement.
+
+**Le bug que seul le navigateur a montré**
+- Les handlers lisaient `dragging` depuis le state React : toute rafale de `pointermove`
+  arrivant avant le re-render était perdue. Les tests unitaires passaient, la maquette
+  « marchait » à la souris par chance. C'est en pilotant vraiment le navigateur que le
+  déplacement s'est révélé mort. Règle : dans un handler de pointeur, l'état de drag et la
+  position courante vivent dans des refs, jamais dans du state.
+
+**À surveiller**
+- La pierre est en `position:absolute` dans `.shell`. Si un jour une vue crée son propre
+  contexte de positionnement, la pierre pourrait se retrouver piégée dedans.
