@@ -32,10 +32,12 @@ sous-agents, skills et serveurs MCP.** Usage interne Kern, pas de produit multi-
 - `kern-ui` ne pilote pas les LLM et ne stocke ni l'état des runs ni la mémoire :
   `kern-orch` checkpointe, `kern-memory` mémorise. Sa base locale ne contient que ce qui
   lui appartient — disposition des widgets, préférences, cache d'affichage.
-- Branchement initial : lecture des checkpoints et du CLI `kern-orch` existants ; les
-  contrats `kern-obs` et `kern-pilot` émergent des besoins réels de l'UI.
-- Protocole temps réel (SSE ou WebSocket), transport vers l'instance centralisée,
-  authentification : _à décider_.
+- Ingestion en **push** : `kern-orch` poste chaque niveau terminé sur
+  `POST /api/v1/steps` (`KERN_STEP_REPORT_URL` de son côté). Jamais de lecture de ses
+  checkpoints — un schéma interne n'est pas un contrat.
+- Temps réel : **SSE** (`GET /api/v1/stream`, snapshot puis mises à jour), pilotage en POST.
+- Les contrats `kern-obs` et `kern-pilot` émergent des besoins réels de l'UI.
+- Transport vers l'instance centralisée, authentification : _à décider_.
 
 ## Méthode obligatoire
 - **TDD** : écrire les tests AVANT le code. Go → `go test` ; front → Vitest ; E2E avant merge.
@@ -64,7 +66,9 @@ sous-agents, skills et serveurs MCP.** Usage interne Kern, pas de produit multi-
   `kern-vault` et `kern-link`.
 
 ## Commandes
-_à décider_ — à compléter au bootstrap (dev / test / build / cross-compilation).
+- Dev : `make dev` (Go) + `cd web && npm run dev` (SPA, proxy vers :7777)
+- Tests : `make test` · lint : `make lint` · build : `make build` · toutes cibles : `make dist`
+- Alimenter en direct : `KERN_STEP_REPORT_URL=http://127.0.0.1:7777/api/v1/steps` côté kern-orch
 
 BRAIN: ~/brain/kern-ui
 

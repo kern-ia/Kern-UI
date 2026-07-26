@@ -66,3 +66,30 @@ et `/runs/{id}` servent le snapshot. Vérifié E2E au curl sur le binaire.
 erreur console, mise à jour live sans rechargement (3 → 4 runs, transitions et fin de run).
 **Non vérifié visuellement** : le rendu mobile — `resize_window` n'a pas pris dans la
 session navigateur. Le layout une colonne repose sur la media query à 720 px.
+
+---
+
+## Branchement kern-orch (2026-07-26)
+
+Fait dans l'autre brique : voir `../Kern-Orch/docs/index/0010-step-reporter.md`.
+
+```sh
+# terminal 1
+make build && KERN_UI_WEB_DIR=internal/httpapi/dist ./bin/kern-ui
+
+# terminal 2
+cd ../Kern-Orch
+KERN_STEP_REPORT_URL=http://127.0.0.1:7777/api/v1/steps go run . run examples/hello.yaml
+```
+
+`KERN_STEP_REPORT_URL` non défini = kern-orch se comporte exactement comme avant.
+
+**E2E des deux briques** : `hello`, `freeze`, `parent`, `child` exécutés au binaire,
+les 4 runs affichés en direct dans le navigateur, zéro erreur console. Le `state` reçu ne
+contient que la donnée métier (`n`, `echo`) — l'enveloppe interne de `graph.State` ne
+traverse pas le contrat. Vérifié aussi kern-ui éteint puis avec une URL invalide : les runs
+kern-orch aboutissent, code de sortie 0.
+
+**Limite observée** : les graphes d'exemple se terminent instantanément, donc tous les runs
+apparaissent directement en « Terminé ». L'état « En cours » n'a pas pu être observé sur un
+run réel — seulement sur des events injectés à la main.
