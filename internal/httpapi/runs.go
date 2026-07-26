@@ -15,6 +15,11 @@ const maxStepBody = 1 << 20 // 1 MiB
 
 // handleIngestStep accepts one graph level pushed by kern-orch. Replays and stale steps
 // are accepted and change nothing, so a reporter may retry without coordination.
+//
+// Two routes reach it. The collection form (POST /api/v1/steps) carries the run id in the
+// body and is what a reporter should use: it needs a single configured URL and stays
+// unaware of our route shape. The per-run form (POST /api/v1/runs/{id}/steps) is the
+// RESTful equivalent, handy by hand and in tests.
 func (s *server) handleIngestStep(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 
@@ -27,6 +32,9 @@ func (s *server) handleIngestStep(w http.ResponseWriter, r *http.Request) {
 	}
 
 	switch {
+	// id is empty on the collection route: the body is then the only source of the run id,
+	// and projection.Validate rejects it if missing.
+	case id == "":
 	case ev.RunID == "":
 		ev.RunID = id
 	case ev.RunID != id:

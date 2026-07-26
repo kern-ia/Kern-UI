@@ -233,3 +233,59 @@ func readEvent(t *testing.T, r *bufio.Reader) (string, []byte) {
 		}
 	}
 }
+
+func TestCollectionEndpointTakesTheRunIDFromTheBody(t *testing.T) {
+	h := NewRouter(Config{})
+	body := `{"run_id":"r1","graph":"review","step":1,"frontier":["a"],"at":"2026-07-26T12:00:00Z"}`
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/steps", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	h.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusAccepted {
+		t.Fatalf("status = %d, want %d (body %s)", rec.Code, http.StatusAccepted, rec.Body)
+	}
+
+	rec = httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/v1/runs/r1", nil))
+	if rec.Code != http.StatusOK {
+		t.Errorf("the run was not recorded: status = %d", rec.Code)
+	}
+}
+
+func TestCollectionEndpointRequiresARunID(t *testing.T) {
+	h := NewRouter(Config{})
+	body := `{"graph":"review","step":1,"frontier":["a"],"at":"2026-07-26T12:00:00Z"}`
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/steps", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	h.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("status = %d, want %d", rec.Code, http.StatusBadRequest)
+	}
+}
+
+func TestCollectionEndpointPublishesToTheStream(t *testing.T) {
+	cfg := Config{}
+	h := NewRouterWithDeps(&cfg)
+
+	sub, unsubscribe := cfg.Hub.Subscribe()
+	defer unsubscribe()
+
+	body := `{"run_id":"r1","graph":"review","step":1,"frontier":["a"],"at":"2026-07-26T12:00:00Z"}`
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/steps", strings.NewReader(body))
+	h.ServeHTTP(rec, req)
+
+	select {
+	case run := <-sub:
+		if run.ID != "r1" {
+			t.Errorf("published run = %q, want %q", run.ID, "r1")
+		}
+	case <-time.After(time.Second):
+		t.Error("nothing was published to the stream")
+	}
+}
