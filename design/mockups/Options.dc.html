@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#f0eee9;font-family:'Space Grotesk',system-ui,sans-serif}
+.dv-turn{padding:40px 44px 32px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 20px}
+.dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#1a1a1a;color:#fff;border-radius:4px;text-decoration:none}
+.dv-tname{font:600 13px/1.2 system-ui,sans-serif;color:#1a1a1a}
+.dv-opts{display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:9px}
+.dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(0,0,0,.08);color:#1a1a1a;border-radius:5px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11px/1.3 system-ui,sans-serif;color:rgba(0,0,0,.55)}
+.dv-card{max-width:100%;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.18);overflow:hidden}
+.dv-opt:target .dv-oid{background:#2a78d6;color:#fff}
+.dv-next{margin:22px 0 0;font:12px/1.5 system-ui,sans-serif;color:rgba(0,0,0,.5)}
+</style>
+</helmet>
+
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Trois directions couleur / ambiance / style — vue "Cerveau &amp; Mémoire"</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1a">
+<div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Grimoire Ambré — matière feutrée, chaud, runique</div>
+<div class="dv-card" style="width:400px;height:540px;background:radial-gradient(120% 100% at 50% 0%,#241c14 0%,#14100b 55%,#0a0806 100%);position:relative;font-family:'Space Grotesk',sans-serif">
+  <svg width="400" height="330" style="position:absolute;top:30px;left:0" viewBox="0 0 400 330">
+    <defs>
+      <radialGradient id="g1a-core" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#ffb347" stop-opacity="0.9"/><stop offset="100%" stop-color="#ffb347" stop-opacity="0"/></radialGradient>
+      <radialGradient id="g1a-node" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#e8c98a" stop-opacity="1"/><stop offset="100%" stop-color="#e8c98a" stop-opacity="0"/></radialGradient>
+    </defs>
+    <circle cx="200" cy="165" r="90" fill="url(#g1a-core)"/>
+    <g stroke="#8a6a3a" stroke-width="1" opacity="0.5">
+      <line x1="200" y1="165" x2="120" y2="90"/><line x1="200" y1="165" x2="290" y2="100"/>
+      <line x1="200" y1="165" x2="110" y2="230"/><line x1="200" y1="165" x2="300" y2="235"/>
+      <line x1="200" y1="165" x2="200" y2="60"/><line x1="120" y1="90" x2="200" y2="60"/>
+      <line x1="290" y1="100" x2="200" y2="60"/><line x1="110" y1="230" x2="300" y2="235"/>
+    </g>
+    <circle cx="200" cy="165" r="10" fill="#ffb347"/>
+    <circle cx="120" cy="90" r="14" fill="url(#g1a-node)"/><circle cx="120" cy="90" r="4" fill="#ffd9a0"/>
+    <circle cx="290" cy="100" r="10" fill="url(#g1a-node)"/><circle cx="290" cy="100" r="3" fill="#ffd9a0"/>
+    <circle cx="110" cy="230" r="12" fill="url(#g1a-node)"/><circle cx="110" cy="230" r="3.5" fill="#ffd9a0"/>
+    <circle cx="300" cy="235" r="9" fill="url(#g1a-node)"/><circle cx="300" cy="235" r="3" fill="#ffd9a0"/>
+    <circle cx="200" cy="60" r="8" fill="url(#g1a-node)"/><circle cx="200" cy="60" r="2.5" fill="#ffd9a0"/>
+  </svg>
+  <div style="position:absolute;top:24px;left:24px;font:600 13px 'Cinzel',serif;letter-spacing:.14em;color:#e8c98a;text-transform:uppercase">Cerveau</div>
+  <div style="position:absolute;top:24px;right:24px;font:22px serif;color:#ffb347;opacity:.8">ᛝ</div>
+  <div style="position:absolute;bottom:0;left:0;right:0;padding:20px 24px 22px;background:linear-gradient(180deg,transparent,#0a0806 60%)">
+    <div style="font:600 15px 'Cinzel',serif;color:#f3e3c4;margin-bottom:10px;letter-spacing:.02em">Souvenir : "Lancement Q3"</div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#ffb347;box-shadow:0 0 8px #ffb347"></span><span style="font:11px 'Space Grotesk';color:#c9b48f">Repos</span></div>
+      <div style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#a674ff;box-shadow:0 0 8px #a674ff"></span><span style="font:11px 'Space Grotesk';color:#c9b48f">Réflexion</span></div>
+      <div style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#4ee3ff;box-shadow:0 0 8px #4ee3ff"></span><span style="font:11px 'Space Grotesk';color:#c9b48f">Action</span></div>
+      <div style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#ff4d5e;box-shadow:0 0 8px #ff4d5e"></span><span style="font:11px 'Space Grotesk';color:#c9b48f">Erreur</span></div>
+    </div>
+    <div style="margin-top:16px;display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,179,71,.25);border-radius:20px;padding:10px 16px">
+      <span style="width:6px;height:6px;border-radius:50%;background:#ffb347"></span>
+      <span style="font:12px 'Space Grotesk';color:#8a7355">Demande-moi n'importe quoi…</span>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="dv-opt" id="1b">
+<div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Abysse Bioluminescent — froid, océanique, organique</div>
+<div class="dv-card" style="width:400px;height:540px;background:radial-gradient(120% 100% at 50% 100%,#0c1f24 0%,#071418 55%,#03080a 100%);position:relative;font-family:'Space Grotesk',sans-serif">
+  <svg width="400" height="330" style="position:absolute;top:30px;left:0" viewBox="0 0 400 330">
+    <defs>
+      <radialGradient id="g1b-core" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#4ee3ff" stop-opacity="0.85"/><stop offset="100%" stop-color="#4ee3ff" stop-opacity="0"/></radialGradient>
+      <radialGradient id="g1b-node" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#7fffd4" stop-opacity="1"/><stop offset="100%" stop-color="#7fffd4" stop-opacity="0"/></radialGradient>
+    </defs>
+    <path d="M200,165 C160,120 130,110 90,95" stroke="#1c5a66" stroke-width="1.2" fill="none" opacity="0.6"/>
+    <path d="M200,165 C250,110 270,95 305,80" stroke="#1c5a66" stroke-width="1.2" fill="none" opacity="0.6"/>
+    <path d="M200,165 C170,210 140,225 105,245" stroke="#1c5a66" stroke-width="1.2" fill="none" opacity="0.6"/>
+    <path d="M200,165 C240,215 270,230 305,255" stroke="#1c5a66" stroke-width="1.2" fill="none" opacity="0.6"/>
+    <path d="M200,165 C200,120 200,90 200,55" stroke="#1c5a66" stroke-width="1.2" fill="none" opacity="0.6"/>
+    <circle cx="200" cy="165" r="95" fill="url(#g1b-core)" opacity="0.5"/>
+    <circle cx="200" cy="165" r="11" fill="#c8fff0"/>
+    <circle cx="90" cy="95" r="15" fill="url(#g1b-node)"/><circle cx="90" cy="95" r="4" fill="#e0fff8"/>
+    <circle cx="305" cy="80" r="10" fill="url(#g1b-node)"/><circle cx="305" cy="80" r="3" fill="#e0fff8"/>
+    <circle cx="105" cy="245" r="12" fill="url(#g1b-node)"/><circle cx="105" cy="245" r="3.5" fill="#e0fff8"/>
+    <circle cx="305" cy="255" r="9" fill="url(#g1b-node)"/><circle cx="305" cy="255" r="3" fill="#e0fff8"/>
+    <circle cx="200" cy="55" r="8" fill="url(#g1b-node)"/><circle cx="200" cy="55" r="2.5" fill="#e0fff8"/>
+  </svg>
+  <div style="position:absolute;top:24px;left:24px;font:500 13px 'Space Grotesk';letter-spacing:.14em;color:#9fe8de;text-transform:uppercase">Mémoire</div>
+  <div style="position:absolute;top:24px;right:24px;font:22px serif;color:#4ee3ff;opacity:.7">ᚦ</div>
+  <div style="position:absolute;bottom:0;left:0;right:0;padding:20px 24px 22px;background:linear-gradient(180deg,transparent,#03080a 60%)">
+    <div style="font:500 15px 'Space Grotesk';color:#dffaf5;margin-bottom:10px">Synapse active : recherche client</div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#ffb347;box-shadow:0 0 8px #ffb347"></span><span style="font:11px 'Space Grotesk';color:#8fb5b0">Repos</span></div>
+      <div style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#a674ff;box-shadow:0 0 8px #a674ff"></span><span style="font:11px 'Space Grotesk';color:#8fb5b0">Réflexion</span></div>
+      <div style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#4ee3ff;box-shadow:0 0 8px #4ee3ff"></span><span style="font:11px 'Space Grotesk';color:#8fb5b0">Action</span></div>
+      <div style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#ff4d5e;box-shadow:0 0 8px #ff4d5e"></span><span style="font:11px 'Space Grotesk';color:#8fb5b0">Erreur</span></div>
+    </div>
+    <div style="margin-top:16px;display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.03);border:1px solid rgba(78,227,255,.25);border-radius:20px;padding:10px 16px">
+      <span style="width:6px;height:6px;border-radius:50%;background:#4ee3ff"></span>
+      <span style="font:12px 'Space Grotesk';color:#6d9490">Demande-moi n'importe quoi…</span>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="dv-opt" id="1c">
+<div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Obsidienne Circuit — minéral, froid, spatial-tech</div>
+<div class="dv-card" style="width:400px;height:540px;background:linear-gradient(160deg,#111214 0%,#0a0a0b 60%,#050506 100%);position:relative;font-family:'Space Grotesk',sans-serif">
+  <svg width="400" height="330" style="position:absolute;top:30px;left:0" viewBox="0 0 400 330">
+    <defs>
+      <radialGradient id="g1c-core" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#a674ff" stop-opacity="0.8"/><stop offset="100%" stop-color="#a674ff" stop-opacity="0"/></radialGradient>
+    </defs>
+    <g stroke="#33343a" stroke-width="1">
+      <line x1="200" y1="165" x2="120" y2="90"/><line x1="200" y1="165" x2="290" y2="100"/>
+      <line x1="200" y1="165" x2="110" y2="230"/><line x1="200" y1="165" x2="300" y2="235"/>
+      <line x1="200" y1="165" x2="200" y2="60"/>
+      <line x1="120" y1="90" x2="290" y2="100" stroke-dasharray="2 4"/>
+      <line x1="110" y1="230" x2="300" y2="235" stroke-dasharray="2 4"/>
+    </g>
+    <circle cx="200" cy="165" r="75" fill="url(#g1c-core)" opacity="0.4"/>
+    <rect x="194" y="159" width="12" height="12" fill="#e6dcff" transform="rotate(45 200 165)"/>
+    <circle cx="120" cy="90" r="5" fill="none" stroke="#e6dcff" stroke-width="1.5"/>
+    <circle cx="290" cy="100" r="4" fill="none" stroke="#e6dcff" stroke-width="1.5"/>
+    <circle cx="110" cy="230" r="4.5" fill="none" stroke="#e6dcff" stroke-width="1.5"/>
+    <circle cx="300" cy="235" r="4" fill="none" stroke="#e6dcff" stroke-width="1.5"/>
+    <circle cx="200" cy="60" r="3.5" fill="none" stroke="#e6dcff" stroke-width="1.5"/>
+  </svg>
+  <div style="position:absolute;top:24px;left:24px;font:500 12px 'Space Grotesk';letter-spacing:.18em;color:#8a8a92;text-transform:uppercase">Réseau</div>
+  <div style="position:absolute;top:22px;right:24px;font:20px serif;color:#a674ff;opacity:.75">ᛟ</div>
+  <div style="position:absolute;bottom:0;left:0;right:0;padding:20px 24px 22px;background:linear-gradient(180deg,transparent,#050506 60%)">
+    <div style="font:500 15px 'Space Grotesk';color:#eceef2;margin-bottom:10px">Nœud 04 · analyse en cours</div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#ffb347;box-shadow:0 0 8px #ffb347"></span><span style="font:11px 'Space Grotesk';color:#7a7a82">Repos</span></div>
+      <div style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#a674ff;box-shadow:0 0 8px #a674ff"></span><span style="font:11px 'Space Grotesk';color:#7a7a82">Réflexion</span></div>
+      <div style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#4ee3ff;box-shadow:0 0 8px #4ee3ff"></span><span style="font:11px 'Space Grotesk';color:#7a7a82">Action</span></div>
+      <div style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#ff4d5e;box-shadow:0 0 8px #ff4d5e"></span><span style="font:11px 'Space Grotesk';color:#7a7a82">Erreur</span></div>
+    </div>
+    <div style="margin-top:16px;display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.02);border:1px solid rgba(166,116,255,.3);border-radius:4px;padding:10px 16px">
+      <span style="width:6px;height:6px;background:#a674ff;transform:rotate(45deg)"></span>
+      <span style="font:12px 'Space Grotesk';color:#65656d">Demande-moi n'importe quoi…</span>
+    </div>
+  </div>
+</div>
+</div>
+
+</div>
+<p class="dv-next">Essaie ensuite : "approfondis <a class="dv-oid" href="#1a">1a</a>" · "mélange <a class="dv-oid" href="#1b">1b</a> et <a class="dv-oid" href="#1c">1c</a>" · "montre les 4 vues pour <a class="dv-oid" href="#1a">1a</a>"</p>
+</section>
+
+</x-dc>
+</body>
+</html>

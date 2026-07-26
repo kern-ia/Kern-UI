@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#f0eee9;font-family:'Space Grotesk',system-ui,sans-serif}
+.m-col{display:flex;flex-direction:column;align-items:center;gap:14px}
+.m-label{font:600 12px 'Space Grotesk';color:#1a1a1a;letter-spacing:.02em}
+</style>
+</helmet>
+
+<div style="padding:56px;display:flex;gap:48px;flex-wrap:wrap;align-items:flex-start;justify-content:center">
+
+<div class="m-col">
+<div class="m-label">Cerveau &amp; Mémoire — mobile</div>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" hint-size="402,874">
+  <div style="height:100%;display:flex;flex-direction:column;background:radial-gradient(140% 60% at 50% 0%,#241c14 0%,#0d0a07 50%,#070504 100%);color:#f3e3c4;box-sizing:border-box;padding-top:56px">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:0 20px 12px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="width:7px;height:7px;border-radius:50%;background:#ffb347;box-shadow:0 0 8px #ffb347"></span>
+        <span style="font:600 12px 'Cinzel',serif;letter-spacing:.14em;color:#e8c98a;text-transform:uppercase">Kern-IA</span>
+      </div>
+      <span style="font:10px 'Space Grotesk';color:#8a7355">Repos</span>
+    </div>
+    <div style="font:10.5px 'Space Grotesk';letter-spacing:.1em;color:#8a7355;text-transform:uppercase;padding:0 20px 8px">248 souvenirs actifs</div>
+    <div style="flex:1;position:relative">
+      <svg viewBox="0 0 400 420" style="position:absolute;inset:0;width:100%;height:100%">
+        <defs><radialGradient id="mCore" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#ffb347" stop-opacity="0.5"/><stop offset="100%" stop-color="#ffb347" stop-opacity="0"/></radialGradient>
+        <radialGradient id="mNode" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#e8c98a" stop-opacity="1"/><stop offset="100%" stop-color="#e8c98a" stop-opacity="0"/></radialGradient></defs>
+        <circle cx="200" cy="190" r="120" fill="url(#mCore)"/>
+        <g stroke="#8a6a3a" stroke-width="1" opacity="0.5">
+          <line x1="200" y1="190" x2="90" y2="110"/><line x1="200" y1="190" x2="310" y2="100"/>
+          <line x1="200" y1="190" x2="70" y2="290"/><line x1="200" y1="190" x2="320" y2="300"/>
+          <line x1="200" y1="190" x2="200" y2="340"/>
+        </g>
+        <circle cx="200" cy="190" r="14" fill="#ffb347"/>
+        <circle cx="90" cy="110" r="18" fill="url(#mNode)"/><circle cx="90" cy="110" r="5" fill="#ffe0a8"/>
+        <circle cx="310" cy="100" r="13" fill="url(#mNode)"/><circle cx="310" cy="100" r="4" fill="#ffe0a8"/>
+        <circle cx="70" cy="290" r="15" fill="url(#mNode)"/><circle cx="70" cy="290" r="4.5" fill="#ffe0a8"/>
+        <circle cx="320" cy="300" r="12" fill="url(#mNode)"/><circle cx="320" cy="300" r="3.5" fill="#ffe0a8"/>
+        <circle cx="200" cy="340" r="10" fill="url(#mNode)"/><circle cx="200" cy="340" r="3" fill="#ffe0a8"/>
+        <text x="90" y="80" text-anchor="middle" fill="#c9b48f" font-size="12" font-family="Space Grotesk">Lancement Q3</text>
+        <text x="70" y="325" text-anchor="middle" fill="#c9b48f" font-size="12" font-family="Space Grotesk">Recherche client</text>
+      </svg>
+    </div>
+    <div style="padding:0 20px 12px;display:flex;justify-content:center">
+      <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,179,71,.25);border-radius:20px;padding:11px 18px;width:100%;box-sizing:border-box">
+        <span style="width:6px;height:6px;border-radius:50%;background:#ffb347"></span>
+        <span style="font:12px 'Space Grotesk';color:#8a7355;flex:1">Demande-moi n'importe quoi…</span>
+        <span style="width:26px;height:26px;border-radius:50%;background:rgba(255,179,71,.15);border:1px solid rgba(255,179,71,.4);display:flex;align-items:center;justify-content:center;flex:none;box-shadow:0 0 8px rgba(255,179,71,.35)">
+          <svg width="10" height="14" viewBox="0 0 10 14"><rect x="2.5" y="0" width="5" height="8.5" rx="2.5" fill="#ffb347"/><path d="M0.5 6.5C0.5 9.5 2.5 11.5 5 11.5C7.5 11.5 9.5 9.5 9.5 6.5" stroke="#ffb347" stroke-width="1.1" fill="none" stroke-linecap="round"/><line x1="5" y1="11.5" x2="5" y2="14" stroke="#ffb347" stroke-width="1.1"/></svg>
+        </span>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-around;align-items:center;padding:10px 12px 14px;border-top:1px solid rgba(232,201,138,.1)">
+      <span style="width:36px;height:30px;border-radius:15px;background:#e8c98a;color:#0d0a07;display:flex;align-items:center;justify-content:center;font-size:15px">◎</span>
+      <span style="color:#9c8a6a;font-size:15px">⬡</span>
+      <span style="color:#9c8a6a;font-size:15px">▦</span>
+      <span style="color:#9c8a6a;font-size:15px">✎</span>
+      <span style="color:#9c8a6a;font-size:15px">ᛝ</span>
+    </div>
+  </div>
+</x-import>
+</div>
+
+<div class="m-col">
+<div class="m-label">Espace (widgets MCP) — mobile</div>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" hint-size="402,874">
+  <div style="height:100%;display:flex;flex-direction:column;background:#0d0a07;color:#f3e3c4;box-sizing:border-box;padding-top:56px">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:0 20px 14px">
+      <span style="font:600 12px 'Cinzel',serif;letter-spacing:.14em;color:#e8c98a;text-transform:uppercase">Espace</span>
+      <span style="font:10px 'Space Grotesk';color:#6a5a44">Glisser pour réorganiser</span>
+    </div>
+    <div style="flex:1;overflow:auto;padding:0 20px;display:flex;flex-direction:column;gap:12px">
+      <div style="border:1px solid rgba(232,201,138,.15);border-top:2px solid #ffb347;border-radius:12px;background:rgba(255,255,255,.02);padding:14px 16px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="font-size:14px;color:#ffb347">⌥</span><span style="font:10.5px 'Space Grotesk';color:#9c8a6a">Dépôt de code</span></div>
+        <div style="font:10.5px 'Space Grotesk';color:#8a7355;margin-bottom:4px">Pull requests ouvertes</div>
+        <div style="font:600 17px 'Cinzel',serif;color:#f3e3c4">4</div>
+      </div>
+      <div style="border:1px solid rgba(232,201,138,.15);border-top:2px solid #a674ff;border-radius:12px;background:rgba(255,255,255,.02);padding:14px 16px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="font-size:14px;color:#a674ff">✉</span><span style="font:10.5px 'Space Grotesk';color:#9c8a6a">Messagerie</span></div>
+        <div style="font:10.5px 'Space Grotesk';color:#8a7355;margin-bottom:4px">Messages non lus</div>
+        <div style="font:600 17px 'Cinzel',serif;color:#f3e3c4">12</div>
+      </div>
+      <div style="border:1px solid rgba(232,201,138,.15);border-top:2px solid #4ee3ff;border-radius:12px;background:rgba(255,255,255,.02);padding:14px 16px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="font-size:14px;color:#4ee3ff">◷</span><span style="font:10.5px 'Space Grotesk';color:#9c8a6a">Agenda</span></div>
+        <div style="font:10.5px 'Space Grotesk';color:#8a7355;margin-bottom:4px">Prochain rendez-vous</div>
+        <div style="font:600 15px 'Cinzel',serif;color:#f3e3c4">14:30 — Revue design</div>
+      </div>
+      <div style="border:1px dashed rgba(232,201,138,.25);border-radius:12px;display:flex;align-items:center;justify-content:center;min-height:56px;color:#6a5a44;font-size:20px">+</div>
+    </div>
+    <div style="padding:12px 20px;display:flex;justify-content:center">
+      <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,179,71,.25);border-radius:20px;padding:11px 18px;width:100%;box-sizing:border-box">
+        <span style="width:6px;height:6px;border-radius:50%;background:#ffb347"></span>
+        <span style="font:12px 'Space Grotesk';color:#8a7355;flex:1">Demande-moi n'importe quoi…</span>
+        <span style="width:26px;height:26px;border-radius:50%;background:rgba(255,179,71,.15);border:1px solid rgba(255,179,71,.4);display:flex;align-items:center;justify-content:center;flex:none;box-shadow:0 0 8px rgba(255,179,71,.35)">
+          <svg width="10" height="14" viewBox="0 0 10 14"><rect x="2.5" y="0" width="5" height="8.5" rx="2.5" fill="#ffb347"/><path d="M0.5 6.5C0.5 9.5 2.5 11.5 5 11.5C7.5 11.5 9.5 9.5 9.5 6.5" stroke="#ffb347" stroke-width="1.1" fill="none" stroke-linecap="round"/><line x1="5" y1="11.5" x2="5" y2="14" stroke="#ffb347" stroke-width="1.1"/></svg>
+        </span>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-around;align-items:center;padding:10px 12px 14px;border-top:1px solid rgba(232,201,138,.1)">
+      <span style="color:#9c8a6a;font-size:15px">◎</span>
+      <span style="color:#9c8a6a;font-size:15px">⬡</span>
+      <span style="width:36px;height:30px;border-radius:15px;background:#e8c98a;color:#0d0a07;display:flex;align-items:center;justify-content:center;font-size:15px">▦</span>
+      <span style="color:#9c8a6a;font-size:15px">✎</span>
+      <span style="color:#9c8a6a;font-size:15px">ᛝ</span>
+    </div>
+  </div>
+</x-import>
+</div>
+
+<div class="m-col">
+<div class="m-label">Grimoire (skills &amp; agents) — mobile</div>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" hint-size="402,874">
+  <div style="height:100%;display:flex;flex-direction:column;background:#0d0a07;color:#f3e3c4;box-sizing:border-box;padding-top:56px">
+    <div style="padding:0 20px 14px"><span style="font:600 12px 'Cinzel',serif;letter-spacing:.14em;color:#e8c98a;text-transform:uppercase">Grimoire</span></div>
+    <div style="flex:1;overflow:auto;padding:0 20px 14px">
+      <div style="font:10.5px 'Space Grotesk';letter-spacing:.1em;color:#8a7355;text-transform:uppercase;margin-bottom:10px">Compétences</div>
+      <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:14px;margin:0 -20px;padding-left:20px;padding-right:20px">
+        <div style="flex:none;width:76px;aspect-ratio:1;border:1px solid rgba(232,201,138,.15);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:rgba(255,255,255,.02)"><span style="font-size:22px;color:#e8c98a">ᛝ</span><span style="font:10px 'Space Grotesk';color:#9c8a6a">Analyse</span></div>
+        <div style="flex:none;width:76px;aspect-ratio:1;border:1px solid rgba(232,201,138,.15);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:rgba(255,255,255,.02)"><span style="font-size:22px;color:#e8c98a">ᚦ</span><span style="font:10px 'Space Grotesk';color:#9c8a6a">Synthèse</span></div>
+        <div style="flex:none;width:76px;aspect-ratio:1;border:1px solid rgba(232,201,138,.15);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:rgba(255,255,255,.02)"><span style="font-size:22px;color:#e8c98a">ᛟ</span><span style="font:10px 'Space Grotesk';color:#9c8a6a">Recherche</span></div>
+        <div style="flex:none;width:76px;aspect-ratio:1;border:1px dashed rgba(232,201,138,.25);border-radius:12px;display:flex;align-items:center;justify-content:center;color:#6a5a44;font-size:18px">+</div>
+      </div>
+      <div style="font:10.5px 'Space Grotesk';letter-spacing:.1em;color:#8a7355;text-transform:uppercase;margin:6px 0 10px">Sous-agents</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:center;gap:12px;border:1px solid rgba(232,201,138,.12);border-radius:12px;padding:10px 12px;background:rgba(255,255,255,.02)">
+          <div style="width:40px;height:40px;border-radius:50%;border:2px solid #4ee3ff;box-shadow:0 0 8px #4ee3ff;flex:none"></div>
+          <div style="display:flex;flex-direction:column"><span style="font:12px 'Space Grotesk';color:#e8c98a">Scribe</span><span style="font:10px 'Space Grotesk';color:#8a7355">Actif</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;border:1px solid rgba(232,201,138,.12);border-radius:12px;padding:10px 12px;background:rgba(255,255,255,.02)">
+          <div style="width:40px;height:40px;border-radius:50%;border:2px solid #ffb347;box-shadow:0 0 8px #ffb347;flex:none"></div>
+          <div style="display:flex;flex-direction:column"><span style="font:12px 'Space Grotesk';color:#e8c98a">Vision</span><span style="font:10px 'Space Grotesk';color:#8a7355">Repos</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;border:1px dashed rgba(232,201,138,.25);border-radius:12px;padding:10px 12px;color:#6a5a44">
+          <span style="font-size:18px">+</span><span style="font:12px 'Space Grotesk'">Nouveau sous-agent</span>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-around;align-items:center;padding:10px 12px 14px;border-top:1px solid rgba(232,201,138,.1)">
+      <span style="color:#9c8a6a;font-size:15px">◎</span>
+      <span style="color:#9c8a6a;font-size:15px">⬡</span>
+      <span style="color:#9c8a6a;font-size:15px">▦</span>
+      <span style="color:#9c8a6a;font-size:15px">✎</span>
+      <span style="width:36px;height:30px;border-radius:15px;background:#e8c98a;color:#0d0a07;display:flex;align-items:center;justify-content:center;font-size:15px">ᛝ</span>
+    </div>
+  </div>
+</x-import>
+</div>
+
+</div>
+
+</x-dc>
+</body>
+</html>

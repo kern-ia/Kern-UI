@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="./image-slot.js"></script>
+<style>
+html,body{margin:0;height:100%;background:#0d0a07;overflow:hidden;font-family:'Space Grotesk',system-ui,sans-serif}
+@keyframes pulseGlow{0%,100%{opacity:.55;transform:scale(1)}50%{opacity:1;transform:scale(1.15)}}
+@keyframes flowDash{to{stroke-dashoffset:-24}}
+*::-webkit-scrollbar{width:6px;height:6px}
+*::-webkit-scrollbar-thumb{background:rgba(232,201,138,.2);border-radius:3px}
+</style>
+</helmet>
+
+<div ref="{{ containerRef }}" style="position:relative;width:100%;height:100vh;background:radial-gradient(140% 100% at 50% -10%,#241c14 0%,#0d0a07 45%,#070504 100%);color:#f3e3c4;overflow:hidden;display:flex;flex-direction:column;box-sizing:border-box">
+
+  <header style="position:relative;z-index:20;height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:rgba(10,8,6,.55);backdrop-filter:blur(10px);border-bottom:1px solid rgba(232,201,138,.12)">
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="position:relative;width:9px;height:9px;border-radius:50%;background:#ffb347;box-shadow:0 0 10px #ffb347;display:inline-block;animation:pulseGlow 3.4s ease-in-out infinite"></span>
+      <span style="font:600 15px 'Cinzel',serif;letter-spacing:.16em;color:#e8c98a;text-transform:uppercase">Kern-IA</span>
+    </div>
+    <nav style="display:flex;gap:6px">
+      <sc-for list="{{ tabs }}" as="tab" hint-placeholder-count="4">
+        <div onClick="{{ tab.onClick }}" style="{{ tab.style }}">
+          <span style="font-size:15px;line-height:1">{{ tab.glyph }}</span>
+          <span style="font:500 12px 'Space Grotesk'">{{ tab.label }}</span>
+        </div>
+      </sc-for>
+    </nav>
+    <div style="display:flex;align-items:center;gap:16px">
+      <div style="display:flex;align-items:center;gap:7px">
+        <span style="width:7px;height:7px;border-radius:50%;background:{{ stateColor }};box-shadow:0 0 8px {{ stateColor }}"></span>
+        <span style="font:11px 'Space Grotesk';color:#c9b48f;letter-spacing:.04em">{{ stateLabel }}</span>
+      </div>
+      <span style="font-size:15px;color:#8a7355;cursor:pointer">⚙</span>
+    </div>
+  </header>
+
+  <main style="position:relative;flex:1;min-height:0;overflow:hidden">
+
+    <sc-if value="{{ isBrain }}" hint-placeholder-val="{{ true }}">
+      <div style="position:absolute;inset:0">
+        <div style="position:absolute;top:22px;left:28px;font:500 11px 'Space Grotesk';letter-spacing:.14em;color:#8a7355;text-transform:uppercase">Cerveau — 248 souvenirs actifs</div>
+        <sc-if value="{{ showRunes }}" hint-placeholder-val="{{ true }}">
+          <div style="position:absolute;top:16px;right:28px;font:26px serif;color:#ffb347;opacity:.55">ᛝ</div>
+        </sc-if>
+        <svg viewBox="0 0 1000 600" style="position:absolute;inset:0;width:100%;height:100%">
+          <defs>
+            <radialGradient id="coreGlow" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#ffb347" stop-opacity="0.55"/><stop offset="100%" stop-color="#ffb347" stop-opacity="0"/></radialGradient>
+            <radialGradient id="nodeGlow" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#e8c98a" stop-opacity="1"/><stop offset="100%" stop-color="#e8c98a" stop-opacity="0"/></radialGradient>
+          </defs>
+          <circle cx="500" cy="300" r="170" fill="url(#coreGlow)"/>
+          <g stroke="#8a6a3a" stroke-width="1" opacity="0.45">
+            <line x1="500" y1="300" x2="300" y2="150"/><line x1="500" y1="300" x2="650" y2="120"/>
+            <line x1="500" y1="300" x2="230" y2="330"/><line x1="500" y1="300" x2="760" y2="260"/>
+            <line x1="500" y1="300" x2="420" y2="480"/><line x1="500" y1="300" x2="640" y2="460"/>
+            <line x1="500" y1="300" x2="820" y2="420"/><line x1="500" y1="300" x2="180" y2="150"/>
+            <line x1="300" y1="150" x2="650" y2="120"/><line x1="230" y1="330" x2="420" y2="480"/>
+          </g>
+          <circle cx="500" cy="300" r="16" fill="#ffb347"/>
+          <circle cx="300" cy="150" r="26" fill="url(#nodeGlow)"/><circle cx="300" cy="150" r="7" fill="#ffe0a8"/>
+          <text x="300" y="112" text-anchor="middle" fill="#c9b48f" font-size="13" font-family="Space Grotesk">Lancement Q3</text>
+          <circle cx="650" cy="120" r="16" fill="url(#nodeGlow)"/><circle cx="650" cy="120" r="5" fill="#ffe0a8"/>
+          <circle cx="230" cy="330" r="22" fill="url(#nodeGlow)"/><circle cx="230" cy="330" r="6" fill="#ffe0a8"/>
+          <text x="230" y="368" text-anchor="middle" fill="#c9b48f" font-size="13" font-family="Space Grotesk">Recherche client</text>
+          <circle cx="760" cy="260" r="14" fill="url(#nodeGlow)"/><circle cx="760" cy="260" r="4" fill="#ffe0a8"/>
+          <circle cx="420" cy="480" r="18" fill="url(#nodeGlow)"/><circle cx="420" cy="480" r="5" fill="#ffe0a8"/>
+          <text x="420" y="512" text-anchor="middle" fill="#c9b48f" font-size="13" font-family="Space Grotesk">Idée produit</text>
+          <circle cx="640" cy="460" r="13" fill="url(#nodeGlow)"/><circle cx="640" cy="460" r="4" fill="#ffe0a8"/>
+          <circle cx="820" cy="420" r="12" fill="url(#nodeGlow)"/><circle cx="820" cy="420" r="3.5" fill="#ffe0a8"/>
+          <circle cx="180" cy="150" r="10" fill="url(#nodeGlow)"/><circle cx="180" cy="150" r="3" fill="#ffe0a8"/>
+        </svg>
+        <div style="position:absolute;bottom:18px;right:28px;font:11px 'Space Grotesk';color:#6a5a44">Molette pour zoomer · double-clic pour plonger</div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isGraph }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;inset:0">
+        <div style="position:absolute;top:22px;left:28px;font:500 11px 'Space Grotesk';letter-spacing:.14em;color:#8a7355;text-transform:uppercase">Ruche des sous-agents</div>
+        <div style="position:absolute;top:18px;right:28px;display:flex;gap:14px;background:rgba(255,255,255,.03);border:1px solid rgba(232,201,138,.15);border-radius:20px;padding:8px 16px">
+          <div style="display:flex;align-items:center;gap:6px"><span style="width:7px;height:7px;border-radius:50%;background:#ffb347"></span><span style="font:10.5px 'Space Grotesk';color:#c9b48f">Repos</span></div>
+          <div style="display:flex;align-items:center;gap:6px"><span style="width:7px;height:7px;border-radius:50%;background:#a674ff"></span><span style="font:10.5px 'Space Grotesk';color:#c9b48f">Réflexion</span></div>
+          <div style="display:flex;align-items:center;gap:6px"><span style="width:7px;height:7px;border-radius:50%;background:#4ee3ff"></span><span style="font:10.5px 'Space Grotesk';color:#c9b48f">Action</span></div>
+          <div style="display:flex;align-items:center;gap:6px"><span style="width:7px;height:7px;border-radius:50%;background:#ff4d5e"></span><span style="font:10.5px 'Space Grotesk';color:#c9b48f">Erreur</span></div>
+        </div>
+        <svg viewBox="0 0 1000 600" style="position:absolute;inset:0;width:100%;height:100%">
+          <g stroke="#4ee3ff" stroke-width="1.6" opacity="0.7" stroke-dasharray="5 7" style="animation:flowDash 1.6s linear infinite">
+            <line x1="500" y1="120" x2="320" y2="280"/>
+            <line x1="500" y1="120" x2="500" y2="300"/>
+          </g>
+          <g stroke="#8a6a3a" stroke-width="1" opacity="0.4">
+            <line x1="500" y1="120" x2="700" y2="260"/>
+            <line x1="320" y1="280" x2="220" y2="460"/>
+            <line x1="320" y1="280" x2="420" y2="470"/>
+            <line x1="500" y1="300" x2="580" y2="480"/>
+            <line x1="700" y1="260" x2="800" y2="440"/>
+          </g>
+          <circle cx="500" cy="120" r="17" fill="#a674ff"/><circle cx="500" cy="120" r="17" fill="none" stroke="#a674ff" stroke-width="6" opacity="0.3"/>
+          <text x="500" y="90" text-anchor="middle" fill="#e0d4ff" font-size="13" font-family="Space Grotesk">Orchestrateur</text>
+          <circle cx="320" cy="280" r="14" fill="#4ee3ff"/><text x="320" y="255" text-anchor="middle" fill="#bff2ff" font-size="12" font-family="Space Grotesk">Agent Scribe · actif</text>
+          <circle cx="500" cy="300" r="12" fill="#4ee3ff"/><text x="500" y="330" text-anchor="middle" fill="#bff2ff" font-size="12" font-family="Space Grotesk">Agent Chercheur · actif</text>
+          <circle cx="700" cy="260" r="12" fill="#ffb347"/><text x="700" y="235" text-anchor="middle" fill="#f3dcad" font-size="12" font-family="Space Grotesk">Agent Vision · repos</text>
+          <circle cx="220" cy="460" r="10" fill="#ffb347"/>
+          <circle cx="420" cy="470" r="10" fill="#ff4d5e"/><text x="420" y="500" text-anchor="middle" fill="#ffc3c9" font-size="12" font-family="Space Grotesk">Agent Analyste · bloqué</text>
+          <circle cx="580" cy="480" r="9" fill="#ffb347"/>
+          <circle cx="800" cy="440" r="10" fill="#ffb347"/>
+        </svg>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isSpace }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;inset:0;padding:32px 40px;overflow:auto">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:20px">
+          <div style="font:500 12px 'Space Grotesk';letter-spacing:.14em;color:#8a7355;text-transform:uppercase">Espace — widgets connectés (MCP)</div>
+          <div style="font:11px 'Space Grotesk';color:#6a5a44">Glisser une carte pour réorganiser</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px">
+          <sc-for list="{{ widgets }}" as="w" hint-placeholder-count="5">
+            <div draggable="true" onDragStart="{{ w.onDragStart }}" onDragOver="{{ preventDefault }}" onDrop="{{ w.onDrop }}" style="position:relative;border:1px solid rgba(232,201,138,.15);border-top:2px solid {{ w.color }};border-radius:12px;background:rgba(255,255,255,.02);padding:16px 18px;cursor:grab">
+              <span onClick="{{ w.onRemove }}" style="position:absolute;top:8px;right:10px;color:#6a5a44;font-size:13px;cursor:pointer" style-hover="color:#ff4d5e">×</span>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+                <span style="font-size:15px;color:{{ w.color }}">{{ w.glyph }}</span>
+                <span style="font:11px 'Space Grotesk';color:#9c8a6a;letter-spacing:.03em">{{ w.app }}</span>
+              </div>
+              <div style="font:11px 'Space Grotesk';color:#8a7355;margin-bottom:6px">{{ w.metric }}</div>
+              <div style="font:600 18px 'Cinzel',serif;color:#f3e3c4">{{ w.value }}</div>
+            </div>
+          </sc-for>
+          <sc-if value="{{ canAddWidget }}" hint-placeholder-val="{{ true }}">
+            <div onClick="{{ addWidget }}" style="border:1px dashed rgba(232,201,138,.25);border-radius:12px;display:flex;align-items:center;justify-content:center;min-height:110px;color:#6a5a44;font-size:22px;cursor:pointer">+</div>
+          </sc-if>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isBrowser }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column">
+        <div style="height:52px;flex:none;display:flex;align-items:center;gap:12px;padding:0 20px;border-bottom:1px solid rgba(232,201,138,.1);background:rgba(255,255,255,.02)">
+          <span style="color:#8a7355;font-size:16px;cursor:pointer">‹</span>
+          <span style="color:#4a3f2e;font-size:16px;cursor:pointer">›</span>
+          <div style="flex:1;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.03);border:1px solid rgba(232,201,138,.15);border-radius:8px;padding:7px 14px">
+            <span style="width:6px;height:6px;border-radius:50%;background:#4ee3ff;box-shadow:0 0 6px #4ee3ff"></span>
+            <span style="font:12px 'Space Grotesk';color:#c9b48f">recherche-fournisseurs.exemple.com</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:14px;background:rgba(78,227,255,.12);border:1px solid rgba(78,227,255,.35)">
+            <span style="width:6px;height:6px;border-radius:50%;background:#4ee3ff;box-shadow:0 0 6px #4ee3ff"></span>
+            <span style="font:11px 'Space Grotesk';color:#bff2ff">Agent au clavier</span>
+          </div>
+        </div>
+        <div style="height:38px;flex:none;display:flex;align-items:center;gap:8px;padding:0 20px;border-bottom:1px solid rgba(232,201,138,.08)">
+          <div style="display:flex;align-items:center;gap:7px;padding:6px 12px;border-radius:8px 8px 0 0;background:rgba(255,255,255,.04);border-bottom:2px solid #ffb347"><span style="font:11px 'Space Grotesk';color:#e8c98a">Recherche fournisseurs</span></div>
+          <div style="display:flex;align-items:center;gap:7px;padding:6px 12px;border-radius:8px 8px 0 0"><span style="font:11px 'Space Grotesk';color:#6a5a44">App locale · Tableau de bord</span></div>
+          <div style="color:#4a3f2e;font-size:13px;cursor:pointer">+</div>
+        </div>
+        <div style="flex:1;display:flex;overflow:hidden">
+          <div style="flex:1;overflow:auto;padding:32px 40px">
+            <div style="font:600 20px 'Cinzel',serif;color:#f3e3c4;margin-bottom:22px">Comparateur de fournisseurs</div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+              <div style="border:1px solid rgba(232,201,138,.15);border-radius:10px;overflow:hidden;background:rgba(255,255,255,.02)">
+                <div style="height:80px;background:repeating-linear-gradient(45deg,rgba(232,201,138,.06),rgba(232,201,138,.06) 8px,transparent 8px,transparent 16px)"></div>
+                <div style="padding:12px"><div style="font:12px 'Space Grotesk';color:#e8c98a;margin-bottom:6px">Fournisseur Atlas</div><div style="font:11px 'Space Grotesk';color:#8a7355">à partir de 2 400 €/mois</div></div>
+              </div>
+              <div style="border:1px solid rgba(232,201,138,.15);border-radius:10px;overflow:hidden;background:rgba(255,255,255,.02)">
+                <div style="height:80px;background:repeating-linear-gradient(45deg,rgba(232,201,138,.06),rgba(232,201,138,.06) 8px,transparent 8px,transparent 16px)"></div>
+                <div style="padding:12px"><div style="font:12px 'Space Grotesk';color:#e8c98a;margin-bottom:6px">Fournisseur Méridien</div><div style="font:11px 'Space Grotesk';color:#8a7355">à partir de 1 950 €/mois</div></div>
+              </div>
+              <div style="border:1px solid rgba(232,201,138,.15);border-radius:10px;overflow:hidden;background:rgba(255,255,255,.02)">
+                <div style="height:80px;background:repeating-linear-gradient(45deg,rgba(232,201,138,.06),rgba(232,201,138,.06) 8px,transparent 8px,transparent 16px)"></div>
+                <div style="padding:12px"><div style="font:12px 'Space Grotesk';color:#e8c98a;margin-bottom:6px">Fournisseur Orion</div><div style="font:11px 'Space Grotesk';color:#8a7355">à partir de 2 780 €/mois</div></div>
+              </div>
+            </div>
+            <div style="margin-top:20px;height:1px;background:linear-gradient(90deg,rgba(232,201,138,.15),transparent)"></div>
+            <div style="margin-top:20px;display:flex;flex-direction:column;gap:10px">
+              <div style="height:12px;width:85%;border-radius:4px;background:rgba(232,201,138,.06)"></div>
+              <div style="height:12px;width:70%;border-radius:4px;background:rgba(232,201,138,.06)"></div>
+              <div style="height:12px;width:60%;border-radius:4px;background:rgba(232,201,138,.06)"></div>
+            </div>
+          </div>
+          <div style="width:260px;flex:none;border-left:1px solid rgba(232,201,138,.1);background:rgba(255,255,255,.015);padding:20px;overflow:auto">
+            <div style="font:500 11px 'Space Grotesk';letter-spacing:.12em;color:#8a7355;text-transform:uppercase;margin-bottom:16px">Actions de l'agent</div>
+            <div style="display:flex;flex-direction:column;gap:16px">
+              <div style="display:flex;gap:10px"><span style="width:6px;height:6px;border-radius:50%;background:#4ee3ff;box-shadow:0 0 6px #4ee3ff;margin-top:5px;flex:none"></span><div><div style="font:11px 'Space Grotesk';color:#6a5a44;margin-bottom:2px">00:02</div><div style="font:12px 'Space Grotesk';color:#d8c7a4">Ouvre recherche-fournisseurs.exemple.com</div></div></div>
+              <div style="display:flex;gap:10px"><span style="width:6px;height:6px;border-radius:50%;background:#a674ff;box-shadow:0 0 6px #a674ff;margin-top:5px;flex:none"></span><div><div style="font:11px 'Space Grotesk';color:#6a5a44;margin-bottom:2px">00:05</div><div style="font:12px 'Space Grotesk';color:#d8c7a4">Compare les tarifs de 6 fournisseurs</div></div></div>
+              <div style="display:flex;gap:10px"><span style="width:6px;height:6px;border-radius:50%;background:#4ee3ff;box-shadow:0 0 6px #4ee3ff;margin-top:5px;flex:none"></span><div><div style="font:11px 'Space Grotesk';color:#6a5a44;margin-bottom:2px">00:09</div><div style="font:12px 'Space Grotesk';color:#d8c7a4">Extrait les 3 meilleures offres vers Mémoire</div></div></div>
+              <div style="display:flex;gap:10px"><span style="width:6px;height:6px;border-radius:50%;background:#ffb347;box-shadow:0 0 6px #ffb347;margin-top:5px;flex:none"></span><div><div style="font:11px 'Space Grotesk';color:#6a5a44;margin-bottom:2px">00:11</div><div style="font:12px 'Space Grotesk';color:#d8c7a4">En attente de confirmation</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isWrite }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;inset:0;display:flex">
+        <div style="width:208px;flex:none;height:100%;background:rgba(255,255,255,.02);border-right:1px solid rgba(232,201,138,.1);display:flex;flex-direction:column;align-items:flex-start;padding:24px 0 0 20px;gap:20px;box-sizing:border-box">
+          <div style="display:flex;align-items:center;gap:12px;color:#e8c98a;white-space:nowrap"><span style="font-size:15px">◈</span><span style="font:12px 'Space Grotesk'">Vision du produit</span></div>
+          <div style="display:flex;align-items:center;gap:12px;color:#9c8a6a;white-space:nowrap"><span style="font-size:15px">◈</span><span style="font:12px 'Space Grotesk'">Recherche marché</span></div>
+          <div style="display:flex;align-items:center;gap:12px;color:#9c8a6a;white-space:nowrap"><span style="font-size:15px">◈</span><span style="font:12px 'Space Grotesk'">Journal des décisions</span></div>
+        </div>
+        <div style="flex:1;position:relative;padding:48px 80px;overflow:auto">
+          <div style="font:600 26px 'Cinzel',serif;color:#f3e3c4;margin-bottom:6px">Notes — Vision du produit</div>
+          <div style="font:11px 'Space Grotesk';color:#6a5a44;margin-bottom:28px">482 mots · sauvegardé à l'instant</div>
+          <p style="font:16px/1.9 'Space Grotesk';color:#d8c7a4;max-width:460px;margin:0 0 20px">L'interface efface la notion de fenêtre. Chaque interaction naît d'une intention exprimée en langage naturel, et l'organisme répond en faisant émerger la vue adaptée — jamais l'inverse.</p>
+          <p style="font:16px/1.9 'Space Grotesk';color:#d8c7a4;max-width:460px;margin:0">Le <span style="border-bottom:1px dashed #a674ff;position:relative">mécanisme de zoom sur les souvenirs</span> doit rester continu : aucune coupure entre la vue globale du cerveau et l'immersion dans un souvenir unique.</p>
+          <div style="margin-top:32px;max-width:460px;background:rgba(30,20,12,.9);border:1px solid rgba(166,116,255,.35);border-left:2px solid #a674ff;border-radius:12px;padding:14px 16px;box-shadow:0 8px 24px rgba(0,0,0,.4)">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="width:6px;height:6px;border-radius:50%;background:#a674ff;box-shadow:0 0 8px #a674ff"></span><span style="font:11px 'Space Grotesk';color:#c9b0ff;letter-spacing:.04em">Suggestion — mécanisme de zoom sur les souvenirs</span></div>
+            <div style="font:13px/1.5 'Space Grotesk';color:#e6ddff;margin-bottom:12px">Préciser la transition d'échelle : durée, easing, et seuil de déclenchement.</div>
+            <div style="display:flex;gap:10px">
+              <span style="font:11px 'Space Grotesk';color:#0d0a07;background:#a674ff;padding:5px 12px;border-radius:14px;cursor:pointer">Accepter</span>
+              <span style="font:11px 'Space Grotesk';color:#9c8a6a;cursor:pointer">Ignorer</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isSkills }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;inset:0;padding:32px 40px;overflow:auto;display:grid;grid-template-columns:1.2fr 1fr;gap:40px">
+        <div>
+          <div style="font:500 12px 'Space Grotesk';letter-spacing:.14em;color:#8a7355;text-transform:uppercase;margin-bottom:16px">Compétences</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
+            <sc-for list="{{ skills }}" as="skill" hint-placeholder-count="8">
+              <div style="aspect-ratio:1;border:1px solid rgba(232,201,138,.15);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:rgba(255,255,255,.02)">
+                <span style="font-size:26px;color:#e8c98a">{{ skill.glyph }}</span>
+                <span style="font:11px 'Space Grotesk';color:#9c8a6a">{{ skill.name }}</span>
+              </div>
+            </sc-for>
+            <div style="aspect-ratio:1;border:1px dashed rgba(232,201,138,.25);border-radius:12px;display:flex;align-items:center;justify-content:center;color:#6a5a44;font-size:22px;cursor:pointer">+</div>
+          </div>
+        </div>
+        <div>
+          <div style="font:500 12px 'Space Grotesk';letter-spacing:.14em;color:#8a7355;text-transform:uppercase;margin-bottom:16px">Sous-agents</div>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:18px">
+            <sc-for list="{{ agents }}" as="agent" hint-placeholder-count="4">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+                <div style="width:84px;height:84px;border-radius:50%;padding:3px;border:2px solid {{ agent.color }};box-shadow:0 0 12px {{ agent.color }}">
+                  <image-slot id="{{ agent.slotId }}" shape="circle" placeholder="Avatar génératif"></image-slot>
+                </div>
+                <span style="font:12px 'Space Grotesk';color:#e8c98a">{{ agent.name }}</span>
+                <span style="font:10.5px 'Space Grotesk';color:#8a7355">{{ agent.status }}</span>
+              </div>
+            </sc-for>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:8px;justify-content:center">
+              <div style="width:84px;height:84px;border-radius:50%;border:2px dashed rgba(232,201,138,.3);display:flex;align-items:center;justify-content:center;color:#6a5a44;font-size:22px;cursor:pointer">+</div>
+              <span style="font:12px 'Space Grotesk';color:#9c8a6a">Nouveau sous-agent</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+  </main>
+
+  <div style="{{ groupStyle }}">
+    <div onMouseDown="{{ onStoneMouseDown }}" style="width:46px;height:46px;border-radius:50%;flex:none;background:radial-gradient(circle at 35% 30%,#a4703a,#6b4423 65%,#4a2e18 100%);border:1.5px solid #ffb347;box-shadow:0 0 18px rgba(255,179,71,.6),0 4px 10px rgba(0,0,0,.5),inset 0 1px 3px rgba(255,224,168,.5);display:flex;align-items:center;justify-content:center;cursor:{{ stoneCursor }};user-select:none">
+      <span style="font:22px serif;color:#fff3dc;text-shadow:0 0 6px #ffb347">ᛝ</span>
+    </div>
+    <sc-if value="{{ showChat }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;align-items:center;gap:10px;background:rgba(20,14,9,.75);backdrop-filter:blur(10px);border:1px solid {{ stateColor }}44;border-radius:24px;padding:12px 20px;min-width:340px;box-shadow:0 10px 30px rgba(0,0,0,.35)">
+        <span style="width:6px;height:6px;border-radius:50%;background:{{ stateColor }};box-shadow:0 0 8px {{ stateColor }}"></span>
+        <span style="font:13px 'Space Grotesk';color:#c9b48f">Demande-moi n'importe quoi…</span>
+      </div>
+    </sc-if>
+  </div>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900},&quot;systemState&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;repos&quot;,&quot;options&quot;:[&quot;repos&quot;,&quot;reflexion&quot;,&quot;action&quot;,&quot;erreur&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;État global&quot;},&quot;showRunes&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;État global&quot;}}">
+class Component extends DCLogic {
+  state = {
+    view: 0,
+    stone: null,
+    dragging: false,
+    widgets: [
+      { id: 'w1', app: 'Dépôt de code', glyph: '⌥', metric: 'Pull requests ouvertes', value: '4' },
+      { id: 'w2', app: 'Messagerie', glyph: '✉', metric: 'Messages non lus', value: '12' },
+      { id: 'w3', app: 'Agenda', glyph: '◷', metric: 'Prochain rendez-vous', value: '14:30 — Revue design' },
+      { id: 'w4', app: 'Suivi de tickets', glyph: '☰', metric: 'Tickets en cours', value: '7' },
+      { id: 'w5', app: 'Base de connaissances', glyph: '◈', metric: 'Page modifiée', value: 'il y a 20 min' },
+    ],
+  };
+  _dragId = null;
+  containerRef = React.createRef();
+
+  onStoneMouseDown = (e) => {
+    e.preventDefault();
+    const rect = this.containerRef.current.getBoundingClientRect();
+    const stone = this.state.stone || { x: rect.width / 2 - 130, y: rect.height - 90 };
+    this._offsetX = e.clientX - rect.left - stone.x;
+    this._offsetY = e.clientY - rect.top - stone.y;
+    document.addEventListener('mousemove', this._onStoneMove);
+    document.addEventListener('mouseup', this._onStoneUp);
+    this.setState({ dragging: true, stone: { x: stone.x, y: stone.y, docked: null } });
+  };
+  _onStoneMove = (e) => {
+    const rect = this.containerRef.current.getBoundingClientRect();
+    let x = e.clientX - rect.left - this._offsetX;
+    let y = e.clientY - rect.top - this._offsetY;
+    x = Math.max(4, Math.min(x, rect.width - 48));
+    y = Math.max(4, Math.min(y, rect.height - 48));
+    this.setState({ stone: { x, y, docked: null } });
+  };
+  _onStoneUp = () => {
+    document.removeEventListener('mousemove', this._onStoneMove);
+    document.removeEventListener('mouseup', this._onStoneUp);
+    const rect = this.containerRef.current.getBoundingClientRect();
+    const threshold = 70;
+    const s = this.state.stone;
+    let docked = null;
+    let x = s.x;
+    if (s.x < threshold) { docked = 'left'; x = 4; }
+    else if (s.x > rect.width - threshold - 44) { docked = 'right'; x = rect.width - 48; }
+    this.setState({ dragging: false, stone: { x, y: s.y, docked } });
+  };
+  _widgetPool = [
+    { app: 'Discussion d\'équipe', glyph: '◍', metric: 'Mentions', value: '3' },
+    { app: 'Stockage de fichiers', glyph: '▤', metric: 'Fichiers partagés', value: '9' },
+    { app: 'Analytique', glyph: '◔', metric: 'Visiteurs aujourd\'hui', value: '1 284' },
+  ];
+
+  setView(i) { this.setState({ view: i }); }
+
+  handleDragStart(id) { this._dragId = id; }
+  handleDrop(targetId) {
+    if (this._dragId == null || this._dragId === targetId) return;
+    const list = [...this.state.widgets];
+    const from = list.findIndex(w => w.id === this._dragId);
+    const to = list.findIndex(w => w.id === targetId);
+    if (from < 0 || to < 0) return;
+    const [moved] = list.splice(from, 1);
+    list.splice(to, 0, moved);
+    this._dragId = null;
+    this.setState({ widgets: list });
+  }
+  removeWidget(id) { this.setState(s => ({ widgets: s.widgets.filter(w => w.id !== id) })); }
+  addWidget() {
+    const used = new Set(this.state.widgets.map(w => w.app));
+    const next = this._widgetPool.find(w => !used.has(w.app));
+    if (!next) return;
+    this.setState(s => ({ widgets: [...s.widgets, { ...next, id: 'w' + Date.now() }] }));
+  }
+
+  renderVals() {
+    const tabDefs = [
+      { label: 'Cerveau', glyph: '◎' },
+      { label: 'Agents', glyph: '⬡' },
+      { label: 'Espace', glyph: '▦' },
+      { label: 'Navigateur', glyph: '◫' },
+      { label: 'Rédaction', glyph: '✎' },
+      { label: 'Grimoire', glyph: 'ᛝ' },
+    ];
+    const tabs = tabDefs.map((t, i) => {
+      const active = i === this.state.view;
+      return {
+        ...t,
+        onClick: () => this.setView(i),
+        style: `display:flex;align-items:center;gap:7px;padding:8px 16px;border-radius:20px;cursor:pointer;color:${active ? '#0d0a07' : '#c9b48f'};background:${active ? '#e8c98a' : 'transparent'};transition:background .2s ease`,
+      };
+    });
+
+    const stateMap = {
+      repos: { color: '#ffb347', label: 'Repos' },
+      reflexion: { color: '#a674ff', label: 'Réflexion' },
+      action: { color: '#4ee3ff', label: 'Action' },
+      erreur: { color: '#ff4d5e', label: 'Tension' },
+    };
+    const sys = stateMap[this.props.systemState ?? 'repos'];
+
+    const skills = [
+      { glyph: 'ᛝ', name: 'Analyse' }, { glyph: 'ᚦ', name: 'Synthèse' },
+      { glyph: 'ᛟ', name: 'Recherche' }, { glyph: 'ᚱ', name: 'Mémoire' },
+      { glyph: 'ᛒ', name: 'Vision' }, { glyph: 'ᚨ', name: 'Écriture' },
+      { glyph: 'ᛚ', name: 'Orchestration' }, { glyph: 'ᛈ', name: 'Vigilance' },
+    ];
+    const agents = [
+      { slotId: 'agent-1', name: 'Scribe', status: 'Actif', color: '#4ee3ff' },
+      { slotId: 'agent-2', name: 'Chercheur', status: 'Actif', color: '#4ee3ff' },
+      { slotId: 'agent-3', name: 'Vision', status: 'Repos', color: '#ffb347' },
+      { slotId: 'agent-4', name: 'Analyste', status: 'Bloqué', color: '#ff4d5e' },
+    ];
+
+    const palette = ['#ffb347', '#a674ff', '#4ee3ff', '#ff4d5e'];
+    const widgets = this.state.widgets.map((w, i) => ({
+      ...w,
+      color: palette[i % 4],
+      onDragStart: () => this.handleDragStart(w.id),
+      onDrop: (e) => { e.preventDefault(); this.handleDrop(w.id); },
+      onRemove: () => this.removeWidget(w.id),
+    }));
+    const canAddWidget = widgets.length < 5 + this._widgetPool.length;
+
+    const stone = this.state.stone;
+    const groupStyle = stone
+      ? `position:absolute;left:${stone.x}px;top:${stone.y}px;display:flex;align-items:center;gap:12px;z-index:40;`
+      : `position:absolute;left:50%;bottom:26px;transform:translateX(-50%);display:flex;align-items:center;gap:12px;z-index:40;`;
+    const showChat = !stone || !stone.docked;
+    const stoneCursor = this.state.dragging ? 'grabbing' : 'grab';
+
+    return {
+      tabs,
+      containerRef: this.containerRef,
+      groupStyle,
+      showChat,
+      stoneCursor,
+      onStoneMouseDown: this.onStoneMouseDown,
+      isBrain: this.state.view === 0,
+      isGraph: this.state.view === 1,
+      isSpace: this.state.view === 2,
+      isBrowser: this.state.view === 3,
+      isWrite: this.state.view === 4,
+      isSkills: this.state.view === 5,
+      stateColor: sys.color,
+      stateLabel: sys.label,
+      showRunes: this.props.showRunes ?? true,
+      skills,
+      agents,
+      widgets,
+      canAddWidget,
+      addWidget: () => this.addWidget(),
+      preventDefault: (e) => e.preventDefault(),
+    };
+  }
+}
+</script>
+</body>
+</html>
