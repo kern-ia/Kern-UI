@@ -24,3 +24,20 @@ Ce qui a fonctionné ou non, noté au moment où ça mord. Append only.
 **Piège d'outillage (hors projet)**
 - Lancer un serveur en arrière-plan puis `wait` dans le même script bloque jusqu'au
   timeout. Utiliser `pkill` sur le binaire, pas `wait`.
+
+## 2026-07-26 — live-runs (chaîne Go)
+
+**A fonctionné**
+- Écrire les tests de la projection avant le code a forcé à trancher explicitement des
+  règles qu'on aurait sinon découvertes en production : que faire d'un step rejoué, d'un
+  event arrivé après la fin d'un run, d'une frontière aliasée par l'appelant.
+- `go test -race -count=3` sur le hub : la première version fermait le canal hors du
+  verrou de publication, ce que le détecteur aurait fini par attraper en prod seulement.
+
+**À surveiller**
+- Le hub drop quand un navigateur décroche. `Dropped() != 0` veut dire qu'un client a vu
+  un trou et dépend de son snapshot. Si ce compteur monte en usage réel, c'est le signal
+  qu'il faut coalescer par run plutôt qu'agrandir le buffer.
+- Pas de persistance : redémarrer le binaire vide la projection. Assumé tant que
+  kern-orch reste autoritatif — le jour où on veut l'historique des runs terminés, la
+  bonne réponse est de le redemander à kern-orch, pas de le recopier ici.
