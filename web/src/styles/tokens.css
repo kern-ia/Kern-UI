@@ -1,0 +1,109 @@
+/* Design tokens — the single source of truth for the Kern-IA look.
+   Values are lifted from design/mockups/*.dc.html. No component may hard-code a colour,
+   a font or a radius: add a token here instead. */
+
+:root {
+  /* Surfaces, darkest to lightest */
+  --surface-void: #070504;
+  --surface-base: #0d0a07;
+  --surface-raised: #241c14;
+  --surface-veil: rgba(255, 255, 255, 0.03);
+  --surface-veil-strong: rgba(232, 201, 138, 0.06);
+  --backdrop: radial-gradient(140% 100% at 50% -10%, #241c14 0%, #0d0a07 45%, #070504 100%);
+
+  /* Gold — the brand axis */
+  --gold: #e8c98a;
+  --gold-bright: #ffe0a8;
+  --gold-muted: #c9b48f;
+  --gold-dim: #9c8a6a;
+  --gold-faint: #6a5a44;
+
+  /* Text */
+  --text: #f3e3c4;
+  --text-muted: #c9b48f;
+  --text-dim: #8a7355;
+
+  /* Borders */
+  --border: rgba(232, 201, 138, 0.15);
+  --border-soft: rgba(232, 201, 138, 0.1);
+  --border-strong: rgba(232, 201, 138, 0.25);
+
+  /* Agent states, from the mockup's stateMap */
+  --state-idle: #ffb347;
+  --state-thinking: #a674ff;
+  --state-action: #4ee3ff;
+  --state-error: #ff4d5e;
+
+  /* Type */
+  --font-display: 'Cinzel', Georgia, serif;
+  --font-body: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  --tracking-display: 0.16em;
+  --tracking-label: 0.04em;
+
+  /* Spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  /* Shape */
+  --radius: 10px;
+  --radius-pill: 999px;
+  --header-height: 64px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--surface-base);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(232, 201, 138, 0.2);
+  border-radius: 3px;
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
