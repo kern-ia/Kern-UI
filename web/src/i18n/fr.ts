@@ -49,6 +49,17 @@ export const fr = {
     roadmap: 'Voir la cartographie des briques dans Kern-Orch/docs/ROADMAP.md',
   },
 
+  hive: {
+    label: (graph: string, count: number) => `Graphe du run ${graph}, ${count} nœuds`,
+    status: {
+      pending: 'En attente',
+      active: 'Actif',
+      done: 'Terminé',
+      failed: 'Bloqué',
+    },
+    noTopology: "Ce run n'a pas déclaré sa topologie.",
+  },
+
   runs: {
     heading: 'Ruche des sous-agents',
     empty: 'Aucun run pour le moment.',
@@ -56,7 +67,9 @@ export const fr = {
     status: {
       running: 'En cours',
       finished: 'Terminé',
+      failed: 'Échec',
     },
+    select: (graph: string) => `Voir le graphe du run ${graph}`,
     step: (n: number) => `Niveau ${n}`,
     frontier: 'Frontière',
     idle: 'En attente',

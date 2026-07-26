@@ -132,3 +132,24 @@ Ce qui a fonctionné ou non, noté au moment où ça mord. Append only.
 **À surveiller**
 - La pierre est en `position:absolute` dans `.shell`. Si un jour une vue crée son propre
   contexte de positionnement, la pierre pourrait se retrouver piégée dedans.
+
+## 2026-07-26 — ruche et contrat v2
+
+**A fonctionné**
+- Écrire le layout et les statuts comme fonctions pures avant de dessiner : neuf tests
+  couvrent l'arrangement, le composant SVG n'est plus qu'un rendu.
+- Se demander « qu'est-ce qui doit VRAIMENT traverser le contrat ? ». Le statut par nœud
+  semblait en avoir besoin ; en fait la projection le dérive des frontières qu'elle voit
+  déjà passer. Seul l'échec devait voyager. Un contrat plus petit que prévu.
+- Rejouer volontairement la panne de contrat sur v2 pour vérifier que le garde-fou mord.
+
+**Ce que j'ai raté deux fois**
+- Lancer les tests kern-ui depuis le répertoire de kern-orch : `FAIL [setup failed]`, qu'on
+  peut prendre pour un vrai échec. Deuxième occurrence dans cette session. Toujours vérifier
+  le répertoire courant avant de conclure quoi que ce soit d'un résultat de test.
+
+**À surveiller**
+- Un nœud `subgraph` est dessiné comme un nœud simple. Imbriquer la ruche de l'enfant
+  demanderait sa topologie, que rien n'envoie.
+- L'échec ne nomme pas le nœud fautif. On marque toute la frontière active ; si un jour le
+  message devient structuré, on pourra être précis.

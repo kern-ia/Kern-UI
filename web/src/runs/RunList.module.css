@@ -115,3 +115,28 @@
   color: var(--text-dim);
   max-width: 34ch;
 }
+
+.card[data-selected='true'] {
+  border-color: var(--border-strong);
+  background: var(--surface-veil-strong);
+}
+
+/* The whole card is the target; it must not look like a form control. */
+.pick {
+  display: grid;
+  gap: var(--space-3);
+  width: 100%;
+  padding: 0;
+  text-align: left;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.pick:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 4px;
+  border-radius: var(--radius);
+}

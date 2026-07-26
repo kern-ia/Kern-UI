@@ -17,8 +17,8 @@ are statements of need. The one contract that exists is specified in [README.md]
 | # | Contract | Producer | Unlocks | Status |
 |---|---|---|---|---|
 | C1 | `kern.step-event/v1` — level transitions | kern-orch ✅ | Agents (partial), beacon (partial) | **in use** |
-| C2 | Run topology — nodes and edges | kern-orch ✅ | Agents as the mockup draws it | missing |
-| C3 | Per-node status and failure | kern-orch ✅ | Agents node colours, `Tension` beacon | missing |
+| C2 | Run topology — nodes and edges | kern-orch ✅ | Agents as the mockup draws it | **in use** |
+| C3 | Run failure | kern-orch ✅ | Agents node colours, failed runs | **in use** |
 | C4 | Skills & tools registry | kern-skills ✅ / kern-tools 🟡 | Grimoire **and** Espace | missing |
 | C5 | Tool invocation and readback | kern-tools 🟡 | Espace widget values | missing |
 | C6 | Steering channel | kern-pilot ⬜ | Conversation, sub-agent creation, accept/ignore | missing |
@@ -27,8 +27,12 @@ are statements of need. The one contract that exists is specified in [README.md]
 | C9 | Browser session and approval queue | kern-exec ⬜ + kern-pilot ⬜ | Navigateur | missing |
 | C10 | Live activity signal | kern-obs ⬜ or kern-link 🔌 | `Réflexion` beacon | missing |
 
-Two of these carry most of the value: **C2 + C3** turn the Agents view into the graph the
-mockup actually shows, and **C4** unlocks two views at once.
+**C2 and C3 shipped on 2026-07-26** as `kern.step-event/v2`: the Agents view now draws the
+hive the mockup shows. **C4** is the next one worth having — it unlocks two views at once.
+
+One correction from building them: C3 turned out smaller than written here. Per-node status
+needs no contract at all — the interface derives it from the topology and the frontiers it
+has already seen. Only the *failure* had to travel, because nothing in v1 could express one.
 
 ---
 
@@ -42,7 +46,7 @@ state of an individual node, or a failure.
 
 ---
 
-## C2 — Run topology · missing
+## C2 — Run topology · **in use**
 
 **Producer** kern-orch. The data already exists in `internal/topology` and `graph.Graph`; it
 is simply never sent.
@@ -52,16 +56,18 @@ top, sub-agent nodes below, edges between them, animated on the active paths. A 
 alone cannot be laid out — kern-ui does not know which nodes exist, nor what connects them.
 The card list shipped today is a stand-in for a graph.
 
-**Needed** Once per run, before or with the first step: the node list (id, kind `tool` or
-`agent`, label) and the edge list (from, to). Sub-graphs need to say which run they nest in,
-so the hive can nest them too.
+**Shipped** The topology rides on the first event of a run. It is read from the declared
+YAML, not from the running graph: `graph.Graph`'s edges are `RouteFunc` closures, so a
+conditional route cannot be enumerated. Such an edge travels with no targets and
+`dynamic: true`, and the interface draws a dashed stub rather than a dead end it cannot
+vouch for.
 
-**Note** This is the smallest change with the largest visual payoff. It is additive: a sink
-that ignores it keeps working.
+Sub-graphs still appear as a single `subgraph` node. Nesting a sub-graph's own hive inside
+the parent's would need the child's topology too, which nothing sends yet.
 
 ---
 
-## C3 — Per-node status and failure · missing
+## C3 — Run failure · **in use**
 
 **Producer** kern-orch.
 
@@ -70,8 +76,15 @@ Today a node is either in the frontier or invisible, and **no run can be reporte
 — `kern.step-event/v1` has no error field. That is also why the beacon can never show
 `Tension`: nothing can report trouble.
 
-**Needed** Per-node state within a step, and a terminal state for a run that distinguishes
-completed from failed, with the failure attached to the node that caused it.
+**Shipped, and smaller than expected.** Per-node status needed no contract: the interface
+accumulates the frontiers it sees and derives `pending` / `active` / `done` from the
+topology. Only the failure had to travel — v1 could not express one at all, so a broken run
+was indistinguishable from a finished one.
+
+The failure carries the frontier that was running when it broke, which is what lets the
+interface colour the right nodes. It does **not** name the node that caused it: the message
+is a string. Marking a specific node from it would be a guess dressed as a fact, so the
+interface marks the whole frontier that was live.
 
 ---
 
