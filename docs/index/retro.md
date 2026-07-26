@@ -41,3 +41,19 @@ Ce qui a fonctionné ou non, noté au moment où ça mord. Append only.
 - Pas de persistance : redémarrer le binaire vide la projection. Assumé tant que
   kern-orch reste autoritatif — le jour où on veut l'historique des runs terminés, la
   bonne réponse est de le redemander à kern-orch, pas de le recopier ici.
+
+## 2026-07-26 — live-runs (piste front)
+
+**A fonctionné**
+- Extraire la charte des maquettes (`stateMap`, ligne 369 de `Agentic OS.dc.html`) plutôt
+  que de l'inventer : la sémantique d'états était déjà là, repos/réflexion/action/tension.
+- Vérifier dans un vrai navigateur, pas seulement en tests : c'est ce qui a confirmé que
+  les polices se chargent en local et que le flux met la page à jour sans rechargement.
+- `grep` du bundle construit à la recherche de `googleapis|gstatic|unpkg` : preuve directe
+  qu'aucun appel externe ne subsiste, plutôt qu'une intention.
+
+**À surveiller**
+- Le rendu mobile n'a pas pu être vérifié visuellement, `resize_window` n'a pas pris dans
+  la session. À contrôler sur un vrai téléphone avant de considérer le responsive acquis.
+- Les polices sont un actif binaire dans le repo (72 Ko). Si un jour une locale a besoin
+  d'un autre subset, régénérer depuis l'API Google Fonts, ne pas bricoler les fichiers.
