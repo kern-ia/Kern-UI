@@ -73,3 +73,21 @@ Ce qui a fonctionné ou non, noté au moment où ça mord. Append only.
   c'est le signal qu'il faut un contrat publié (schéma JSON versionné), pas un package commun.
 - Le reporter est synchrone chez kern-orch : un kern-ui lent ralentit les graphes, borné à
   2 s par niveau.
+
+## 2026-07-26 — contrat exécutable
+
+**Ce qui n'a pas fonctionné, et que Yoann a relevé**
+- J'avais « sécurisé » le schéma dupliqué par un commentaire invitant à lancer un `diff`.
+  Ça se sentait rigoureux sans l'être : un garde-fou qui dépend de la mémoire de celui qui
+  édite ne protège de rien. Pire, il surveillait la prose alors que le vrai risque est que
+  le CODE s'écarte de la prose — les deux READMEs pouvaient rester synchronisés pendant que
+  `report.StepEvent` et `projection.StepEvent` divergeaient.
+
+**La correction**
+- Fixture partagée + un test de chaque côté, exécutés en CI. Le test kern-orch capture ce
+  que le vrai Hook émet, pas une struct reconstruite à la main : une struct ne teste qu'elle-même.
+- Vérifié en cassant volontairement le contrat. Un garde-fou qui n'a jamais échoué ne prouve rien.
+
+**Règle à retenir**
+- Un contrat entre deux briques autonomes doit être exécutable des deux côtés. Si on ne peut
+  pas le tester, ce n'est pas un contrat, c'est un vœu.
