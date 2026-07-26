@@ -64,6 +64,7 @@ func NewRouterWithDeps(cfg *Config) http.Handler {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", handleHealthz)
+	mux.HandleFunc("POST /api/v1/steps", s.handleIngestStep)
 	mux.HandleFunc("POST /api/v1/runs/{id}/steps", s.handleIngestStep)
 	mux.HandleFunc("GET /api/v1/runs", s.handleListRuns)
 	mux.HandleFunc("GET /api/v1/runs/{id}", s.handleGetRun)
