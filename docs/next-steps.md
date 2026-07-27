@@ -120,6 +120,10 @@ team decision before it is work. All stated in the contracts report.
 
 ## Open questions, to answer before building
 
+Stated in plain language, for a team discussion rather than an implementer, in
+[`a-trancher.md`](a-trancher.md) — which covers the whole set, including the ones that live
+in the ordered list above.
+
 **Does Kern-IA become multi-user?** CLAUDE.md says *"Usage interne Kern, pas de produit
 multi-comptes"*. The question "can one agent receive tasks from several employees" makes
 that line false if the answer is yes, and it changes:
