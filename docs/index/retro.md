@@ -213,3 +213,22 @@ Ce qui a fonctionné ou non, noté au moment où ça mord. Append only.
 - C5 n'est pas bloqué par un schéma mais par un processus : kern-orch est un CLI, donc entre
   deux runs rien n'est vivant pour rafraîchir une valeur de widget. Prérequis = EPIC-03
   (exposition des tools par un service). Consigné dans `expected-contracts.md`.
+
+## 2026-07-28 — failing-node
+
+**A fonctionné**
+- Chercher la donnée AVANT de concevoir un contrat. Troisième fois de suite que l'information
+  existait déjà chez le producteur et se perdait en route (`skill`, puis l'id du nœud en
+  échec). Réflexe à garder : `grep` dans le producteur avant d'écrire un champ.
+- Rendre le pluriel obligatoire par le raisonnement : au singulier, la garantie « non nommé
+  donc réussi » devient fausse dès que deux nœuds cassent. Le contrat est plus juste parce
+  qu'on a cherché ce qui le rendrait faux.
+- `LevelError.Error()` renvoie exactement l'ancien message : aucun test existant n'a bougé
+  alors que le type de l'erreur a changé.
+
+**À surveiller**
+- Un E2E d'échec demande un échec à l'EXÉCUTION, pas au chargement : un `func` inexistant
+  est rejeté par le loader avant que le graphe ne tourne. Il a fallu un faux CLI qui échoue
+  selon le `node_id` reçu sur stdin.
+- Le moteur renvoyait la PREMIÈRE erreur du niveau et jetait les autres, alors que `wg.Wait()`
+  les avait toutes. Collecter avant de renvoyer ne coûte rien et évite de perdre ce qu'on a.

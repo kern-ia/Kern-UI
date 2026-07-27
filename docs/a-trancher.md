@@ -1,17 +1,5 @@
 # À trancher
 
-Les décisions qui attendent une réponse humaine, expliquées sans jargon.
-
-> **Pourquoi ce document existe.** `expected-contracts.md` dit la même chose en langage
-> technique, pour ceux qui écrivent le code. Celui-ci s'adresse à ceux qui décident. Les deux
-> restent d'accord : quand une décision est prise ici, elle est reportée là-bas.
->
-> _Exception assumée aux conventions du repo : tout ce qui vit dans `docs/` est en anglais.
-> Ce fichier est en français parce qu'il sert à une discussion, pas à du code._
-
-Écrit le 2026-07-28.
-
----
 
 ## Ce qu'il faut savoir avant de lire
 
@@ -48,7 +36,6 @@ rempli apprend quelque chose de faux sur l'état réel du système.
 | 4 | Qui crée les sous-agents, et où vivent-ils ? | Moyenne | Le bouton « Nouveau sous-agent » |
 | 5 | Les outils doivent-ils tourner en permanence ? | Moyenne | La vue Espace et ses widgets |
 | 6 | Le mobile : consulter, ou vraiment s'en servir ? | Basse | Le choix d'une coquille native |
-| 7 | Poser un jalon stable | Basse | Rien, mais c'est bon marché |
 
 ---
 
@@ -223,40 +210,3 @@ de test refuse de redimensionner la fenêtre. À regarder sur un vrai téléphon
 conclure quoi que ce soit.
 
 ---
-
-## 7. Poser un jalon stable
-
-**Ce dont il s'agit.** Le travail s'accumule sur la branche de développement des deux
-projets. La branche stable n'a rien reçu depuis le début.
-
-**Pourquoi ça compte un peu.** Un point de reprise identifié rend tout le reste plus facile à
-raisonner : « avant ou après ce jalon » est une phrase qu'on peut dire, « avant ou après ce
-mardi » beaucoup moins.
-
-**Ce que je recommande.** Le faire dès que l'équipe est d'accord pour dire que l'état actuel
-est présentable. C'est une pause volontaire, pas un oubli. Ça ne coûte presque rien et ça ne
-ferme aucune porte.
-
----
-
-## Ce qui n'est pas à trancher
-
-Pour éviter de rouvrir des débats déjà clos :
-
-- **Le langage de l'interface** — tranché le 2026-07-26 après examen. On y revient seulement
-  si la décision 6 dit « coquille native », et les critères sont écrits.
-- **La direction artistique** — validée. Changer de palette coûterait un seul fichier.
-- **L'indépendance des briques** — c'est le principe qui tient l'ensemble. Chaque brique
-  publie ce qu'elle sait faire ; aucune ne connaît les entrailles d'une autre. Plusieurs
-  recommandations de ce document en découlent directement.
-
----
-
-## Un mot sur la méthode
-
-Ce document ne cache pas les recommandations, il les marque. Là où j'écris « je
-recommande », c'est un avis technique sur une question qui reste la vôtre. Là où j'écris que
-quelque chose est bloqué, c'est un fait vérifié dans le code, pas une prudence.
-
-Les décisions 2, 3 et 4 forment un bloc : la 2 commande les deux autres. Les prendre dans le
-désordre revient à construire deux fois.

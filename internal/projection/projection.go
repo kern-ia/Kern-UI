@@ -94,8 +94,14 @@ func (t Topology) Validate() error {
 }
 
 // Failure ends a run that did not complete.
+//
+// Nodes names the nodes of the reported frontier that actually broke. A node in that
+// frontier and absent from here **completed** — the producer waits for the whole level
+// before giving up, so this is knowledge rather than a guess. An empty Nodes means the
+// producer could not say, and the interface then falls back to marking the frontier.
 type Failure struct {
-	Message string `json:"message"`
+	Message string   `json:"message"`
+	Nodes   []string `json:"nodes,omitempty"`
 }
 
 // StepEvent is the ingestion contract: one graph level completed in kern-orch. It mirrors

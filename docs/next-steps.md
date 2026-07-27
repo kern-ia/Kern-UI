@@ -7,7 +7,7 @@ Written 2026-07-26, updated 2026-07-27 when the skills registry shipped. Read th
 
 ## State
 
-**kern-ui** — `dev`, 12 features merged, 100 front tests + 4 Go packages green, `main` still
+**kern-ui** — `dev`, 13 features merged, 105 front tests + 4 Go packages green, `main` still
 at the baseline commit.
 
 **kern-orch** — `dev`, 8 packages green, `main` behind `dev`.
@@ -172,7 +172,5 @@ the Tauri re-evaluation easier to reason about later.
   says it waits for kern-pilot — same treatment as the conversation bar.
 - **Sub-graph nodes draw as single nodes.** Nesting the child's hive needs the child's
   topology, which nothing sends.
-- **A failure names no node.** The contract carries a message, not an id, so the interface
-  marks the whole frontier that was live rather than guessing.
 - **The reporter is synchronous** in kern-orch: a slow sink slows the graph, capped at 2 s
   per level.

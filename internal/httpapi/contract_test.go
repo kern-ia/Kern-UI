@@ -189,6 +189,10 @@ func TestContractV2FailureMarksTheRunFailed(t *testing.T) {
 	if len(run.Frontier) != 1 || run.Frontier[0] != "synthese" {
 		t.Errorf("Frontier = %v, want [synthese]", run.Frontier)
 	}
+	// And the failure now names the node itself, so the hive colours one rather than all.
+	if got := run.Error.Nodes; len(got) != 1 || got[0] != "synthese" {
+		t.Errorf("Error.Nodes = %v, want [synthese]", got)
+	}
 }
 
 // v1 payloads must keep working: the new fields are optional, so an old producer is still
