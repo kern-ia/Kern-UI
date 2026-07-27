@@ -27,7 +27,12 @@ export function AgentsView({ runs }: { runs: Run[] }) {
         (selected.topology ? (
           <HiveGraph run={selected} />
         ) : (
-          <p className={styles.noTopology}>{fr.hive.noTopology}</p>
+          // A run that has completed no level yet was opened by its activity signal: its
+          // shape is still on its way. Only past that point is a missing topology a
+          // statement about the producer rather than about timing.
+          <p className={styles.noTopology}>
+            {selected.step === 0 ? fr.hive.topologyPending : fr.hive.noTopology}
+          </p>
         ))}
 
       <RunList runs={runs} selected={selected?.id} onSelect={setPicked} />

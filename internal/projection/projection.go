@@ -170,6 +170,11 @@ type Run struct {
 
 	// Error is set when the run failed.
 	Error *Failure `json:"error,omitempty"`
+
+	// Generating lists the nodes whose model is producing output right now, sorted. Fed by
+	// ActivityEvent, emptied when the run ends. It is what lets the beacon tell a run that
+	// is thinking from one that is merely in flight.
+	Generating []string `json:"generating,omitempty"`
 }
 
 // terminal reports whether a run can still move.
@@ -181,6 +186,12 @@ func (r Run) terminal() bool {
 type Projection struct {
 	mu   sync.RWMutex
 	runs map[string]Run
+
+	// activityAt remembers when each node last reported generating, keyed by run then node.
+	// Activity is sent without blocking a run, so two signals can overtake each other; this
+	// is what stops a late "started" from resurrecting a generation that already ended. It
+	// is bookkeeping, never displayed, and dropped with the run that ends.
+	activityAt map[string]map[string]time.Time
 }
 
 // New returns an empty projection.
@@ -237,6 +248,13 @@ func (p *Projection) Apply(ev StepEvent) (Run, bool, error) {
 		run.EndedAt = ev.At
 	default:
 		run.Status = StatusRunning
+	}
+
+	// Nothing generates in a run that is over, and a node left behind would light the
+	// beacon for ever on a run nobody is watching any more.
+	if run.terminal() {
+		run.Generating = nil
+		p.forgetActivity(ev.RunID)
 	}
 
 	p.runs[ev.RunID] = run

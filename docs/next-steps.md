@@ -7,7 +7,7 @@ Written 2026-07-26, updated 2026-07-27 when the skills registry shipped. Read th
 
 ## State
 
-**kern-ui** — `dev`, 11 features merged, 88 front tests + 4 Go packages green, `main` still
+**kern-ui** — `dev`, 12 features merged, 100 front tests + 4 Go packages green, `main` still
 at the baseline commit.
 
 **kern-orch** — `dev`, 8 packages green, `main` behind `dev`.
@@ -20,7 +20,8 @@ when you want a stable milestone.
 ```sh
 make build && KERN_UI_WEB_DIR=internal/httpapi/dist ./bin/kern-ui   # → :7777
 cd ../Kern-Orch && KERN_STEP_REPORT_URL=http://127.0.0.1:7777/api/v1/steps \
-  KERN_REGISTRY_REPORT_URL=http://127.0.0.1:7777/api/v1/registry go run . run examples/hello.yaml
+  KERN_REGISTRY_REPORT_URL=http://127.0.0.1:7777/api/v1/registry \
+  KERN_ACTIVITY_REPORT_URL=http://127.0.0.1:7777/api/v1/activity go run . run examples/hello.yaml
 ```
 
 - Six-tab shell (Cerveau · Agents · Espace · Navigateur · Rédaction · Grimoire), four tabs on
@@ -34,8 +35,10 @@ cd ../Kern-Orch && KERN_STEP_REPORT_URL=http://127.0.0.1:7777/api/v1/steps \
   the catalogue, it lacks the readings.
 - Floating conversation on a draggable rune stone, dockable to either edge, position
   persisted. Inert: there is nothing to talk to yet.
-- Contracts `kern.step-event/v2` and `kern.registry/v1` in use, with executable fixtures
-  asserted from both repos.
+- Contracts `kern.step-event/v2`, `kern.registry/v1` and `kern.activity/v1` in use, with
+  executable fixtures asserted from both repos.
+- The beacon reaches all four of its colours: a run opens the moment an agent starts working,
+  and `Réflexion` is lit for as long as a model is.
 
 ---
 
@@ -85,31 +88,33 @@ inject fake ones.
 
 It stops being optional the moment more than one person uses it. See the open question below.
 
-### 3. `C5` — tool invocation and readback
+### 3. `C5` — tool invocation and readback · **blocked on a process, not a contract**
 
-Since C4 shipped, this is **all that stands between the Espace and its widgets**: the
-interface knows which tools exist and cannot ask any of them for a value.
+Since C4 shipped, this is all that stands between the Espace and its widgets. But it cannot
+be built yet, and the reason is structural rather than a missing schema.
 
-One question to settle first, and it is a boundary question rather than a schema one:
-does kern-ui read tools directly, or does kern-orch read on its behalf? Reading directly
-would give kern-ui a second producer to talk to, and would put the knowledge of how to
-invoke a tool in the interface — which is kern-tools' business. The brick-independence rule
-points at **kern-orch reads and publishes the readings**; decide it deliberately rather than
-by accident.
+A widget value refreshes on a clock, independently of runs. **kern-orch is a CLI**: between
+two graphs no kern-orch process is alive, so there is nothing to push and nothing to poll.
+Reading tools from kern-ui instead would give the interface a second producer *and* teach it
+how to invoke a tool, which is kern-tools' job.
 
-Independent of C11 (skill authoring): this is a read path and does not wait on it.
+The prerequisite is already on kern-orch's own roadmap: **EPIC-03, "exposition MCP/API des
+tools (un service unique)"**, sized L. Until something long-running exposes the tools, C5 has
+no producer that can run.
 
-### 4. `C10` — live activity signal
+Two ways forward, both deliberate choices rather than defaults: do EPIC-03, or ship widgets
+with an explicit staleness ("12 — il y a 3 h") that only move when a graph runs.
 
-The beacon has four states in the mockup; only `repos` and `action` are reachable, because
-nothing reports that a model is generating. Needed by the beacon, and by any future avatar —
-same signal, two consumers.
+### 4. `C10` — done
+
+Shipped 2026-07-27. Half of it needed no contract at all: `Tension` was already reachable
+from the failure C3 carries, and the code had simply not caught up.
 
 ### 5. Everything else
 
-`C5` tool readback (Espace widget values), `C6` steering (kern-pilot — the conversation
-stone, sub-agent creation, accept/ignore), `C7` memory graph, `C8` documents, `C9` browser
-session and approval queue. All stated in the contracts report.
+`C6` steering (kern-pilot — the conversation stone, accept/ignore), `C7` memory graph, `C8`
+documents, `C9` browser session and approval queue, and `C11` skill authoring — which is a
+team decision before it is work. All stated in the contracts report.
 
 ---
 

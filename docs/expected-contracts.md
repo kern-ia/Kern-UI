@@ -25,7 +25,7 @@ are statements of need. The one contract that exists is specified in [README.md]
 | C7 | Memory graph | kern-memory ⬜ | Cerveau | missing |
 | C8 | Documents and suggestions | kern-memory ⬜ + kern-pilot ⬜ | Rédaction | missing |
 | C9 | Browser session and approval queue | kern-exec ⬜ + kern-pilot ⬜ | Navigateur | missing |
-| C10 | Live activity signal | kern-obs ⬜ or kern-link 🔌 | `Réflexion` beacon | missing |
+| C10 | `kern.activity/v1` — live activity signal | kern-orch ✅ | `Réflexion` beacon | **in use** |
 | C11 | Skill & sub-agent authoring | **undecided — that is the question** | `Nouveau sous-agent`, `+` compétence | **decision first** |
 
 **C11 was added on 2026-07-27**, from building C4: it is the first entry on this list that
@@ -33,8 +33,9 @@ is a decision before it is a schema, and it is stated so nobody has to rediscove
 
 **C2 and C3 shipped on 2026-07-26** as `kern.step-event/v2`: the Agents view draws the hive
 the mockup shows. **C4 shipped on 2026-07-27** as `kern.registry/v1`: the Grimoire is live.
-**C5** is the next one worth having — it is all that stands between the Espace and its
-widgets.
+**C10 shipped on 2026-07-27** as `kern.activity/v1`: the beacon reaches all four of its
+colours. **C5** is the next one worth having — and it needs a process before it needs a
+schema, see below.
 
 Two corrections from building them, both in the same direction — a contract stated from a
 mockup is wider than the one the code needs:
@@ -137,6 +138,13 @@ nothing — and the Grimoire draws a different screen for each.
 **Producer** kern-tools 🟡. **Now the only thing standing between the Espace and its
 widgets** — since C4, the interface knows which tools exist.
 
+**It needs a process before it needs a schema.** A widget value must refresh on a clock,
+independently of runs. kern-orch is a CLI: between two graphs no kern-orch process is alive,
+so there is nothing to push and nothing to poll. Neither transport works until the tools are
+exposed by something long-running — which is exactly EPIC-03's "exposition MCP/API des
+tools" in the roadmap. Writing the payload shape before that exists would be designing for a
+producer that cannot run.
+
 **Why** An Espace widget is not just a name: it shows a live measurement — *Pull requests
 ouvertes 4*, *Messages non lus 12*, *Prochain rendez-vous 14:30*. That value has to be read
 from the tool behind the widget.
@@ -207,16 +215,33 @@ consequences outside the screen** — it needs its contract before its pixels.
 
 ---
 
-## C10 — Live activity signal · missing
+## C10 — Live activity signal · `kern.activity/v1` · **in use**
 
-**Producer** kern-obs ⬜ (in progress) or the token stream already flowing through kern-link 🔌.
+**Producer** kern-orch → `POST /api/v1/activity`. Specified in [README.md](../README.md).
 
-**Why** The mockup's beacon has four states. `systemState()` in kern-ui can only ever return
-two — `Repos` and `Action` — because nothing reports that an agent is *thinking*, and nothing
-reports trouble (see C3). The other two colours stay in the palette, never produced.
+**Why** The beacon has four states in the mockup and `systemState()` could produce two.
 
-**Needed** Something coarse: whether a model is currently generating. Token-level detail is
-kern-obs's business, not the interface's.
+**Shipped, and half of it turned out to need no contract at all.** `Tension` was already
+reachable: C3 made a run able to report failure, and the code simply had not caught up — the
+comment in `systemState.ts` still said no run could fail. Only `Réflexion` needed something
+new.
+
+What travels is deliberately coarse: one node, started or stopped. Token-level detail stays
+kern-orch's business.
+
+Two things this contract taught, both about timing rather than shape:
+
+- **It opens runs.** An agent generates before its level completes, so the first activity of
+  a run arrives before any step event. It carries `graph` for that reason, and a run at step
+  0 is one whose shape has not arrived yet — which the Agents view now says, instead of
+  claiming a topology was never declared.
+- **It is reported off the run's thread**, so an agent never waits on the interface before it
+  may start working. That makes signals able to overtake each other, which is why each
+  carries `at` and the projection keeps only the freshest word about a node.
+
+A correction it forced elsewhere: `Bloqué` in the Grimoire, and `Tension` on the beacon, now
+only count **while the failure is the last word**. A run that broke an hour ago was keeping a
+sub-agent red for ever, which reads as a statement about the present and was not one.
 
 ---
 
