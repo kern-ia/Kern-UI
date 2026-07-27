@@ -26,6 +26,10 @@ are statements of need. The one contract that exists is specified in [README.md]
 | C8 | Documents and suggestions | kern-memory ⬜ + kern-pilot ⬜ | Rédaction | missing |
 | C9 | Browser session and approval queue | kern-exec ⬜ + kern-pilot ⬜ | Navigateur | missing |
 | C10 | Live activity signal | kern-obs ⬜ or kern-link 🔌 | `Réflexion` beacon | missing |
+| C11 | Skill & sub-agent authoring | **undecided — that is the question** | `Nouveau sous-agent`, `+` compétence | **decision first** |
+
+**C11 was added on 2026-07-27**, from building C4: it is the first entry on this list that
+is a decision before it is a schema, and it is stated so nobody has to rediscover it.
 
 **C2 and C3 shipped on 2026-07-26** as `kern.step-event/v2`: the Agents view draws the hive
 the mockup shows. **C4 shipped on 2026-07-27** as `kern.registry/v1`: the Grimoire is live.
@@ -213,6 +217,58 @@ reports trouble (see C3). The other two colours stay in the palette, never produ
 
 **Needed** Something coarse: whether a model is currently generating. Token-level detail is
 kern-obs's business, not the interface's.
+
+---
+
+## C11 — Skill and sub-agent authoring · **decision first, contract second**
+
+**Producer** Undecided. Which brick produces this *is* the open question, and it has to be
+settled by people before anything is written.
+
+**Why it surfaced** Building C4 made the shape of the registry visible, and with it what the
+registry cannot do. Two affordances in the mockup have no producer: `Nouveau sous-agent` in
+the Grimoire, and the `+` beside the competences. Both are drawn and disabled today.
+
+### What exists, precisely
+
+A sub-agent is **not a distinct object**. It is a skill whose SKILL.md frontmatter says
+`type: agent` rather than `type: tool` — one field, and the Grimoire's two columns are that
+field. There is no notion of a *system* skill versus any other: one flat directory
+(`KERN_SKILLS_DIR`, default `skills/`), one subdirectory per skill, re-read on every
+invocation. It is a directory, not a store: no index, no write path, no versioning.
+
+`skills.Load` only reads. **Nothing in the ecosystem can create a skill or a sub-agent.**
+That is why the question "who stores a sub-agent" has no answer today — it only bites for a
+sub-agent that is *created*, not one shipped on disk.
+
+Note that `kern-skills` and `kern-tools` are marked in the roadmap as sub-packages of
+kern-orch, **extractable into bricks of their own later**. So kern-orch carries the registry
+today without owning it by right. The extraction costs nothing on this side: the producer of
+`kern.registry/v1` is a configured URL, so it can change brick without kern-ui noticing.
+
+### The three decisions, in the order they constrain each other
+
+1. **One tier or two?** Shipped skills read-only on one side and created ones on the other,
+   or everything in the same directory — at the risk of a kern-orch update overwriting
+   something a user made. Two tiers means the catalogue gains a field saying which is which,
+   and the Grimoire can then refuse to offer deletion of what it did not create.
+
+2. **Who writes?** kern-orch holds the directory; kern-pilot holds the creation path
+   (C6); a created sub-agent is arguably a memory, which would be kern-memory. The reading
+   that fits what already exists: **kern-pilot commands, kern-orch writes** — whoever reads a
+   directory should be the one who writes it, otherwise two bricks contend for the same files
+   and neither owns the outcome. This is a recommendation, not a decision.
+
+3. **Multi-user.** The question still open below lands directly here: a sub-agent created by
+   whom, visible to whom, deletable by whom. Answering (1) and (2) without it risks writing a
+   store that has no owner field and needs one three months later.
+
+### What the interface would need, once decided
+
+Only two things, and neither is large: a way to submit a new skill or sub-agent and learn
+whether it was accepted, and a marker on each catalogue entry saying whether this interface
+may edit it. **The write path deserves its contract before its pixels** — same rule as the
+approval queue in C9.
 
 ---
 

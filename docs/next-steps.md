@@ -92,7 +92,12 @@ interface knows which tools exist and cannot ask any of them for a value.
 
 One question to settle first, and it is a boundary question rather than a schema one:
 does kern-ui read tools directly, or does kern-orch read on its behalf? Reading directly
-would give kern-ui a second producer to talk to. Decide it deliberately.
+would give kern-ui a second producer to talk to, and would put the knowledge of how to
+invoke a tool in the interface — which is kern-tools' business. The brick-independence rule
+points at **kern-orch reads and publishes the readings**; decide it deliberately rather than
+by accident.
+
+Independent of C11 (skill authoring): this is a read path and does not wait on it.
 
 ### 4. `C10` — live activity signal
 
@@ -122,6 +127,21 @@ that line false if the answer is yes, and it changes:
 
 **This premise gates items 2, 5 and part of 3.** It is a product decision, not a technical
 one. Answer it before writing `kern-pilot`.
+
+**Who owns the authoring of skills and sub-agents?** Raised 2026-07-27, on the back of C4.
+A sub-agent is a skill with `type: agent` — one field, one flat directory, read-only. Nothing
+can create one, so the storage question only bites for a sub-agent that is *created*.
+
+Three decisions, entangled, stated in full in
+[`docs/expected-contracts.md`](expected-contracts.md) as **C11**:
+
+1. one tier or two — shipped skills versus created ones;
+2. who writes — recommendation: kern-pilot commands, kern-orch writes, because whoever reads
+   a directory should be the one who writes it;
+3. the multi-user question below, which decides whether a created sub-agent needs an owner.
+
+**This is a team decision, not a technical one.** It blocks the Grimoire's `+`, nothing else
+— C5 and C10 are read paths and proceed without it.
 
 **Should `dev` merge to `main`?** Both repos have unmerged work. A milestone tag would make
 the Tauri re-evaluation easier to reason about later.
