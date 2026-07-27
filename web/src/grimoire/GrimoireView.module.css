@@ -1,0 +1,214 @@
+/* The Grimoire, after design/mockups/Agentic OS.dc.html: competences left on a wider
+   column, sub-agents right. Every value comes from tokens.css. */
+
+.grimoire {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: var(--space-6) 40px;
+  padding: var(--space-6) 40px;
+  height: 100%;
+  overflow: auto;
+}
+
+.column {
+  min-width: 0;
+}
+
+.heading {
+  margin: 0 0 var(--space-4);
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/* Compétences — square cards, four across as in the mockup. */
+.skillGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.skillCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  aspect-ratio: 1;
+  text-align: center;
+  background: var(--surface-veil);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.skillGlyph {
+  font-size: 26px;
+  line-height: 1;
+  color: var(--gold);
+}
+
+.skillName {
+  font-size: 11px;
+  color: var(--gold-dim);
+}
+
+.skillDescription {
+  font-size: 10px;
+  line-height: 1.35;
+  color: var(--text-dim);
+  /* A one-line summary can be a paragraph: keep the card square and let the title attribute
+     carry the rest rather than letting one skill stretch the whole row. */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.skillAdd {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 1;
+  font-size: 22px;
+  color: var(--gold-faint);
+  background: none;
+  border: 1px dashed var(--border-strong);
+  border-radius: 12px;
+}
+
+/* Sous-agents — two across, avatar over name over state. */
+.agentGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.agentCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  text-align: center;
+}
+
+.agentAvatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 84px;
+  height: 84px;
+  font-family: var(--font-display);
+  font-size: 30px;
+  color: var(--text);
+  background: var(--surface-raised);
+  border: 2px solid var(--activity-colour);
+  border-radius: 50%;
+  box-shadow: 0 0 12px var(--activity-colour);
+}
+
+.agentName {
+  font-size: 12px;
+  color: var(--gold);
+}
+
+.agentActivity {
+  font-size: 10.5px;
+  letter-spacing: var(--tracking-label);
+  color: var(--activity-colour);
+}
+
+.agentDescription {
+  font-size: 10.5px;
+  line-height: 1.35;
+  color: var(--text-dim);
+}
+
+.agentAddCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.agentAdd {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 84px;
+  height: 84px;
+  font-size: 22px;
+  color: var(--gold-faint);
+  background: none;
+  border: 2px dashed var(--border-strong);
+  border-radius: 50%;
+}
+
+.agentAddLabel {
+  font-size: 12px;
+  color: var(--gold-dim);
+}
+
+/* A disabled affordance must look unavailable, not broken. */
+.skillAdd:disabled,
+.agentAdd:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* The four states that are not a catalogue. */
+.notice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  height: 100%;
+  padding: var(--space-6);
+  text-align: center;
+}
+
+.noticeGlyph {
+  font-family: var(--font-display);
+  font-size: 40px;
+  color: var(--gold-faint);
+}
+
+.noticeMessage {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 15px;
+  letter-spacing: var(--tracking-label);
+  color: var(--text-muted);
+}
+
+.noticeHint {
+  max-width: 46ch;
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+/* One column on a phone, as the mobile mockup does. */
+@media (max-width: 720px) {
+  .grimoire {
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+    padding: var(--space-5) var(--space-4);
+  }
+
+  .skillGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

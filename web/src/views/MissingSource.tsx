@@ -20,6 +20,9 @@ export function MissingSource({ view, source }: { view: ViewId; source: ViewSour
       </span>
       <h2 className={styles.title}>{fr.views[view]}</h2>
       <p className={styles.reason}>{reason}</p>
+      {source.kind === 'no-contract' && source.detail && (
+        <p className={styles.reason}>{fr.missing.detail[source.detail]}</p>
+      )}
       <p className={styles.why}>{fr.missing.why}</p>
       <p className={styles.roadmap}>{fr.missing.roadmap}</p>
     </section>

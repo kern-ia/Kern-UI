@@ -42,9 +42,14 @@ type Topology struct {
 }
 
 // TopologyNode is one unit of work in the graph.
+//
+// Skill names the catalogue entry backing an agent node, and is what links a run to the
+// Grimoire. It is not the id: a node `greet` may run the skill `planner`, so matching the
+// two by name would be a guess. Tool nodes name a Go function instead and leave it empty.
 type TopologyNode struct {
-	ID   string `json:"id"`
-	Kind string `json:"kind"`
+	ID    string `json:"id"`
+	Kind  string `json:"kind"`
+	Skill string `json:"skill,omitempty"`
 }
 
 // TopologyEdge leaves a node towards its declared targets.

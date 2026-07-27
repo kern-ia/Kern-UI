@@ -4,12 +4,15 @@ import { fr } from '../i18n/fr'
 import { ConversationStone } from './ConversationStone'
 import { MissingSource } from '../views/MissingSource'
 import { AgentsView } from '../views/AgentsView'
+import { GrimoireView } from '../grimoire/GrimoireView'
+import { useRegistry } from '../grimoire/useRegistry'
 import { useRunStream } from '../runs/useRunStream'
 import { systemState, type SystemState } from './systemState'
 import { DEFAULT_VIEW, VIEWS, mobileViews, viewById, type ViewDef, type ViewId } from './views'
 import type { Connection, Run } from '../runs/types'
 
 const STREAM_URL = '/api/v1/stream'
+const REGISTRY_URL = '/api/v1/registry'
 
 /** Colours come from the mockup's stateMap; tokens.css holds the values. */
 const stateColour: Record<SystemState, string> = {
@@ -127,5 +130,18 @@ function ViewBody({ view, runs }: { view: ViewId; runs: Run[] }) {
   if (def.source.kind !== 'live') {
     return <MissingSource view={view} source={def.source} />
   }
+  if (view === 'grimoire') {
+    return <GrimoireBody runs={runs} />
+  }
   return <AgentsView runs={runs} />
+}
+
+/**
+ * Wraps the Grimoire so the catalogue is fetched only while the view is open.
+ *
+ * Keeping the hook here rather than in AppShell means a browser sitting on the Agents view
+ * never asks for a registry it is not drawing.
+ */
+function GrimoireBody({ runs }: { runs: Run[] }) {
+  return <GrimoireView registry={useRegistry(REGISTRY_URL)} runs={runs} />
 }

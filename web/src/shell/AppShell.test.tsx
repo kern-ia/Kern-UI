@@ -102,12 +102,35 @@ it('switches view on click', () => {
   expect(screen.getByText(fr.missing.noBrick)).toBeInTheDocument()
 })
 
-it('explains that the Grimoire waits for a contract, not for a brick', () => {
-  render(<AppShell />)
+it('draws the catalogue kern-orch published in the Grimoire', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        source: 'kern-orch',
+        at: '2026-07-27T12:00:00Z',
+        skills: [{ name: 'Analyse', kind: 'tool' }],
+      }),
+    } as Response),
+  )
 
+  render(<AppShell />)
   fireEvent.click(within(nav()).getByRole('tab', { name: fr.views.grimoire }))
 
-  expect(screen.getByText(fr.missing.noContract('kern-orch'))).toBeInTheDocument()
+  expect(await screen.findByRole('heading', { name: fr.grimoire.competences })).toBeInTheDocument()
+  expect(screen.getByText('Analyse')).toBeInTheDocument()
+})
+
+// The Espace has the catalogue now; what it still lacks is the reading behind a widget.
+// Naming kern-orch alone would send a reader to the wrong brick.
+it('tells the Espace apart: it waits for the readings, not for the registry', () => {
+  render(<AppShell />)
+
+  fireEvent.click(within(nav()).getByRole('tab', { name: fr.views.espace }))
+
+  expect(screen.getByText(fr.missing.detail.espaceValues)).toBeInTheDocument()
 })
 
 it('shows live runs in the Agents view', () => {

@@ -1,16 +1,16 @@
 # Where kern-ui stands, and what comes next
 
-Written 2026-07-26, at the end of the session that built the shell and the hive. Read this
-plus [`docs/index/`](index/) to pick the work back up without re-reading the code.
+Written 2026-07-26, updated 2026-07-27 when the skills registry shipped. Read this plus
+[`docs/index/`](index/) to pick the work back up without re-reading the code.
 
 ---
 
 ## State
 
-**kern-ui** — `dev`, 10 features merged, 58 front tests + 3 Go packages green, `main` still
-at the baseline commit (21 commits behind `dev`).
+**kern-ui** — `dev`, 11 features merged, 88 front tests + 4 Go packages green, `main` still
+at the baseline commit.
 
-**kern-orch** — `dev`, 7 packages green, `main` 6 commits behind `dev`.
+**kern-orch** — `dev`, 8 packages green, `main` behind `dev`.
 
 Neither `dev` has been merged to `main`. That is a deliberate pause, not an oversight: merge
 when you want a stable milestone.
@@ -19,18 +19,23 @@ when you want a stable milestone.
 
 ```sh
 make build && KERN_UI_WEB_DIR=internal/httpapi/dist ./bin/kern-ui   # → :7777
-cd ../Kern-Orch && KERN_STEP_REPORT_URL=http://127.0.0.1:7777/api/v1/steps go run . run examples/hello.yaml
+cd ../Kern-Orch && KERN_STEP_REPORT_URL=http://127.0.0.1:7777/api/v1/steps \
+  KERN_REGISTRY_REPORT_URL=http://127.0.0.1:7777/api/v1/registry go run . run examples/hello.yaml
 ```
 
 - Six-tab shell (Cerveau · Agents · Espace · Navigateur · Rédaction · Grimoire), four tabs on
   mobile, matching the mockup.
-- **Agents** is the only live view: it draws a run as the mockup's hive — nodes coloured by
-  state, edges animated into what is running, dashed stub where a router decides at run time.
+- **Agents** draws a run as the mockup's hive — nodes coloured by state, edges animated into
+  what is running, dashed stub where a router decides at run time.
+- **Grimoire** draws the skills catalogue kern-orch publishes: competences left, sub-agents
+  right, each sub-agent coloured by whether a run is exercising it right now.
 - The four unfed views name the brick or the contract they wait for. They render no data on
-  purpose, and a test enforces that.
+  purpose, and a test enforces that. The Espace now names C5 rather than kern-orch: it has
+  the catalogue, it lacks the readings.
 - Floating conversation on a draggable rune stone, dockable to either edge, position
   persisted. Inert: there is nothing to talk to yet.
-- Contract `kern.step-event/v2` in use, with executable fixtures asserted from both repos.
+- Contracts `kern.step-event/v2` and `kern.registry/v1` in use, with executable fixtures
+  asserted from both repos.
 
 ---
 
@@ -80,13 +85,14 @@ inject fake ones.
 
 It stops being optional the moment more than one person uses it. See the open question below.
 
-### 3. `C4` — skills & tools registry
+### 3. `C5` — tool invocation and readback
 
-kern-orch already holds it (`internal/skills`, exposed on `list-skills`) and never publishes
-it. **One contract unlocks two views**: Grimoire and Espace.
+Since C4 shipped, this is **all that stands between the Espace and its widgets**: the
+interface knows which tools exist and cannot ask any of them for a value.
 
-The cheapest visible win on the list. Full statement in
-[`docs/expected-contracts.md`](expected-contracts.md).
+One question to settle first, and it is a boundary question rather than a schema one:
+does kern-ui read tools directly, or does kern-orch read on its behalf? Reading directly
+would give kern-ui a second producer to talk to. Decide it deliberately.
 
 ### 4. `C10` — live activity signal
 
@@ -127,8 +133,14 @@ the Tauri re-evaluation easier to reason about later.
 - **No persistence.** Restarting kern-ui empties the projection. Assumed: kern-orch stays
   authoritative. The day finished-run history matters, ask kern-orch for it — do not copy it
   here.
-- **Mobile never verified visually.** `resize_window` would not take in the browser session.
-  The one-column layout rests on a media query at 720 px. Check on a real phone.
+- **Mobile never verified visually.** `resize_window` reports success and does not resize
+  the window — confirmed again on 2026-07-27. The one-column layouts rest on a media query
+  at 720 px. Check on a real phone.
+- **The Grimoire has no avatars.** The mockup shows a generative avatar per sub-agent;
+  nothing generates one, so the skill's rune stands in. A placeholder image would be
+  decoration pretending to be data.
+- **Creating a skill or a sub-agent is inert.** The mockup's `+` is drawn, disabled, and
+  says it waits for kern-pilot — same treatment as the conversation bar.
 - **Sub-graph nodes draw as single nodes.** Nesting the child's hive needs the child's
   topology, which nothing sends.
 - **A failure names no node.** The contract carries a message, not an id, so the interface

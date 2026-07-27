@@ -7,6 +7,12 @@ export type NodeStatus = 'pending' | 'active' | 'done' | 'failed'
 export interface TopologyNode {
   id: string
   kind: 'tool' | 'agent' | 'subgraph'
+  /**
+   * The catalogue entry backing an agent node — the link between a run and the Grimoire.
+   * Not the id: a node `greet` may run the skill `planner`. Tool nodes name a Go function
+   * instead and declare none.
+   */
+  skill?: string
 }
 
 export interface TopologyEdge {

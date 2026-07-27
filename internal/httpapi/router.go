@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/yoann/kern-ui/internal/projection"
+	"github.com/yoann/kern-ui/internal/registry"
 	"github.com/yoann/kern-ui/internal/stream"
 )
 
@@ -35,6 +36,11 @@ type Config struct {
 	// Hub broadcasts every run change to the connected browsers.
 	Hub *stream.Hub[projection.Run]
 
+	// Registry is the skills catalogue published by kern-orch. It rides its own endpoint
+	// rather than the run stream: it changes when skills are installed, not when a graph
+	// advances, and the browser fetches it when the Grimoire opens.
+	Registry *registry.Store
+
 	// Heartbeat is the interval between SSE keep-alive comments. Defaults to 25s.
 	Heartbeat time.Duration
 }
@@ -45,6 +51,9 @@ func (c *Config) fillDefaults() {
 	}
 	if c.Hub == nil {
 		c.Hub = stream.NewHub[projection.Run](subscriberBuffer)
+	}
+	if c.Registry == nil {
+		c.Registry = registry.New()
 	}
 	if c.Heartbeat <= 0 {
 		c.Heartbeat = defaultHeartbeat
@@ -69,6 +78,8 @@ func NewRouterWithDeps(cfg *Config) http.Handler {
 	mux.HandleFunc("GET /api/v1/runs", s.handleListRuns)
 	mux.HandleFunc("GET /api/v1/runs/{id}", s.handleGetRun)
 	mux.HandleFunc("GET /api/v1/stream", s.handleStream)
+	mux.HandleFunc("POST /api/v1/registry", s.handlePublishRegistry)
+	mux.HandleFunc("GET /api/v1/registry", s.handleGetRegistry)
 
 	if cfg.WebDir != "" {
 		mux.Handle("GET /", http.FileServer(http.Dir(cfg.WebDir)))
