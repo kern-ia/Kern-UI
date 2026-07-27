@@ -23,12 +23,18 @@ sous-agents, skills et serveurs MCP.** Usage interne Kern, pas de produit multi-
   Cinzel pour les titres, Space Grotesk pour le texte).
 
 ## Décisions techniques
-- Backend : **Go**, binaire unique servant le SPA et poussant l'état en temps réel.
-  Cohérent avec `kern-orch` et `kern-anon`. Tauri et Rust écartés : îlot dans un
-  écosystème Go, aucun code partageable avec les autres briques.
+- Backend : **Go pour cette version**, binaire unique servant le SPA et poussant l'état en
+  temps réel. Cohérent avec `kern-orch` et `kern-anon`, et cross-compilable en une commande.
 - Front : React + Vite + TypeScript, servi par le binaire. Mobile via PWA.
-- Coquille native (Wails) : **écartée de la v1**. Elle casserait la cross-compilation
-  (toolchain natif par OS). À réévaluer si le tray et le raccourci global manquent.
+- Coquille native : **hors périmètre de cette version**, Tauri probable ensuite. Deux
+  questions la trancheront, pas le débat : (1) le mobile doit-il être natif — stores et push
+  — ou la consultation suffit-elle ? (2) l'application des politiques doit-elle partager le
+  processus de la surface d'approbation ? Rien n'est perdu : une coquille Tauri enveloppe
+  ce même SPA. Voir `docs/next-steps.md`.
+- Rust reste pertinent pour `kern-exec`, `kern-guard` et `kern-policy` : elles touchent le
+  confinement au niveau syscall, où Go est mauvais (threads du runtime vs seccomp par
+  thread, cgo requis, cross-compilation cassée). Pas pour l'interface, qui ne fait que de
+  la glu réseau.
 - `kern-ui` ne pilote pas les LLM et ne stocke ni l'état des runs ni la mémoire :
   `kern-orch` checkpointe, `kern-memory` mémorise. Sa base locale ne contient que ce qui
   lui appartient — disposition des widgets, préférences, cache d'affichage.
@@ -53,6 +59,8 @@ sous-agents, skills et serveurs MCP.** Usage interne Kern, pas de produit multi-
   (entête YAML : id, feature, branch, status, files, tests, decisions ; corps ≤ 15 lignes).
   Lire `docs/index/` en début de session au lieu de relire tout le code.
 - **Rétro continue** : noter dans `docs/index/retro.md` ce qui a fonctionné ou non.
+- **Reprise de session** : lire `docs/next-steps.md` (état, décisions, suite ordonnée) et
+  `docs/expected-contracts.md` (les 10 contrats attendus, leur producteur, leur état).
 - Suivre le skill `greenfield-tdd-okf` pour le bootstrap et chaque feature.
 
 ## Règles métier clés
