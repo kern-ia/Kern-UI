@@ -4,11 +4,17 @@
 // truth: kern-orch owns the registry, kern-ui only mirrors what it was told. Losing it
 // costs one republication.
 //
-// What travels is deliberately small. kern-orch keys its own registry by name, so the name
-// is the key here too rather than an identifier invented for the wire. The directory a
-// skill lives in does not travel: a filesystem path is an internal, not a contract. Nor
-// does a "wired" flag — in kern-orch a loaded skill is by definition available, so the
-// field would read true on every row and teach the reader nothing.
+// What travels is deliberately small, and the rules are stated about *a producer*, not
+// about kern-orch: this package must keep working the day a second one publishes here.
+//
+//   - The name is the key. No identifier was invented for the wire, because a producer that
+//     does not already hold one would have to make it up per publication.
+//   - No filesystem path travels: where a skill lives is a producer's internal.
+//   - No "wired" flag. A producer publishes what it holds, so the field would read true on
+//     every row — a column carrying no information is a column to leave out.
+//
+// The origin of those three is in docs/expected-contracts.md, which records what the
+// contract was asked for and what it turned out to need.
 package registry
 
 import (
@@ -25,7 +31,7 @@ import (
 var ErrInvalidCatalogue = errors.New("invalid registry catalogue")
 
 // Kind is what a skill is: something executed directly, or a graph node backed by a model.
-// These are kern-orch's two declared types, and the Grimoire's two columns.
+// Two kinds, which is also what the Grimoire draws as its two columns.
 type Kind string
 
 const (
