@@ -78,6 +78,7 @@ func NewRouterWithDeps(cfg *Config) http.Handler {
 	mux.HandleFunc("GET /api/v1/runs", s.handleListRuns)
 	mux.HandleFunc("GET /api/v1/runs/{id}", s.handleGetRun)
 	mux.HandleFunc("GET /api/v1/stream", s.handleStream)
+	mux.HandleFunc("POST /api/v1/activity", s.handleIngestActivity)
 	mux.HandleFunc("POST /api/v1/registry", s.handlePublishRegistry)
 	mux.HandleFunc("GET /api/v1/registry", s.handleGetRegistry)
 

@@ -64,6 +64,9 @@ export const fr = {
       failed: 'Bloqué',
     },
     noTopology: "Ce run n'a pas déclaré sa topologie.",
+    // A run opened by its activity signal is visible before any level has completed, so
+    // its shape has not arrived yet. Saying it was never declared would be wrong.
+    topologyPending: 'Topologie en attente du premier niveau.',
   },
 
   grimoire: {

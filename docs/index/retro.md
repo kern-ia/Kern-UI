@@ -181,3 +181,35 @@ Ce qui a fonctionné ou non, noté au moment où ça mord. Append only.
   toute vérification E2E d'un état « en cours », attendre la SECONDE frontière.
 - Une fixture partagée assertée depuis deux fichiers de test dans le même paquet
   (`contract_test.go` et `v2_test.go` côté kern-orch) : patcher l'un laisse l'autre rouge.
+
+## 2026-07-27 — activity-signal (C10)
+
+**A fonctionné**
+- Lire le code avant de croire la fiche : la moitié de C10 (`Tension`) n'attendait aucun
+  contrat, seulement un commentaire périmé depuis C3. Vérifier ce qui est *déjà* dérivable
+  avant d'ouvrir un contrat, systématiquement.
+- Reporter hors du fil du run pour l'activité, avec `Flush()` avant sortie de commande.
+  Le signal qui éteint le phare est le dernier d'un run, donc exactement celui qu'un
+  processus qui sort laisse tomber : « fire-and-forget » sans flush = « fire-and-lose ».
+- Ouvrir le bracket au spawn plutôt qu'au premier token : un provider qui répond d'un bloc
+  ne streame rien, et attendre un token l'aurait affiché comme n'ayant jamais réfléchi.
+- Le test de bout en bout dans `internal/cmd` (hook runner → relay → reporter → sink) :
+  les tests unitaires couvraient chaque maillon, aucun ne couvrait la chaîne.
+
+**À surveiller**
+- **Un état permanent affiché avec un libellé au présent est un mensonge.** `Bloqué` et
+  `Tension` restaient allumés pour toujours après un échec. Règle retenue, la même partout :
+  un échec compte tant qu'il est le *dernier mot* sur la chose concernée.
+- Un nouveau chemin d'entrée crée des états intermédiaires inédits : le run devient visible
+  avant sa topologie, et « n'a pas déclaré sa topologie » se lisait comme définitif. Quand
+  on avance le moment où une donnée apparaît, relire tous les messages qui parlent de son
+  absence.
+- `cat >> fichier <<'EOF'` avec un corps vide **crée** le fichier : un fichier de test vide
+  fait échouer vitest (« no tests »). Vérifier `git status` après.
+- Lancer `npx vitest` depuis la racine et non depuis `web/` charge la mauvaise config
+  (`it is not defined`). Passer par `make test`.
+
+**Butée structurelle notée**
+- C5 n'est pas bloqué par un schéma mais par un processus : kern-orch est un CLI, donc entre
+  deux runs rien n'est vivant pour rafraîchir une valeur de widget. Prérequis = EPIC-03
+  (exposition des tools par un service). Consigné dans `expected-contracts.md`.

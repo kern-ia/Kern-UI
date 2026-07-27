@@ -41,6 +41,7 @@ Base URL defaults to `http://127.0.0.1:7777` (`KERN_UI_ADDR`).
 | `GET` | `/api/v1/runs` | Snapshot of every known run. |
 | `GET` | `/api/v1/runs/{id}` | One run. |
 | `GET` | `/api/v1/stream` | Server-Sent Events: snapshot, then live updates. |
+| `POST` | `/api/v1/activity` | One node started or stopped generating. |
 | `POST` | `/api/v1/registry` | Publish the whole skills catalogue. |
 | `GET` | `/api/v1/registry` | The catalogue, or `404` while none has been published. |
 | `GET` | `/healthz` | Liveness. |
@@ -101,6 +102,50 @@ is rejected.
 - **Reporting is never load-bearing.** A producer must treat this endpoint as best-effort
   and must not fail a run because kern-ui is slow, broken or absent.
 
+#### `ActivityEvent` — contract `kern.activity/v1`
+
+<!-- CANONICAL BLOCK — mirrored verbatim in Kern-UI/README.md and Kern-Orch/README.md.
+     The same payload lives in contracts/kern.activity.v1.json in both repos, asserted from
+     both sides on every CI run. -->
+
+```json
+{
+  "run_id": "a23ead5373d9b746",
+  "graph": "hello",
+  "node_id": "greet",
+  "generating": true,
+  "at": "2026-07-26T12:00:01Z"
+}
+```
+
+| Field | Type | Required | Meaning |
+|---|---|---|---|
+| `run_id` | string | yes | Identifies the run. |
+| `graph` | string | yes | Human label. Required because this event routinely **opens** a run — see below. |
+| `node_id` | string | yes | The node whose model started or stopped. |
+| `generating` | bool | yes | `true` when the model began working, `false` when it finished. |
+| `at` | RFC 3339 | yes | When the transition happened. |
+
+It is a sibling of `kern.step-event`, never a field of it: a step describes a level that has
+*completed*, while generation happens inside a level. Anything carried on a step event would
+arrive long after the fact it describes stopped being true.
+
+**Semantics a producer can rely on**
+
+- **It may open a run.** An agent generates before its level completes, so the first activity
+  of a run always arrives before any step event. kern-ui creates the run as `running`, with
+  an empty frontier meaning *not reported yet* rather than *over*. That is why `graph`
+  travels here.
+- **Out-of-order signals are safe.** A producer should report off the run's thread — an agent
+  must not wait on this endpoint before it may start working — so two signals may overtake
+  each other. Only the freshest word about a given node counts; an older one is accepted and
+  changes nothing.
+- **A terminal run generates nothing.** Signals arriving after a run ended are accepted and
+  ignored, and finishing a run clears whatever it had generating.
+- **`202 Accepted`** on success, **`400`** on a payload violating the schema.
+- The result rides the existing run stream: `generating` is a field of a run, so a browser
+  already subscribed receives it with no second connection.
+
 #### `Catalogue` — contract `kern.registry/v1`
 
 <!-- CANONICAL BLOCK — mirrored verbatim in Kern-UI/README.md and Kern-Orch/README.md.
@@ -160,8 +205,9 @@ event: run
 data: { run }                 ← one run changed
 ```
 
-A `run` carries the `StepEvent` fields plus `status` (`running` | `finished`),
-`started_at`, `updated_at` and `ended_at`.
+A `run` carries the `StepEvent` fields plus `status` (`running` | `finished` | `failed`),
+`started_at`, `updated_at`, `ended_at`, and `generating` — the nodes whose model is working
+right now, fed by `kern.activity/v1`.
 
 The snapshot-then-updates order is load-bearing: delivery is best-effort and a client that
 falls behind has its updates dropped rather than blocking the server. Reconnecting yields a
@@ -170,7 +216,7 @@ resynchronise from the snapshot and must not treat the stream as an event log.**
 
 ### Consumed
 
-Two contracts exist. Six more are needed for the interface to stop saying "this view waits
+Three contracts exist. Five more are needed for the interface to stop saying "this view waits
 for a brick" — each one is stated, with its producer and what it unlocks, in
 [docs/expected-contracts.md](docs/expected-contracts.md).
 
@@ -178,11 +224,11 @@ for a brick" — each one is stated, with its producer and what it unlocks, in
 |---|---|---|
 | `kern-orch` | Pushes `kern.step-event/v2` to `POST /api/v1/steps`. See `../Kern-Orch/README.md`. | in use |
 | `kern-orch` | Pushes `kern.registry/v1` to `POST /api/v1/registry`. | in use |
+| `kern-orch` | Pushes `kern.activity/v1` to `POST /api/v1/activity`. | in use |
 | `kern-orch` | Tool invocation and readback (Espace widget values) | needed |
 | `kern-pilot` | Steering channel (steer · queue · replan · nudge) | needed |
 | `kern-memory` | Memory graph · documents | needed |
 | `kern-exec` | Browser session and approval queue | needed |
-| `kern-obs` | Live activity signal | needed |
 
 `kern-ui` does not own run state or memory: `kern-orch` checkpoints, `kern-memory`
 remembers. Its local storage holds only what belongs to it — widget layout, preferences,

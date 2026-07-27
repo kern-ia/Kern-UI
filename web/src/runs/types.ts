@@ -44,6 +44,11 @@ export interface Run {
   ended_at?: string
   /** Every node the run has reached so far, sorted. */
   visited?: string[]
+  /**
+   * The nodes whose model is generating right now, sorted. Empty between generations and
+   * once the run is over — a run that is live is not necessarily one that is thinking.
+   */
+  generating?: string[]
   topology?: Topology
   error?: Failure
 }

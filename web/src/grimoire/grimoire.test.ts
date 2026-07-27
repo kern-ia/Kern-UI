@@ -92,9 +92,84 @@ describe('activity of a sub-agent', () => {
     expect(activityOf('Scribe', [failed])).toBe('bloque')
   })
 
-  it('reports trouble ahead of activity when both are true', () => {
+  // `Actif` outranks `Bloqué`, not the other way round: a skill generating right now is not
+  // blocked, whatever a different run did. The broken run is the Agents view's story to tell.
+  it('reports activity ahead of an unrelated run trouble', () => {
     const failed = run({ id: 'r2', status: 'failed', frontier: ['greet'], error: { message: 'boom' } })
-    expect(activityOf('Scribe', [run({ frontier: ['greet'] }), failed])).toBe('bloque')
+    expect(activityOf('Scribe', [run({ frontier: ['greet'] }), failed])).toBe('actif')
+  })
+
+  // `Bloqué` reads as "right now", so an old failure must not keep a sub-agent red for
+  // ever. A failure is the state of a skill only while it is the last word about it.
+  it('forgets a failure once a later run exercised the skill without breaking', () => {
+    const broke = run({
+      id: 'r1',
+      status: 'failed',
+      frontier: ['greet'],
+      error: { message: 'boom' },
+      updated_at: '2026-07-27T12:00:00Z',
+    })
+    const later = run({
+      id: 'r2',
+      status: 'finished',
+      frontier: [],
+      visited: ['greet'],
+      updated_at: '2026-07-27T13:00:00Z',
+    })
+
+    expect(activityOf('Scribe', [broke, later])).toBe('repos')
+  })
+
+  it('still reports a failure that nothing later has superseded', () => {
+    const broke = run({
+      id: 'r1',
+      status: 'failed',
+      frontier: ['greet'],
+      error: { message: 'boom' },
+      updated_at: '2026-07-27T13:00:00Z',
+    })
+    const older = run({
+      id: 'r2',
+      status: 'finished',
+      frontier: [],
+      visited: ['greet'],
+      updated_at: '2026-07-27T12:00:00Z',
+    })
+
+    expect(activityOf('Scribe', [older, broke])).toBe('bloque')
+  })
+
+  // A run that never touched this skill says nothing about it, however recent it is.
+  it('ignores a later run that does not exercise the skill', () => {
+    const broke = run({
+      id: 'r1',
+      status: 'failed',
+      frontier: ['greet'],
+      error: { message: 'boom' },
+      updated_at: '2026-07-27T12:00:00Z',
+    })
+    const unrelated = run({
+      id: 'r2',
+      status: 'finished',
+      frontier: [],
+      updated_at: '2026-07-27T13:00:00Z',
+      topology: { entry: 'other', nodes: [{ id: 'other', kind: 'agent', skill: 'Chercheur' }] },
+    })
+
+    expect(activityOf('Scribe', [broke, unrelated])).toBe('bloque')
+  })
+
+  it('is actif when a live run exercises the skill, whatever an older run did', () => {
+    const broke = run({
+      id: 'r1',
+      status: 'failed',
+      frontier: ['greet'],
+      error: { message: 'boom' },
+      updated_at: '2026-07-27T12:00:00Z',
+    })
+    const live = run({ id: 'r2', frontier: ['greet'], updated_at: '2026-07-27T13:00:00Z' })
+
+    expect(activityOf('Scribe', [broke, live])).toBe('actif')
   })
 
   // The whole point of carrying `skill` on the node: without it the only available match

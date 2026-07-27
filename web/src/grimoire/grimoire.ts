@@ -75,21 +75,28 @@ export function glyphFor(name: string): string {
  * a guess dressed as a fact. Per-node state is `nodeStatus`'s answer, reused rather than
  * recomputed — the hive and the Grimoire must never disagree about who is running.
  *
- * Trouble outranks activity: a skill blocked in one run and busy in another is reported
- * blocked, because that is the one a reader has to act on.
+ * Anything live wins, because `Actif` is a statement about right now. Failing that, the
+ * answer comes from **the most recent run that exercised this skill**, and from no other:
+ * `Bloqué` also reads as "right now", so a run that broke an hour ago must not keep a
+ * sub-agent red once a later one used it without trouble. A run that never touched the
+ * skill says nothing about it, however recent it is.
  */
 export function activityOf(skillName: string, runs: Run[]): Activity {
-  let active = false
+  let latest: { at: string; failed: boolean } | undefined
 
   for (const run of runs) {
     for (const node of run.topology?.nodes ?? []) {
       if (node.skill !== skillName) continue
 
       const status = nodeStatus(run, node.id)
-      if (status === 'failed') return 'bloque'
-      if (status === 'active') active = true
+      if (status === 'active') return 'actif'
+      if (status === 'pending') continue // the run has not reached it, so it says nothing yet
+
+      if (!latest || run.updated_at > latest.at) {
+        latest = { at: run.updated_at, failed: status === 'failed' }
+      }
     }
   }
 
-  return active ? 'actif' : 'repos'
+  return latest?.failed ? 'bloque' : 'repos'
 }
