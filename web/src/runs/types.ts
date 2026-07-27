@@ -30,6 +30,12 @@ export interface Topology {
 
 export interface Failure {
   message: string
+  /**
+   * The nodes of the reported frontier that actually broke. A node in that frontier and
+   * absent from here completed — the producer waits for the whole level before giving up,
+   * so this is fact, not inference. Absent entirely when the producer could not say.
+   */
+  nodes?: string[]
 }
 
 export interface Run {

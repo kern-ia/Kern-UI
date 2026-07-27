@@ -111,15 +111,22 @@ function rankNodes(topology: Topology): Map<string, number> {
 /**
  * How a node stands right now.
  *
- * When a run fails we know it failed, never which node broke — the contract carries a
- * message, not an id. So the nodes that were running at that moment are marked failed, and
- * no other: colouring a specific one would be a guess dressed as a fact.
+ * A failure names the nodes that broke, and guarantees that any other node of the reported
+ * frontier completed — the producer waits for the whole level before giving up. So a
+ * neighbour of a broken node is drawn as done on reported fact, not on optimism.
+ *
+ * When no node is named the producer could not say, and the whole live frontier is marked
+ * instead. That is deliberately coarse: singling one out with nothing to go on would be a
+ * guess dressed as a fact.
  */
 export function nodeStatus(run: Run, nodeId: string): NodeStatus {
   const inFrontier = run.frontier.includes(nodeId)
 
   if (run.status === 'failed') {
-    return inFrontier ? 'failed' : reached(run, nodeId) ? 'done' : 'pending'
+    const named = run.error?.nodes
+    const broke = named && named.length > 0 ? named.includes(nodeId) : inFrontier
+
+    return broke ? 'failed' : reached(run, nodeId) ? 'done' : 'pending'
   }
   if (run.status === 'running' && inFrontier) {
     return 'active'

@@ -87,6 +87,7 @@ producer needs one configured URL and stays unaware of our route shape.
 | `topology.nodes[].skill` | string | no | The catalogue entry backing the node. **Not the id** — a node `greet` may run the skill `planner`, so matching the two by name would be a guess. Absent on tool nodes, which name a Go function. |
 | `topology.edges[]` | object | no | `from`, `to[]`, or `dynamic: true` when a router picks the targets at run time. |
 | `error` | object | no | Set on the terminal event of a run that failed; `message` is required. |
+| `error.nodes[]` | string[] | no | The nodes of `frontier` that actually broke. A node in `frontier` and **absent here completed** — the producer waits for the whole level before giving up. Omitted when the producer cannot say, and a consumer then falls back to marking the whole frontier. |
 
 On `POST /api/v1/steps` the `run_id` must be in the body. On
 `POST /api/v1/runs/{id}/steps` it may be omitted, and a body value contradicting the path

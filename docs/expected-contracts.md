@@ -102,9 +102,12 @@ topology. Only the failure had to travel — v1 could not express one at all, so
 was indistinguishable from a finished one.
 
 The failure carries the frontier that was running when it broke, which is what lets the
-interface colour the right nodes. It does **not** name the node that caused it: the message
-is a string. Marking a specific node from it would be a guess dressed as a fact, so the
-interface marks the whole frontier that was live.
+interface colour the right nodes. **Updated 2026-07-28: it now names the nodes that broke.** The engine waits for a whole
+level before giving up, so which nodes failed and which finished was known inside kern-orch
+and thrown away into a string — the same shape of loss as the `skill` reference. The failure
+carries `nodes`, and a node of the reported frontier absent from that list **completed**,
+which is a guarantee rather than an inference. A producer that cannot say omits the field,
+and the interface falls back to marking the whole frontier as before.
 
 ---
 

@@ -124,3 +124,55 @@ it('draws into a fixed width so the viewBox can scale it', () => {
 
   expect(nodes.every((n) => n.x > 0 && n.x < HIVE_WIDTH)).toBe(true)
 })
+
+// The producer now says which node broke. Before, the whole live frontier was marked
+// failed because naming one would have been a guess; now it is reported fact.
+describe('a failure that names its nodes', () => {
+  const failedRun = (nodes?: string[]): Run => ({
+    id: 'r1',
+    graph: 'hello',
+    status: 'failed',
+    step: 2,
+    frontier: ['synthese', 'critique'],
+    visited: ['greet', 'synthese', 'critique'],
+    started_at: '2026-07-28T12:00:00Z',
+    updated_at: '2026-07-28T12:00:02Z',
+    error: { message: 'boom', nodes },
+  })
+
+  it('marks only the node the producer named', () => {
+    const run = failedRun(['synthese'])
+
+    expect(nodeStatus(run, 'synthese')).toBe('failed')
+  })
+
+  // The contract guarantees a node of the frontier absent from the list completed, so
+  // saying it is done is reported fact rather than optimism.
+  it('reports the rest of the frontier as done', () => {
+    const run = failedRun(['synthese'])
+
+    expect(nodeStatus(run, 'critique')).toBe('done')
+  })
+
+  it('marks every named node when several broke at once', () => {
+    const run = failedRun(['critique', 'synthese'])
+
+    expect(nodeStatus(run, 'synthese')).toBe('failed')
+    expect(nodeStatus(run, 'critique')).toBe('failed')
+  })
+
+  // An older producer sends no list. Falling back to blaming the whole frontier is what
+  // this code did before, and it stays the honest answer when nothing is known.
+  it('falls back to the whole frontier when the producer named nothing', () => {
+    const run = failedRun()
+
+    expect(nodeStatus(run, 'synthese')).toBe('failed')
+    expect(nodeStatus(run, 'critique')).toBe('failed')
+  })
+
+  it('leaves a node the run never reached alone', () => {
+    const run = failedRun(['synthese'])
+
+    expect(nodeStatus(run, 'jamais')).toBe('pending')
+  })
+})
