@@ -53,6 +53,8 @@ sous-agents, skills et serveurs MCP.** Usage interne Kern, pas de produit multi-
 - **Code et documentation en anglais** : noms, commentaires, commits, tests, `docs/`.
   Seuls les textes affichés à l'utilisateur restent en français, dans les fichiers de
   traduction, jamais en dur dans un composant.
+  Une exception, assumée et unique : `docs/a-trancher.md` est en français. C'est un support
+  de décision destiné à l'équipe, pas au code — le traduire lui ferait perdre son objet.
 - **Git** : `main` ← `dev` ← `feature/xx`. Jamais de commit direct sur main/dev.
   Tests verts avant merge dans `dev`.
 - **Index OKF** : à la fin de chaque feature, créer/mettre à jour `docs/index/<feature>.md`

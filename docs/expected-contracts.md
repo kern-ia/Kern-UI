@@ -4,7 +4,11 @@ What the interface needs in order to stop showing "this view waits for a brick",
 piece of data must come from, and what exists today.
 
 Derived from `design/mockups/*.dc.html` (the six views and their transverse elements) and
-from the brick map in `../Kern-Orch/docs/ROADMAP.md`. Statuses use the roadmap's own legend:
+from the brick map in `../Kern-Orch/docs/ROADMAP.md`.
+
+**Deciding rather than building?** [`a-trancher.md`](a-trancher.md) states the same open
+questions in plain language, for the people who answer them rather than the people who
+implement them. When a decision is taken there, record it here. Statuses use the roadmap's own legend:
 ✅ done · 🟡 partial · ⬜ to do · 🔌 external.
 
 Nothing here is a proposal for a payload shape yet — except where marked **drafted**, these
