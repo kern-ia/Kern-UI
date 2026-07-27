@@ -146,6 +146,18 @@ func TestContractV2CarriesTheTopologyThrough(t *testing.T) {
 	if !run.Topology.Edges[1].Dynamic {
 		t.Error("the router-driven edge lost its dynamic flag")
 	}
+	// The skill an agent node runs is what links a run to the Grimoire's catalogue; the
+	// node id is not that link. A tool node names a Go function and declares no skill.
+	byID := map[string]projection.TopologyNode{}
+	for _, n := range run.Topology.Nodes {
+		byID[n.ID] = n
+	}
+	if got := byID["greet"].Skill; got != "planner" {
+		t.Errorf("greet skill = %q, want planner", got)
+	}
+	if got := byID["critique"].Skill; got != "" {
+		t.Errorf("critique skill = %q, want empty on a tool node", got)
+	}
 	// The entry never appears in a frontier, yet the run began by running it.
 	if !slices.Contains(run.Visited, "greet") {
 		t.Errorf("Visited = %v, want the entry among them", run.Visited)

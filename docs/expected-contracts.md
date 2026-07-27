@@ -19,7 +19,7 @@ are statements of need. The one contract that exists is specified in [README.md]
 | C1 | `kern.step-event/v1` — level transitions | kern-orch ✅ | Agents (partial), beacon (partial) | **in use** |
 | C2 | Run topology — nodes and edges | kern-orch ✅ | Agents as the mockup draws it | **in use** |
 | C3 | Run failure | kern-orch ✅ | Agents node colours, failed runs | **in use** |
-| C4 | Skills & tools registry | kern-skills ✅ / kern-tools 🟡 | Grimoire **and** Espace | missing |
+| C4 | `kern.registry/v1` — skills & tools registry | kern-orch ✅ | Grimoire | **in use** |
 | C5 | Tool invocation and readback | kern-tools 🟡 | Espace widget values | missing |
 | C6 | Steering channel | kern-pilot ⬜ | Conversation, sub-agent creation, accept/ignore | missing |
 | C7 | Memory graph | kern-memory ⬜ | Cerveau | missing |
@@ -27,12 +27,23 @@ are statements of need. The one contract that exists is specified in [README.md]
 | C9 | Browser session and approval queue | kern-exec ⬜ + kern-pilot ⬜ | Navigateur | missing |
 | C10 | Live activity signal | kern-obs ⬜ or kern-link 🔌 | `Réflexion` beacon | missing |
 
-**C2 and C3 shipped on 2026-07-26** as `kern.step-event/v2`: the Agents view now draws the
-hive the mockup shows. **C4** is the next one worth having — it unlocks two views at once.
+**C2 and C3 shipped on 2026-07-26** as `kern.step-event/v2`: the Agents view draws the hive
+the mockup shows. **C4 shipped on 2026-07-27** as `kern.registry/v1`: the Grimoire is live.
+**C5** is the next one worth having — it is all that stands between the Espace and its
+widgets.
 
-One correction from building them: C3 turned out smaller than written here. Per-node status
-needs no contract at all — the interface derives it from the topology and the frontiers it
-has already seen. Only the *failure* had to travel, because nothing in v1 could express one.
+Two corrections from building them, both in the same direction — a contract stated from a
+mockup is wider than the one the code needs:
+
+- **C3 turned out smaller.** Per-node status needs no contract: the interface derives it
+  from the topology and the frontiers it has seen. Only the *failure* had to travel.
+- **C4 turned out narrower, and unlocked one view rather than two.** No `wired` flag, no
+  identifier beside the name, no directory. And the Espace needs C5, not C4: the registry
+  names a widget but cannot fill it.
+
+One thing was *added* rather than removed: C2's node gained an optional `skill`. Writing the
+Grimoire's status revealed that a node id is not a skill name — `greet` runs `planner` — so
+without it every sub-agent state would have been a guess.
 
 ---
 
@@ -88,26 +99,39 @@ interface marks the whole frontier that was live.
 
 ---
 
-## C4 — Skills & tools registry · missing
+## C4 — Skills & tools registry · `kern.registry/v1` · **in use**
 
-**Producer** kern-orch, through `kern-skills` (✅, sub-package, extractable) and `kern-tools`
-(🟡). Exposed today on the CLI only, as `kern-orch list-skills`.
+**Producer** kern-orch → `POST /api/v1/registry`, on every `run` and on
+`kern-orch publish-skills`. Specified in [README.md](../README.md).
 
-**Why two views at once** The Grimoire lists competences (`Analyse`, `Synthèse`, `Recherche`,
-`Mémoire`, `Vision`, `Écriture`, `Orchestration`, `Vigilance`) and the sub-agents that hold
-them. The Espace shows widgets over MCP servers — and MCP servers are tools or skills the
-agent wires on demand, not a brick of their own. Same registry, one contract.
+**Why** The Grimoire lists competences and the sub-agents that hold them. kern-orch held the
+registry since its own bootstrap and only ever printed it on a terminal.
 
-**Needed** The catalogue: id, name, kind (`skill` / `tool`), description, and whether it is
-currently wired. Glyphs are decoration and belong to kern-ui, not to the contract.
+**Shipped, and narrower than written here.** Three fields per skill: `name`, `kind`
+(`tool` / `agent` — kern-orch's own two types, not `skill` / `tool` as stated above),
+`description`.
 
-**Not needed** How a skill is implemented, or its SKILL.md body.
+Three things this file asked for and the code refused:
+
+- **No `wired` flag.** In kern-orch a loaded skill is by definition available. The field
+  would read `true` on every row — a column that carries no information.
+- **No identifier beside the name.** kern-orch indexes its registry by name; inventing a
+  second key for the wire would publish something the producer does not have.
+- **No directory.** A filesystem path is an internal, not a contract.
+
+**It unlocks one view, not two.** The Espace's widgets show a live measurement, and the
+catalogue names a widget without being able to fill it. That is C5, below.
+
+**A note on the two empties.** `GET` answers `404` until someone publishes, and a published
+catalogue may be empty. Those are different facts — no producer, versus a producer holding
+nothing — and the Grimoire draws a different screen for each.
 
 ---
 
 ## C5 — Tool invocation and readback · missing
 
-**Producer** kern-tools 🟡.
+**Producer** kern-tools 🟡. **Now the only thing standing between the Espace and its
+widgets** — since C4, the interface knows which tools exist.
 
 **Why** An Espace widget is not just a name: it shows a live measurement — *Pull requests
 ouvertes 4*, *Messages non lus 12*, *Prochain rendez-vous 14:30*. That value has to be read

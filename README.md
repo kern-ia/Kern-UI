@@ -41,6 +41,8 @@ Base URL defaults to `http://127.0.0.1:7777` (`KERN_UI_ADDR`).
 | `GET` | `/api/v1/runs` | Snapshot of every known run. |
 | `GET` | `/api/v1/runs/{id}` | One run. |
 | `GET` | `/api/v1/stream` | Server-Sent Events: snapshot, then live updates. |
+| `POST` | `/api/v1/registry` | Publish the whole skills catalogue. |
+| `GET` | `/api/v1/registry` | The catalogue, or `404` while none has been published. |
 | `GET` | `/healthz` | Liveness. |
 
 A producer should target `POST /api/v1/steps`: the run id travels in the body, so the
@@ -64,7 +66,7 @@ producer needs one configured URL and stays unaware of our route shape.
   "at": "2026-07-26T12:00:02Z",
   "topology": {
     "entry": "greet",
-    "nodes": [{ "id": "greet", "kind": "agent" }],
+    "nodes": [{ "id": "greet", "kind": "agent", "skill": "planner" }],
     "edges": [{ "from": "greet", "to": ["synthese"] }]
   }
 }
@@ -80,7 +82,8 @@ producer needs one configured URL and stays unaware of our route shape.
 | `at` | RFC 3339 | yes | When the level completed. |
 | `topology` | object | no | The graph's shape. Sent **once**, on the run's first event. |
 | `topology.entry` | string | yes | Entry node id. Never appears in a frontier — it ran first. |
-| `topology.nodes[]` | object | yes | `id` and `kind` (`tool` / `agent` / `subgraph`). |
+| `topology.nodes[]` | object | yes | `id` and `kind` (`tool` / `agent` / `subgraph`), plus `skill` on an agent node. |
+| `topology.nodes[].skill` | string | no | The catalogue entry backing the node. **Not the id** — a node `greet` may run the skill `planner`, so matching the two by name would be a guess. Absent on tool nodes, which name a Go function. |
 | `topology.edges[]` | object | no | `from`, `to[]`, or `dynamic: true` when a router picks the targets at run time. |
 | `error` | object | no | Set on the terminal event of a run that failed; `message` is required. |
 
@@ -97,6 +100,55 @@ is rejected.
   producer bug, not a transient failure — retrying will not help.
 - **Reporting is never load-bearing.** A producer must treat this endpoint as best-effort
   and must not fail a run because kern-ui is slow, broken or absent.
+
+#### `Catalogue` — contract `kern.registry/v1`
+
+<!-- CANONICAL BLOCK — mirrored verbatim in Kern-UI/README.md and Kern-Orch/README.md.
+     Drift is caught by tests, not by discipline: the same payload lives in
+     contracts/kern.registry.v1.json in both repos, and each side asserts against it on
+     every CI run — kern-orch that its publisher emits exactly this, kern-ui that its
+     ingestion accepts exactly this. Change the contract and both suites go red. -->
+
+```json
+{
+  "source": "kern-orch",
+  "at": "2026-07-27T12:00:00Z",
+  "skills": [
+    { "name": "Analyse", "kind": "tool", "description": "Décompose une demande." },
+    { "name": "Scribe", "kind": "agent", "description": "Rédige et reformule." }
+  ]
+}
+```
+
+| Field | Type | Required | Meaning |
+|---|---|---|---|
+| `source` | string | yes | Which brick published this catalogue. |
+| `at` | RFC 3339 | yes | When it was read. |
+| `skills[]` | array | yes | Every skill the producer holds. May be empty — see below. |
+| `skills[].name` | string | yes | The key. Unique within a catalogue. |
+| `skills[].kind` | string | yes | `tool` (executed directly) or `agent` (backed by a model). |
+| `skills[].description` | string | no | One line, shown as-is. |
+
+**Semantics a producer can rely on**
+
+- **Published whole, never patched.** Each publication replaces the previous one, so a
+  skill deleted upstream disappears downstream. There is no delete message and none is
+  needed.
+- **Idempotent.** Republishing the same catalogue changes nothing, so a producer may
+  publish on every run without coordination.
+- **An empty `skills` list is a statement**, not a non-answer: it says the producer holds no
+  skill. `GET` answers `404` until someone has published, which is a different fact and
+  draws a different screen.
+- **`202 Accepted`** on success, **`400`** on a payload violating the schema. A rejected
+  publication leaves the previous catalogue standing — a producer pushing garbage must not
+  be able to blank the view.
+- **Reporting is never load-bearing.** A producer must treat this endpoint as best-effort
+  and must not fail a run because kern-ui is slow, broken or absent.
+
+**What deliberately does not travel.** The directory a skill lives in — a filesystem path is
+an internal, not a contract. Any "wired" flag — in kern-orch a loaded skill is by definition
+available, so the field would read true on every row. Glyphs, colours and labels — those are
+the interface's job, and a brick sending an icon name is a brick doing it.
 
 #### `GET /api/v1/stream` — SSE
 
@@ -118,14 +170,15 @@ resynchronise from the snapshot and must not treat the stream as an event log.**
 
 ### Consumed
 
-One contract exists. Nine more are needed for the interface to stop saying "this view waits
+Two contracts exist. Six more are needed for the interface to stop saying "this view waits
 for a brick" — each one is stated, with its producer and what it unlocks, in
 [docs/expected-contracts.md](docs/expected-contracts.md).
 
 | Brick | Contract | Status |
 |---|---|---|
 | `kern-orch` | Pushes `kern.step-event/v2` to `POST /api/v1/steps`. See `../Kern-Orch/README.md`. | in use |
-| `kern-orch` | Run topology · per-node status · skills and tools registry | needed |
+| `kern-orch` | Pushes `kern.registry/v1` to `POST /api/v1/registry`. | in use |
+| `kern-orch` | Tool invocation and readback (Espace widget values) | needed |
 | `kern-pilot` | Steering channel (steer · queue · replan · nudge) | needed |
 | `kern-memory` | Memory graph · documents | needed |
 | `kern-exec` | Browser session and approval queue | needed |

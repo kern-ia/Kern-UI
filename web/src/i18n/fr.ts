@@ -46,6 +46,12 @@ export const fr = {
     noContract: (brick: string) =>
       `${brick} détient ces données mais ne publie aucun contrat pour les exposer.`,
     why: 'Rien n\'est affiché ici plutôt que des données inventées.',
+    detail: {
+      // The registry now reaches the interface, so the Espace no longer waits for the
+      // catalogue — only for the readings that fill a widget.
+      espaceValues:
+        'Le catalogue des outils est publié ; il manque la lecture de leur valeur (contrat C5).',
+    },
     roadmap: 'Voir la cartographie des briques dans Kern-Orch/docs/ROADMAP.md',
   },
 
@@ -58,6 +64,31 @@ export const fr = {
       failed: 'Bloqué',
     },
     noTopology: "Ce run n'a pas déclaré sa topologie.",
+  },
+
+  grimoire: {
+    competences: 'Compétences',
+    subAgents: 'Sous-agents',
+    label: 'Grimoire des compétences et des sous-agents',
+    loading: 'Chargement du grimoire…',
+    // kern-orch holds the registry but has never pushed it here.
+    unpublished: 'kern-orch n\'a pas encore publié son catalogue de skills.',
+    unpublishedHint:
+      'Lance un graphe, ou `kern-orch publish-skills`, avec KERN_REGISTRY_REPORT_URL défini.',
+    // Published, and genuinely empty — not the same thing.
+    empty: 'kern-orch ne déclare aucun skill.',
+    emptyHint: 'Ajoute un dossier contenant un SKILL.md dans son répertoire de skills.',
+    error: 'Le catalogue des skills n\'a pas pu être chargé.',
+    activity: {
+      actif: 'Actif',
+      repos: 'Repos',
+      bloque: 'Bloqué',
+    },
+    // Creating a skill or a sub-agent is a write path: it waits for kern-pilot, so the
+    // mockup's `+` is shown and disabled rather than dropped or left to lie.
+    newSubAgent: 'Nouveau sous-agent',
+    newSkill: 'Nouvelle compétence',
+    creationUnavailable: 'La création attend la brique kern-pilot.',
   },
 
   runs: {

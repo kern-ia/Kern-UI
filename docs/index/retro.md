@@ -153,3 +153,31 @@ Ce qui a fonctionné ou non, noté au moment où ça mord. Append only.
   demanderait sa topologie, que rien n'envoie.
 - L'échec ne nomme pas le nœud fautif. On marque toute la frontière active ; si un jour le
   message devient structuré, on pourra être précis.
+
+## 2026-07-27 — skills-registry (C4)
+
+**A fonctionné**
+- Poser la question du transport AVANT d'écrire : kern-orch est un CLI, pas un démon. Le
+  pull aurait exigé de lui monter un serveur. Trente secondes de lecture de `http.go`
+  (« l'URL est tout le contrat ») ont tranché push + seconde variable d'env.
+- Écrire la logique pure (`grimoire.ts`) avant le composant : les 14 premiers tests ont
+  tenu la vue entière ensuite, et `activityOf` a pu réutiliser `nodeStatus` de la ruche au
+  lieu de recalculer un état concurrent.
+- Vérifier dans un vrai navigateur AVEC un run réellement lent. Un stub instantané aurait
+  montré « Repos » partout et laissé croire que ça marchait.
+- Les cas de refus écrits en table (`TestReplaceRejectsWhatTheInterfaceCannotDraw`) avec un
+  champ `why` : le message d'échec explique la règle, pas seulement qu'elle a sauté.
+
+**À surveiller**
+- **Un identifiant qui ressemble à un autre n'est pas le même.** Le statut des sous-agents
+  a failli se dériver de l'id du nœud, qui n'est pas le nom du skill (`greet` exécute
+  `planner`). Ça aurait été faux partout, et faux en silence. Quand deux domaines doivent
+  se rejoindre, exiger le lien explicite plutôt que la ressemblance de nommage.
+- **Une fiche de contrat écrite depuis une maquette est plus large que le contrat réel.**
+  C3 avait rétréci ; C4 aussi (`wired`, id, `dir` supprimés) et n'a débloqué qu'une vue au
+  lieu de deux. Traiter `expected-contracts.md` comme un besoin à instruire, pas un schéma
+  à implémenter.
+- `StepFunc` ne fire qu'à la fin d'un niveau : rien n'est visible pendant le premier. Pour
+  toute vérification E2E d'un état « en cours », attendre la SECONDE frontière.
+- Une fixture partagée assertée depuis deux fichiers de test dans le même paquet
+  (`contract_test.go` et `v2_test.go` côté kern-orch) : patcher l'un laisse l'autre rouge.
