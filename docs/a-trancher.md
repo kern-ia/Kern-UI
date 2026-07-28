@@ -46,7 +46,7 @@ rempli apprend quelque chose de faux sur l'état réel du système.
 | 3 | Protéger l'accès à l'interface | ✅ tranché | Authentification obligatoire, comptes individuels |
 | 4 | Qui crée les sous-agents ? | ✅ reporté | Hors POC ; la question de fond reste entière |
 | 5 | Les outils en permanence ? | ✅ tranché | **Oui** — l'orchestrateur passe en démon |
-| 6 | Le mobile | ⚠️ **partiel** | Vues restreintes + notifications ; le *comment* reste ouvert |
+| 6 | Le mobile | ✅ tranché | **Par une messagerie existante** — Telegram / WhatsApp / Slack |
 | 7 | Poser un jalon stable | ⬜ **non abordé** | — |
 
 Une huitième chose est ressortie du brainstorming sans figurer dans cette liste : **le
@@ -132,9 +132,10 @@ réponse. C'est une décision produit — qui utilise l'outil — pas une décis
 > **✅ Réponse (2026-07-28) — authentification obligatoire**, comptes individuels, accès
 > sécurisé par collaborateur. Elle découle de la 2 et n'est plus optionnelle.
 >
-> Reste à choisir *comment* : c'est une question technique, pas un arbitrage produit — sauf
-> sur un point, la source des identités (comptes propres à Kern, ou l'annuaire de
-> l'entreprise). Ce point-là mérite une réponse avant l'implémentation.
+> **La source des identités est tranchée** : comptes propres à Kern pour commencer.
+> L'annuaire de l'entreprise (SSO/LDAP) devient intéressant à partir de clients de plus de
+> cinq employés — donc une porte à laisser ouverte dans la conception, pas une chose à
+> construire maintenant.
 
 
 **Ce dont il s'agit.** L'interface est un serveur. Par défaut elle n'écoute que la machine
@@ -160,12 +161,17 @@ la première chose à régler. **Cette décision découle de la 2 : tranchez la 
 
 ## 4. Qui crée les sous-agents, et où vivent-ils ?
 
-> **✅ Réponse (2026-07-28) — reporté, pas résolu.** La création d'agents est explicitement
-> hors du POC : elle arrivera « progressivement dans un second temps ».
+> **✅ Réponse (2026-07-28) — reporté, et sa forme future a changé.**
 >
-> C'est une décision de calendrier, pas de conception : les trois questions ci-dessous
-> restent entières et devront être répondues le jour venu. Le `+` du Grimoire reste affiché
-> et désactivé — désormais parce que c'est décidé, plus parce que c'est un manque.
+> Trois choses ont été dites. La création est **hors de la version mobile**. Elle est
+> **réservée à l'équipe Kern dans un premier temps** — donc pas de création par le client, ce
+> qui retire pour l'instant toute la question du multi-utilisateur appliquée aux
+> sous-agents. Et à terme, la direction visée n'est plus « écrire un skill » mais **un
+> éditeur no-code** : des nœuds simples que le client relie, un n8n ultra-simplifié, dans
+> l'esprit de Scratch.
+>
+> **Cette troisième partie change ce que sera le contrat**, pas seulement sa date — voir
+> ci-dessous. Le `+` du Grimoire reste affiché et désactivé, désormais parce que c'est décidé.
 
 
 **Ce dont il s'agit.** Dans la maquette, le Grimoire a un bouton « Nouveau sous-agent ». Il
@@ -200,6 +206,33 @@ construire un stockage sans notion de propriétaire, et devoir l'ajouter plus ta
 
 **Ce que ça bloque.** Uniquement le bouton de création. Tout le reste de l'interface avance
 sans.
+
+### La piste no-code, et pourquoi elle est plus proche qu'elle n'en a l'air
+
+L'intention : que n'importe qui puisse prototyper un agent en reliant des nœuds, sans écrire
+de fichier.
+
+**Le format existe déjà.** `kern-orch` ne sait pas exécuter autre chose qu'un graphe déclaré :
+des nœuds typés (`tool`, `agent`, `subgraph`), des arêtes, et du routage conditionnel. Un
+éditeur visuel n'aurait donc **aucun format à inventer** — il produirait exactement ce que le
+moteur charge déjà. C'est une différence énorme avec le cas habituel où l'éditeur no-code
+oblige à créer une couche de traduction.
+
+Conséquences, si cette piste se confirme :
+
+- **C'est une fonctionnalité de l'interface, pas une brique.** Elle produit un fichier de
+  graphe ; c'est déjà ce que le Grimoire et la vue Agents savent lire et dessiner.
+- **La question 4b — qui écrit — se pose autrement.** Il ne s'agit plus d'écrire une fiche de
+  compétence dans un dossier, mais d'enregistrer un graphe. Ce n'est pas la même écriture, ni
+  forcément le même propriétaire.
+- **La vue Agents dessine déjà des graphes.** L'éditeur et le moniteur montrent la même
+  chose ; les faire diverger visuellement serait un choix, pas une fatalité.
+- **Le plus dur n'est pas le glisser-déposer**, c'est la palette : quels nœuds un non-technicien
+  peut relier sans se tromper. Scratch marche parce que les blocs ne s'emboîtent que d'une
+  manière valable. C'est une question de conception de produit, à instruire avant le code.
+
+Rien de tout cela n'est à construire maintenant. C'est noté pour que la question 4, le jour
+où elle revient, ne soit pas rouverte sur la mauvaise prémisse.
 
 ---
 
@@ -244,46 +277,61 @@ agents. Or le chef d'orchestre est un programme en ligne de commande : entre deu
 
 ---
 
-## 6. Le mobile : consulter, ou vraiment s'en servir ?
+## 6. Le mobile — et la messagerie comme surface de pilotage
 
-> **⚠️ Réponse partielle (2026-07-28).** Ce qui est décidé : **vues mobiles restreintes**
-> (lecture de l'activité, gestion des nœuds) et **notifications sur le téléphone**.
->
-> Ce qui ne l'est pas : le *comment*. Une PWA sait recevoir des notifications — sur iOS
-> depuis 16.4, avec des limites réelles (l'utilisateur doit installer la page sur son écran
-> d'accueil, et la fiabilité de livraison est inférieure). Une application installée fait
-> mieux. La question à reposer est donc précise : **une notification manquée est-elle un
-> incident ?** Si oui, coquille native. Si c'est un confort, la PWA actuelle suffit.
->
-> La seconde question ci-dessous — l'application des politiques doit-elle partager le
-> processus de la surface d'approbation — n'a pas été abordée, et le contrôle à distance
-> validé au brainstorming la rend plus pressante qu'avant.
+> **✅ Réponse (2026-07-28) — on ne construit pas de canal mobile, on en emprunte un.** Le
+> téléphone doit réagir, mais les notifications et le pilotage passent par une messagerie que
+> le client utilise déjà : Telegram, WhatsApp, Slack selon les cas.
 
+**Pourquoi c'est plus qu'un choix technique.** Trois choses tombent d'un coup :
 
-**Ce dont il s'agit.** L'interface est un site web servi par un programme unique. Sur
-téléphone, elle s'affiche dans le navigateur. Une autre approche — dite « coquille native » —
-produirait une vraie application installable.
+- **Le critère qui plaidait pour une coquille native disparaît.** La question était « un push
+  fiable justifie-t-il une application installée ». Si la notification est un message
+  Telegram, la question ne se pose plus.
+- **On ne gère plus de communication chiffrée** ni de jetons de push, ni de présence dans les
+  stores. C'est sous-traité à des gens dont c'est le métier.
+- **On rencontre l'utilisateur là où il est.** Une PME ne connaît pas forcément Slack ; elle a
+  déjà WhatsApp sur tous les téléphones. Aucune installation à demander.
 
-**Deux questions décident, pas le débat technique.**
+**Ce que ça ouvre, et qui va plus loin que la notification.** Si l'on peut *tout piloter* par
+le chat — arrêter un agent, valider ou refuser, lancer une action — alors le chat n'est plus
+une sortie, c'est une seconde surface de commande à côté de l'interface. Le même contrat les
+sert : c'est C6, `kern-pilot`.
 
-**a) Que doit faire le téléphone ?** Si c'est **consulter** — voir où en sont les agents
-depuis le canapé — ce qui existe suffit. Si c'est **être présent dans les magasins
-d'applications et recevoir des notifications fiables**, il faut la coquille native.
+### Ce qui reste à trancher là-dessus
 
-**b) La surveillance et l'écran d'approbation doivent-ils tourner ensemble ?** Le jour où un
-agent demandera « puis-je faire ceci ? », il y aura un écran de validation. Si le mécanisme
-qui applique les règles doit être **dans le même programme** que cet écran — pour qu'on ne
-puisse pas contourner l'un sans l'autre — la coquille native prend tout son sens. Si les
-briques restent des programmes séparés qui se parlent, elle n'apporte rien.
+**a) Quelle messagerie en premier ?** Elles ne coûtent pas la même chose à livrer :
 
-**Rien n'est perdu dans un cas comme dans l'autre** : la coquille native, si elle arrive,
-enveloppe exactement l'interface actuelle. Ce n'est pas un travail à refaire.
+| | Ce qu'il faut | Coût |
+|---|---|---|
+| **Telegram** | Un bot, un jeton. Rien d'autre. | Gratuit, livrable en une journée |
+| **Slack** | Une app installée par espace de travail | Modéré ; suppose que le client connaît Slack |
+| **WhatsApp** | API Business, compte Meta vérifié, messages *template* validés pour tout message que l'on initie | Le plus cher et le plus lent des trois, facturé à la conversation |
 
-**À savoir** : l'affichage sur téléphone est écrit mais **jamais vérifié à l'œil**. L'outil
-de test refuse de redimensionner la fenêtre. À regarder sur un vrai téléphone avant de
-conclure quoi que ce soit.
+Ironie à assumer : **la messagerie que les PME ont déjà est la plus difficile à livrer**.
+Telegram est le bon premier pas — il prouve la boucle complète en une journée — mais il ne
+prouve pas que WhatsApp suivra sans travail.
 
----
+**b) Le chat devient une surface d'autorisation.** C'est le point que je soulève et qui n'a
+pas été discuté. Si un message peut arrêter un agent ou valider une décision, alors quiconque
+écrit au bot peut le faire. Il faut donc lier un compte de messagerie à un compte Kern, et ce
+lien porte les mêmes conséquences que l'authentification de l'interface. Trois questions
+concrètes : comment on associe les deux la première fois, ce qui se passe si quelqu'un change
+de numéro, et si une validation critique peut se faire par chat ou seulement dans
+l'interface.
+
+**c) Où passent les données, et sous quel régime.** Faire transiter le travail d'une
+entreprise par les serveurs de Meta ou de Telegram est une question de traitement de données
+avant d'être une question technique. **Je ne suis pas en mesure de valider la conformité de
+l'un ou de l'autre**, et je note que la contrainte qui mordra le plus tôt pour une PME
+européenne est probablement le RGPD — hébergement, sous-traitance, consentement — davantage
+que l'AI Act, qui porte sur le système d'IA lui-même plutôt que sur le transport des
+messages. À faire vérifier par quelqu'un dont c'est le métier avant de vendre la
+fonctionnalité, pas avant de la prototyper.
+
+**Ce qui reste vrai de l'ancienne question.** L'affichage mobile de l'interface existe et n'a
+**toujours jamais été vérifié à l'œil**. Il sert toujours à consulter, même si le pilotage
+passe par le chat.
 
 ---
 
@@ -329,7 +377,17 @@ quelque chose est bloqué, c'est un fait vérifié dans le code, pas une prudenc
 Les décisions 2, 3 et 4 formaient un bloc, et il s'est résolu dans le bon ordre : la 2 est
 tranchée, la 3 en découle, la 4 est reportée en connaissance de cause.
 
-Il reste **deux questions ouvertes**, et aucune ne bloque le travail en cours : le *comment*
-des notifications mobiles (décision 6) et le jalon (décision 7). Deux autres apparaîtront à
-la mise en œuvre plutôt qu'avant : la source des identités pour l'authentification, et
-l'étendue exacte du bac à sable.
+**Six décisions sur sept sont tranchées.** Reste le jalon (décision 7), qui ne bloque rien.
+
+Trois questions nouvelles sont nées des réponses, et c'est normal — une décision ouvre le
+niveau de détail en dessous :
+
+- **Quelle messagerie en premier**, sachant que la plus utile aux PME est la plus coûteuse à
+  livrer (décision 6a) ;
+- **Une validation critique peut-elle passer par le chat**, ou seulement par l'interface
+  (6b) — c'est une question de sécurité, pas de confort ;
+- **Où les données ont le droit de transiter** (6c). Celle-là demande quelqu'un dont c'est
+  le métier ; je peux la poser, pas y répondre.
+
+Et deux apparaîtront au moment d'écrire plutôt qu'avant : l'étendue exacte du bac à sable, et
+la façon dont un compte de messagerie se lie à un compte Kern.

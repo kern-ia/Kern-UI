@@ -48,6 +48,12 @@ proposition 02). Cette ligne disait l'inverse jusque-là — voir `docs/a-tranch
 - **Authentification : obligatoire, pas optionnelle** (tranché 2026-07-28). Comptes
   individuels, accès sécurisé par collaborateur. Un `Run` devra porter son demandeur — le
   champ n'existe pas encore.
+- **Identités : comptes propres à Kern d'abord** (tranché 2026-07-28). L'annuaire de
+  l'entreprise (SSO/LDAP) est une piste à explorer à partir de clients de plus de cinq
+  employés — donc à ne pas exclure par construction, mais à ne pas bâtir maintenant.
+- **Notifications et pilotage mobile : par une messagerie existante**, pas par du push natif
+  (tranché 2026-07-28). Telegram / WhatsApp / Slack selon le client. Conséquence directe : le
+  critère « push fiable » qui plaidait pour une coquille native tombe.
 - **`kern-orch` passe en mode démon** (tranché 2026-07-28) : un service qui tourne, plus une
   commande qu'on lance. C'est ce qui débloque la lecture des outils (C5), impossible tant que
   rien n'est vivant entre deux runs.

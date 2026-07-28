@@ -51,32 +51,29 @@ cd ../Kern-Orch && KERN_STEP_REPORT_URL=http://127.0.0.1:7777/api/v1/steps \
 | Authentication | **Mandatory**, individual accounts. Decided 2026-07-28. |
 | kern-orch's nature | **A daemon**, not a command. Decided 2026-07-28. |
 | Confinement | **A sandbox**, control kept outside the agent. Decided 2026-07-28. |
-| Creating sub-agents | **Out of the POC**, deferred. Decided 2026-07-28. |
+| Creating sub-agents | **Out of the POC**, deferred. Kern team only at first; headed towards a no-code node editor. Decided 2026-07-28. |
+| Identities | **Kern-owned accounts first**; the company directory becomes interesting past ~5 employees per client. Decided 2026-07-28. |
+| Mobile | **No native shell, no push of our own.** The phone reacts through a messaging app the client already uses. Decided 2026-07-28. |
+| Tauri | **Not needed for notifications.** One of its two criteria is now void; the other one stands. |
 | Tauri | **Likely later, not now.** Re-evaluate against the two criteria below. |
 | Rust in the ecosystem | Right tool for `kern-exec` / `kern-guard` / `kern-policy` — they touch syscall-level confinement, which Go handles badly (runtime thread multiplexing vs per-thread seccomp, cgo needed, breaks pure cross-compilation). |
 | Art direction | Grimoire Ambré confirmed. The other two mockups would cost only a `tokens.css`. |
 | MCP servers | Not a brick — tools/skills the agent wires on demand. Same registry as the Grimoire. |
 
-### What would settle the Tauri question
+### The Tauri question, mostly closed
 
-Two questions. The first was **half-answered on 2026-07-28** — mobile must show activity and
-**receive notifications**, on restricted views. What is still missing is the reliability
-required: a PWA can receive notifications (iOS 16.4+, with real limits), an installed app
-does it better. The question to put back to the team is narrower than before: *is a missed
-notification an incident, or an inconvenience?*
+Two criteria stood. **The first is void as of 2026-07-28**: mobile does not need a reliable
+push of our own, because notifications go out through Telegram, Slack or WhatsApp — a
+messaging app the client already has. No store presence, no push tokens, no encrypted
+transport to build.
 
-1. ~~What must mobile actually do?~~ **Answered in part**: read activity, manage nodes, get
-   notified — on deliberately restricted views. Only the required reliability of the push is
-   still open.
-2. **Must policy enforcement share a process with the approval surface?** Unanswered, and
-   **more pressing than it was**: remote control — stop, approve, refuse — is now confirmed
-   scope, so an approval surface will exist. If enforcement must sit in the same signed
-   binary as it, Tauri serves that. If the bricks stay separate processes talking by
-   contract, it buys nothing.
+**The second stands, and got sharper.** Must policy enforcement share a process with the
+approval surface? Remote control is now confirmed scope, so an approval surface *will* exist
+— and it will exist in a chat as well as in the interface, which arguably settles it the
+other way: an approval that can arrive from WhatsApp cannot be enforced by a binary sharing
+its process. Worth thinking through rather than declaring.
 
 Nothing built so far is wasted either way: a Tauri shell wraps this same SPA.
-
----
 
 ## Next, in order
 
@@ -129,11 +126,24 @@ this contract on top of it.
 Shipped 2026-07-27. Half of it needed no contract at all: `Tension` was already reachable
 from the failure C3 carries, and the code had simply not caught up.
 
-### 5. Everything else
+### 5. `C12` — the messaging channel · **new, and it displaces mobile work**
 
-`C6` steering (kern-pilot — the conversation stone, accept/ignore), `C7` memory graph, `C8`
-documents, `C9` browser session and approval queue, and `C11` skill authoring — which is a
-team decision before it is work. All stated in the contracts report.
+The phone reacts through Telegram, Slack or WhatsApp rather than through anything we build.
+Telegram is the cheap first step — a bot and a token, the whole loop provable in a day — and
+it is *not* proof that WhatsApp will follow easily: that one needs a verified Meta business
+account and pre-approved templates for anything we initiate, billed per conversation. The
+irony to accept is that the app SMEs already have is the hardest of the three to ship.
+
+Two things need answering before this ships, neither of them ours alone: whether a critical
+approval may be given by chat at all, and where a company's data is allowed to transit.
+Stated in [`docs/expected-contracts.md`](expected-contracts.md) as C12.
+
+### 6. Everything else
+
+`C6` steering (kern-pilot — the conversation stone, accept/ignore, and now the chat surface
+too), `C7` memory graph, `C8` documents, `C9` browser session and approval queue, and `C11`
+authoring — deferred, and headed towards a no-code node editor rather than skill files. All
+stated in the contracts report.
 
 ---
 
@@ -150,14 +160,15 @@ file used to carry. Stated in plain language, with what follows from each, in
 | Confinement | **Sandbox**, control kept outside | `kern-exec` confirmed, at its full scope rather than a quick restriction |
 | Tools always available? | **Yes — kern-orch becomes a daemon** | Unblocks C5, and changes what kern-orch *is* |
 | Creating sub-agents | **Deferred**, out of the POC | C11 stays unanswered on purpose; the Grimoire's `+` stays disabled by decision |
+| Where identities come from | **Kern accounts first** | Directory/SSO is a door to leave open, not to build |
+| How the phone reacts | **Through an existing messaging app** | Removes native push from the roadmap; adds C12 |
 
 Also confirmed as scope rather than a question: **remote control** — stop an agent, approve
 or refuse one of its decisions, trigger a simple action. That is C6, `kern-pilot`.
 
-**Still open.** How mobile notifications are delivered — a PWA can receive them, an installed
-app does it better, and nothing said which reliability is required (see decision 6). And the
-milestone below. Two more will surface during implementation rather than before: where
-identities come from, and how wide the sandbox is.
+**Still open.** The milestone below. How wide the sandbox is. Whether a critical approval may
+be given by chat at all, and where a company's data may transit — both C12, both needing
+someone other than this repo to answer.
 
 **One correction this forces.** CLAUDE.md said *"Usage interne Kern, pas de produit
 multi-comptes"*. That is now false and has been rewritten. It was the premise under several
