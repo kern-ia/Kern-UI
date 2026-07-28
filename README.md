@@ -77,9 +77,21 @@ PBKDF2-HMAC-SHA256 at 600 000 iterations, from the standard library: argon2id re
 purpose-built cracking hardware better, and costs this binary its only dependency-free
 property. Revisit that trade the day a hash database could leak.
 
-**TLS is not handled here.** Without it a password and a session travel in clear, which the
-server warns about at startup. Put a reverse proxy in front before anyone logs in over a
-network.
+### TLS
+
+A public address is served encrypted or not at all. Authenticating over plain http protects
+against a bystander and not against a network, which is the more dangerous of the two
+illusions — so this is a refusal to start, not a warning.
+
+| Deployment | Set |
+|---|---|
+| kern-ui serves TLS | `KERN_UI_TLS_CERT` and `KERN_UI_TLS_KEY` (TLS 1.2 floor) |
+| A reverse proxy terminates it | `KERN_UI_TRUST_PROXY=1` |
+| Local development | nothing — loopback is exempt |
+
+`X-Forwarded-Proto` decides whether the session cookie is marked `Secure` and whether HSTS
+is sent, but **only when a proxy is declared**. Any client can set that header; believing it
+by default would let a caller declare their own connection safe.
 
 #### `StepEvent` — contract `kern.step-event/v2`
 

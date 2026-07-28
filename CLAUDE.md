@@ -65,8 +65,11 @@ proposition 02). Cette ligne disait l'inverse jusque-là — voir `docs/a-tranch
   `kern-ui useradd`, jamais à la main.
 - **Le binaire REFUSE de démarrer** sur une adresse publique sans jeton ni compte. Un
   avertissement se rate ; un processus qui ne démarre pas, non.
-- **TLS reste à faire.** Sans lui, mot de passe et session voyagent en clair : un
-  avertissement le dit au démarrage. Un proxy inverse devant suffit.
+- **TLS livré** (2026-07-28). Soit `kern-ui` sert HTTPS lui-même (`KERN_UI_TLS_CERT` /
+  `KERN_UI_TLS_KEY`, TLS 1.2 minimum), soit un proxy inverse le termine et on le déclare
+  (`KERN_UI_TRUST_PROXY=1`). **Le binaire refuse de servir une adresse publique en clair** :
+  authentifier sans chiffrer protège d'un curieux, pas d'un réseau. `X-Forwarded-Proto` n'est
+  cru que si un proxy est déclaré — n'importe quel client peut poser cet en-tête.
 - Transport vers l'instance centralisée : _à décider_.
 
 ## Méthode obligatoire

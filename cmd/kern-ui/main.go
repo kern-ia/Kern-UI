@@ -5,6 +5,7 @@ package main
 import (
 	"bufio"
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"io"
@@ -42,6 +43,12 @@ func main() {
 func run() error {
 	addr := envOr("KERN_UI_ADDR", "127.0.0.1:7777")
 	producerToken := os.Getenv("KERN_UI_TOKEN")
+	certFile, keyFile := os.Getenv("KERN_UI_TLS_CERT"), os.Getenv("KERN_UI_TLS_KEY")
+	trustProxy := os.Getenv("KERN_UI_TRUST_PROXY") != ""
+
+	if err := checkTLSPair(certFile, keyFile); err != nil {
+		return err
+	}
 
 	accounts, err := auth.LoadAccounts(envOr("KERN_UI_ACCOUNTS", defaultAccountsPath))
 	if err != nil {
@@ -50,11 +57,14 @@ func run() error {
 
 	// Before the socket, not after: a server that has already bound the port has already
 	// exposed whatever it was going to expose.
-	if err := checkExposure(addr, producerToken, accounts.Len()); err != nil {
+	if err := checkExposure(exposure{
+		addr:          addr,
+		producerToken: producerToken,
+		accounts:      accounts.Len(),
+		tls:           certFile != "",
+		trustProxy:    trustProxy,
+	}); err != nil {
 		return err
-	}
-	if warning := exposureWarning(addr); warning != "" {
-		slog.Warn("kern-ui: " + warning)
 	}
 	if !isPublic(addr) && (producerToken == "" || accounts.Len() == 0) {
 		slog.Info("kern-ui: running unauthenticated on a local address; " +
@@ -67,8 +77,12 @@ func run() error {
 			WebDir:        os.Getenv("KERN_UI_WEB_DIR"),
 			ProducerToken: producerToken,
 			Accounts:      accounts,
+			TrustProxy:    trustProxy,
 		}),
 		ReadHeaderTimeout: 5 * time.Second,
+		// TLS 1.2 is the floor: everything below it is broken, and everything that speaks
+		// only below it is old enough that we would rather know.
+		TLSConfig: &tls.Config{MinVersion: tls.VersionTLS12},
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -76,8 +90,19 @@ func run() error {
 
 	errc := make(chan error, 1)
 	go func() {
-		slog.Info("kern-ui listening", "addr", addr)
-		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		serving := "http"
+		if certFile != "" {
+			serving = "https"
+		}
+		slog.Info("kern-ui listening", "addr", addr, "scheme", serving, "behind_proxy", trustProxy)
+
+		var err error
+		if certFile != "" {
+			err = srv.ListenAndServeTLS(certFile, keyFile)
+		} else {
+			err = srv.ListenAndServe()
+		}
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errc <- err
 			return
 		}
