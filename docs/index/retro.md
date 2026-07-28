@@ -278,3 +278,20 @@ déjà faisable. Instruire le besoin, ne pas implémenter le schéma.
 **Ce qui a le mieux payé en méthode**
 Mesurer plutôt que déduire. Le rapporteur asynchrone semblait fini ; la mesure a montré que
 l'attente avait seulement migré du moteur vers la sortie du processus.
+
+## 2026-07-28 — vocabulaire de démonstration
+
+**A fonctionné**
+- La centralisation du texte dans `fr.ts` a payé : la reprise complète du vocabulaire a tenu
+  dans un fichier plus un modèle. Une convention qui coûte peu et rapporte d'un coup.
+- Faire entrer le vocabulaire client dans le TYPE (`capability` au lieu de `brick`) plutôt
+  que seulement dans les libellés. Un libellé se corrige, un modèle empêche la rechute.
+
+**À surveiller**
+- Le retour est venu de l'usage prévu — « je dois montrer ça en démo » — pas d'une revue de
+  code. Aucun test ne voyait le problème puisque tous comparaient à `fr.*`, donc à eux-mêmes.
+  **Un test qui compare l'affichage à sa propre source de vérité ne valide pas le contenu.**
+  D'où le test de garde qui interdit un motif (`kern-*`) plutôt que d'affirmer une égalité.
+- L'honnêteté et la lisibilité ne s'opposaient pas : dire « la mémoire n'est pas branchée »
+  est aussi vrai que « attend kern-memory », et compréhensible. Quand les deux semblent
+  s'opposer, c'est souvent qu'on n'a pas cherché la bonne formulation.

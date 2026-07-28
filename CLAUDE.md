@@ -64,6 +64,14 @@ proposition 02). Cette ligne disait l'inverse jusque-là — voir `docs/a-tranch
 - **SOLID/DRY** : une responsabilité par module ; on étend par composition. Un composant
   qui pilote un run, formate son état et l'affiche viole la règle : il se découpe.
   Aucune logique dupliquée entre le Go et le front, aucune donnée recopiée des deux côtés.
+- **Le vocabulaire affiché est celui du client, jamais le nôtre.** `web/src/i18n/fr.ts` ne
+  contient ni « run », ni « graphe », ni « topologie », ni « nœud », ni nom de brique, ni nom
+  de fichier. Les mots sont fixés une fois : run → **mission**, graphe/topologie →
+  **déroulé**, nœud/niveau → **étape**, frontière → **en cours**, skill → **compétence**, et
+  une brique manquante se nomme par **la capacité absente** (« la mémoire des agents n'est
+  pas encore branchée »), jamais par son nom de code. Ce produit se montre en démonstration :
+  un écran qui dit `kern-pilot` renseigne le client sur notre découpage et sur rien de son
+  travail. Un test échoue si un nom de brique réapparaît à l'écran.
 - **Code et documentation en anglais** : noms, commentaires, commits, tests, `docs/`.
   Seuls les textes affichés à l'utilisateur restent en français, dans les fichiers de
   traduction, jamais en dur dans un composant.
