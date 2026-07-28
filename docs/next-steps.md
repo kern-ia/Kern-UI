@@ -7,7 +7,7 @@ Written 2026-07-26, updated 2026-07-27 when the skills registry shipped. Read th
 
 ## State
 
-**kern-ui** — `dev`, 13 features merged, 105 front tests + 4 Go packages green, `main` still
+**kern-ui** — `dev`, 14 features merged, 117 front tests + 4 Go packages green, `main` still
 at the baseline commit.
 
 **kern-orch** — `dev`, 8 packages green, `main` behind `dev`.
@@ -170,5 +170,3 @@ the Tauri re-evaluation easier to reason about later.
   decoration pretending to be data.
 - **Creating a skill or a sub-agent is inert.** The mockup's `+` is drawn, disabled, and
   says it waits for kern-pilot — same treatment as the conversation bar.
-- **Sub-graph nodes draw as single nodes.** Nesting the child's hive needs the child's
-  topology, which nothing sends.

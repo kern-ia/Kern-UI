@@ -241,3 +241,18 @@ Ce qui a fonctionné ou non, noté au moment où ça mord. Append only.
 - L'ordre des steps est une garantie dont dépend la projection (`ev.Step <= run.Step` rejette
   un niveau périmé). Si un jour un producteur livre en parallèle, la projection perdra des
   frontières sans rien signaler. Le README le dit désormais explicitement.
+
+## 2026-07-28 — nested-runs
+
+**A fonctionné**
+- Se demander ce que l'option la moins chère afficherait *vraiment* : envoyer la forme de
+  l'enfant sans son état aurait produit une ruche grise sous un nœud terminé. Un dessin qui
+  n'apprend rien et laisse croire le contraire est pire que l'absence de dessin.
+- Réutiliser `HiveGraph` récursivement plutôt que d'inventer un visuel imbriqué : la maquette
+  ne montre pas ce cas, et le même composant garde le langage visuel qu'elle a fixé.
+
+**À surveiller**
+- `vitest` annonce « 98 passed » quand des fichiers ne compilent pas : les tests disparus ne
+  sont pas comptés comme échoués. Toujours lire la ligne **Test Files**, pas seulement Tests.
+- Deux glyphes de la maquette ne sont pas dans les polices embarquées (`▸`, `▾`). Vérifier à
+  l'écran tout caractère décoratif, les tests ne voient pas une police manquante.

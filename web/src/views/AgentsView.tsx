@@ -3,6 +3,7 @@ import { fr } from '../i18n/fr'
 import { HiveGraph } from '../runs/HiveGraph'
 import { RunList } from '../runs/RunList'
 import styles from './AgentsView.module.css'
+import { topLevelRuns } from '../runs/nested'
 import type { Run } from '../runs/types'
 
 /**
@@ -14,18 +15,22 @@ import type { Run } from '../runs/types'
  */
 export function AgentsView({ runs }: { runs: Run[] }) {
   const [picked, setPicked] = useState<string | null>(null)
-  const selected = runs.find((r) => r.id === picked) ?? runs[0]
+
+  // Nested runs are drawn inside the node that produced them, so listing them beside their
+  // parent would show the same work twice.
+  const listed = topLevelRuns(runs)
+  const selected = listed.find((r) => r.id === picked) ?? listed[0]
 
   return (
     <section>
       <div className={styles.head}>
         <h2 className={styles.heading}>{fr.runs.heading}</h2>
-        {runs.length > 0 && <span className={styles.count}>{fr.runs.count(runs.length)}</span>}
+        {listed.length > 0 && <span className={styles.count}>{fr.runs.count(listed.length)}</span>}
       </div>
 
       {selected &&
         (selected.topology ? (
-          <HiveGraph run={selected} />
+          <HiveGraph run={selected} runs={runs} />
         ) : (
           // A run that has completed no level yet was opened by its activity signal: its
           // shape is still on its way. Only past that point is a missing topology a
@@ -35,7 +40,7 @@ export function AgentsView({ runs }: { runs: Run[] }) {
           </p>
         ))}
 
-      <RunList runs={runs} selected={selected?.id} onSelect={setPicked} />
+      <RunList runs={listed} selected={selected?.id} onSelect={setPicked} />
     </section>
   )
 }

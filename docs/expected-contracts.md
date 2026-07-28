@@ -82,8 +82,14 @@ conditional route cannot be enumerated. Such an edge travels with no targets and
 `dynamic: true`, and the interface draws a dashed stub rather than a dead end it cannot
 vouch for.
 
-Sub-graphs still appear as a single `subgraph` node. Nesting a sub-graph's own hive inside
-the parent's would need the child's topology too, which nothing sends yet.
+**Updated 2026-07-28: sub-graphs are no longer a single dot.** A subgraph node now reports
+its nested graph as a run of its own, carrying `parent` — the run it belongs to and the node
+inside it. The interface opens the node and draws that run with the same component, so depth
+costs nothing and a sub-agent reads in the language its parent already taught.
+
+Sending only the child's *shape* was the cheaper option and would have been worse than
+nothing: a fully grey nested hive under a node marked finished, teaching the reader something
+false. A nested run reports its levels like any other, so its nodes carry real state.
 
 ---
 

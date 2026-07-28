@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import { fr } from '../i18n/fr'
 import styles from './HiveGraph.module.css'
 import { HIVE_WIDTH, layoutHive, nodeStatus } from './hive'
+import { childRunOf } from './nested'
 import type { NodeStatus, Run } from './types'
 
 /** The mockup's state palette, applied to nodes rather than to the whole system. */
@@ -20,26 +22,51 @@ const RADIUS: Record<string, number> = { agent: 14, subgraph: 13, tool: 10 }
  * a node's successors are decided at run time the drawing says so with a dashed stub rather
  * than showing a dead end it cannot vouch for.
  */
-export function HiveGraph({ run }: { run: Run }) {
+export function HiveGraph({
+  run,
+  runs = [],
+  nested = false,
+}: {
+  run: Run
+  runs?: Run[]
+  /** True when drawn inside another hive: the legend is already on screen above. */
+  nested?: boolean
+}) {
+  const [opened, setOpened] = useState<string[]>([])
+
   if (!run.topology) return null
 
   const { nodes, edges, height } = layoutHive(run.topology)
   const statusOf = (id: string) => nodeStatus(run, id)
 
+  // A subgraph node is a whole graph. It can only be opened once the nested run has
+  // reported: an empty panel would say "nothing happened in here", which is not the same
+  // as "we have not been told yet".
+  const nestedNodes = nodes
+    .map((node) => ({ node, child: childRunOf(runs, run.id, node.id) }))
+    .filter((entry) => entry.child !== undefined)
+
+  const toggle = (id: string) =>
+    setOpened((current) =>
+      current.includes(id) ? current.filter((n) => n !== id) : [...current, id],
+    )
+
   return (
     <>
-      <ul className={styles.legend}>
-        {(['active', 'done', 'pending', 'failed'] as NodeStatus[]).map((s) => (
-          <li key={s} className={styles.legendItem}>
-            <span
-              className={styles.legendDot}
-              style={{ '--dot-colour': statusColour[s] } as React.CSSProperties}
-              aria-hidden="true"
-            />
-            {fr.hive.status[s]}
-          </li>
-        ))}
-      </ul>
+      {!nested && (
+        <ul className={styles.legend}>
+          {(['active', 'done', 'pending', 'failed'] as NodeStatus[]).map((s) => (
+            <li key={s} className={styles.legendItem}>
+              <span
+                className={styles.legendDot}
+                style={{ '--dot-colour': statusColour[s] } as React.CSSProperties}
+                aria-hidden="true"
+              />
+              {fr.hive.status[s]}
+            </li>
+          ))}
+        </ul>
+      )}
 
       <svg
         className={styles.frame}
@@ -92,6 +119,34 @@ export function HiveGraph({ run }: { run: Run }) {
           )
         })}
       </svg>
+
+      {nestedNodes.map(({ node, child }) => {
+        const isOpen = opened.includes(node.id)
+        return (
+          <div key={node.id} className={styles.nested}>
+            <button
+              type="button"
+              className={styles.nestedToggle}
+              aria-expanded={isOpen}
+              onClick={() => toggle(node.id)}
+            >
+              <span className={styles.nestedChevron} aria-hidden="true">
+                {isOpen ? '▼' : '▶'}
+              </span>
+              {isOpen ? fr.hive.closeNested(node.id) : fr.hive.openNested(node.id)}
+            </button>
+
+            {isOpen && (
+              <div className={styles.nestedBody}>
+                <p className={styles.nestedLabel}>{fr.hive.nestedOf(node.id)}</p>
+                {/* The same component, so a sub-agent reads in the language its parent
+                    already taught the reader. Recursion also means depth costs nothing. */}
+                <HiveGraph run={child!} runs={runs} nested />
+              </div>
+            )}
+          </div>
+        )
+      })}
     </>
   )
 }
