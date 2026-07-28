@@ -12,8 +12,9 @@ at the baseline commit.
 
 **kern-orch** — `dev`, 8 packages green, `main` behind `dev`.
 
-Neither `dev` has been merged to `main`. That is a deliberate pause, not an oversight: merge
-when you want a stable milestone.
+**Milestone posted 2026-07-28**: `dev` merged to `main` in both repos, tagged **v0.1.0** here
+and **v0.4.0** in kern-orch. Deliberately before the three chantiers ahead — sandbox,
+authentication, daemon — rather than after, since they move a great deal at once.
 
 ### What runs
 
@@ -174,9 +175,8 @@ someone other than this repo to answer.
 multi-comptes"*. That is now false and has been rewritten. It was the premise under several
 choices already made — anything resting on it deserves a second look.
 
-**Should `dev` merge to `main`?** Still unanswered, and now worth more than before: the three
-chantiers ahead — sandbox, authentication, daemon — will move a great deal at once. A marked
-point to come back to costs almost nothing today.
+**Should `dev` merge to `main`?** Answered by doing it, 2026-07-28. Everything above is
+behind `v0.1.0` / `v0.4.0`.
 
 ---
 
