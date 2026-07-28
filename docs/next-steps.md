@@ -5,6 +5,33 @@ Written 2026-07-26, updated 2026-07-27 when the skills registry shipped. Read th
 
 ---
 
+## Où j'en suis
+
+> Bloc court, tenu à jour **à chaque feature fusionnée** — pas seulement en fin de session.
+> Il existe pour qu'une reprise n'ait pas à relire le code. Le reste du fichier donne le
+> pourquoi ; celui-ci donne la position.
+
+**Dernier livré** — 2026-07-28 : TLS (`feature/tls`). Une adresse publique est servie
+chiffrée ou pas du tout. Avant : l'authentification de l'API.
+
+**En cours** — rien. Le prochain point de la liste ci-dessous.
+
+**Ensuite, dans l'ordre**
+1. `kern-exec` — le bac à sable. Le trou le plus ancien, et dans un autre repo.
+2. `kern-orch` en démon — décidé le 2026-07-28 ; c'est ce qui débloque C5 (les valeurs de
+   l'Espace) et rend possible l'instance centralisée.
+3. `C12` — la messagerie (Telegram d'abord, un bot et un jeton).
+4. `C6` — le pilotage : arrêter, valider, refuser. C'est là qu'arrive « qui a demandé cette
+   mission », pas avant.
+
+**Petites choses notées, non bloquantes**
+- Les identifiants d'étapes s'affichent bruts (`prep`, `nested`). Corriger en amont dans les
+  graphes, ou ajouter un libellé optionnel au contrat.
+- Le rendu mobile n'a **jamais** été vérifié à l'œil : `resize_window` ne fonctionne pas dans
+  la session navigateur. À voir sur un vrai téléphone.
+
+---
+
 ## State
 
 **kern-ui** — `dev`, 14 features merged, 117 front tests + 4 Go packages green, `main` still
@@ -99,9 +126,9 @@ machine also reads everything.
 The binary **refuses to listen** on a public address without a token and at least one
 account. A warning scrolls past; a process that will not start does not.
 
-**TLS is still missing**, and it is the next thing this needs. Passwords and sessions travel
-in clear without it, which a startup warning says out loud. A reverse proxy in front is
-enough; kern-ui terminating TLS itself is a separate decision.
+**TLS shipped the same day.** A public address is served encrypted or not at all: kern-ui
+terminates it, or a declared reverse proxy does. The refusal replaced the warning, on the
+same reasoning that produced the refusal about credentials.
 
 Not built, deliberately: **who asked for a mission**. No mission is started from the
 interface yet, so the field could only be empty or false. It arrives with steering.

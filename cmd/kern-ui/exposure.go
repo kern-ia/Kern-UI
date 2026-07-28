@@ -1,49 +1,79 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"strings"
 )
 
-// checkExposure refuses to serve a public address without credentials.
+// exposure is everything that decides whether this server may listen where it was told to.
+type exposure struct {
+	addr          string
+	producerToken string
+	accounts      int
+	// tls is true when this process serves TLS itself.
+	tls bool
+	// trustProxy is true when something in front terminates TLS and we were told so. It has
+	// to be told: any client can forge the header that would otherwise reveal it.
+	trustProxy bool
+}
+
+// checkExposure refuses to serve a public address unprotected.
 //
-// This is the one check that closes the hole rather than describing it. A warning in a log
+// This is the one check that closes a hole rather than describing it. A warning in a log
 // scrolls past on the first busy day, and an open API does not announce itself — the only
 // failure nobody can miss is the process not starting. Local development keeps its
 // frictionless path, because nothing off the machine can reach a loopback address anyway.
-func checkExposure(addr, producerToken string, accounts int) error {
-	if !isPublic(addr) {
+//
+// Two things are checked, and the second is the one that arrived late: credentials, and
+// whether they travel in clear. Asking for a password over plain http protects against a
+// bystander and not against a network, which is the more dangerous of the two illusions.
+func checkExposure(e exposure) error {
+	if !isPublic(e.addr) {
 		return nil
 	}
 
 	var missing []string
-	if producerToken == "" {
+	if e.producerToken == "" {
 		missing = append(missing, "KERN_UI_TOKEN (the secret a producer presents)")
 	}
-	if accounts == 0 {
+	if e.accounts == 0 {
 		missing = append(missing, "KERN_UI_ACCOUNTS (a file with at least one account — see `kern-ui useradd`)")
 	}
-	if len(missing) == 0 {
-		return nil
+	if len(missing) > 0 {
+		return fmt.Errorf(
+			"refusing to listen on %s with no protection: set %s.\n"+
+				"Anyone who can reach this address would read every mission and be able to inject false ones.\n"+
+				"To run locally instead, leave KERN_UI_ADDR at 127.0.0.1:7777",
+			e.addr, strings.Join(missing, " and "))
 	}
 
-	return fmt.Errorf(
-		"refusing to listen on %s with no protection: set %s.\n"+
-			"Anyone who can reach this address would read every mission and be able to inject false ones.\n"+
-			"To run locally instead, leave KERN_UI_ADDR at 127.0.0.1:7777",
-		addr, strings.Join(missing, " and "))
+	if !e.tls && !e.trustProxy {
+		return fmt.Errorf(
+			"refusing to serve %s over plain http: the password and the session would travel in clear,\n"+
+				"so authenticating would protect against a bystander and not against a network.\n"+
+				"Three ways forward:\n"+
+				"  · serve TLS here — set KERN_UI_TLS_CERT and KERN_UI_TLS_KEY\n"+
+				"  · put a reverse proxy in front that terminates TLS — then set KERN_UI_TRUST_PROXY=1\n"+
+				"  · stay local — leave KERN_UI_ADDR at 127.0.0.1:7777",
+			e.addr)
+	}
+	return nil
 }
 
-// exposureWarning returns what an operator should know but which does not justify refusing
-// to start. TLS is a deployment decision — a reverse proxy usually terminates it — so this
-// says its piece and gets out of the way. It must never be silent.
-func exposureWarning(addr string) string {
-	if !isPublic(addr) {
-		return ""
+// checkTLSPair rejects half a certificate. Configuring one of the two is a mistake worth
+// naming, rather than a plain-http deployment worth starting.
+func checkTLSPair(certFile, keyFile string) error {
+	switch {
+	case certFile == "" && keyFile == "":
+		return nil
+	case certFile == "":
+		return errors.New("KERN_UI_TLS_KEY is set without KERN_UI_TLS_CERT")
+	case keyFile == "":
+		return errors.New("KERN_UI_TLS_CERT is set without KERN_UI_TLS_KEY")
 	}
-	return "serving a public address over plain http: passwords and sessions travel in clear. " +
-		"Put TLS in front of this before anyone logs in over a network."
+	return nil
 }
 
 // isPublic reports whether addr can be reached from another machine.

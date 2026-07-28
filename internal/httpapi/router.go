@@ -60,6 +60,11 @@ type Config struct {
 
 	// Sessions holds the browser sessions. Created on first use.
 	Sessions *auth.Sessions
+
+	// TrustProxy says something in front terminates TLS, so `X-Forwarded-Proto` may be
+	// believed. It must be opt-in: any client can set that header, and believing it by
+	// default would let a caller decide their own connection is safe.
+	TrustProxy bool
 }
 
 func (c *Config) fillDefaults() {
@@ -116,7 +121,7 @@ func NewRouterWithDeps(cfg *Config) http.Handler {
 		mux.Handle("GET /", http.FileServer(http.Dir(cfg.WebDir)))
 	}
 
-	return mux
+	return s.withTransportSecurity(mux)
 }
 
 type server struct {

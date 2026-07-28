@@ -112,9 +112,9 @@ func (s *server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		// stolen page from taking the session with it.
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
-		// Secure is set only behind TLS: forcing it on plain http would make the cookie
-		// silently vanish on a loopback development server.
-		Secure: r.TLS != nil,
+		// Secure only where the connection actually is: forcing it on plain http would make
+		// the cookie silently vanish on a loopback development server.
+		Secure: s.overTLS(r),
 	})
 	writeJSON(w, http.StatusOK, map[string]string{"name": body.Name})
 }
@@ -146,4 +146,30 @@ func (s *server) handleSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"name": name})
+}
+
+// overTLS reports whether the browser reached us over an encrypted connection.
+//
+// `r.TLS` answers it when we terminate TLS ourselves. Behind a reverse proxy the hop to us
+// is plain http and `r.TLS` is nil, even though the browser used https — so the proxy's
+// header is the only source, and it counts **only** when we were told to trust one. Any
+// client can set that header; believing it unconditionally would let a caller declare their
+// own connection safe and collect a Secure cookie over http.
+func (s *server) overTLS(r *http.Request) bool {
+	if r.TLS != nil {
+		return true
+	}
+	return s.cfg.TrustProxy && strings.EqualFold(r.Header.Get("X-Forwarded-Proto"), "https")
+}
+
+// withTransportSecurity tells a browser that reached us over TLS never to come back over
+// plain http. Sent only on encrypted connections: over http it means nothing, and on a
+// development machine it would pin localhost to https for months.
+func (s *server) withTransportSecurity(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if s.overTLS(r) {
+			w.Header().Set("Strict-Transport-Security", "max-age=31536000")
+		}
+		next.ServeHTTP(w, r)
+	})
 }

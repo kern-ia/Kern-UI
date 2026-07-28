@@ -314,3 +314,20 @@ l'attente avait seulement migré du moteur vers la sortie du processus.
   compte inconnu répond plus vite et la page devient un annuaire du personnel.
 - L'authentification sans TLS ne protège que d'un curieux, pas d'un réseau. Livrer l'une en
   laissant croire que l'autre est faite serait pire que de n'avoir rien livré.
+
+## 2026-07-28 — TLS
+
+**A fonctionné**
+- Reprendre le raisonnement de la veille plutôt qu'en inventer un autre : « un avertissement
+  se rate » valait pour les identifiants manquants, il vaut pour le clair. Cohérence obtenue
+  en réutilisant l'argument, pas en le redécouvrant.
+- Nommer les trois issues dans le message de refus. Un refus sans issue se contourne par la
+  première variable d'environnement trouvée sur un forum.
+
+**À surveiller**
+- **Un drapeau de sécurité qui dépend de la connexion locale est faux derrière un proxy.**
+  `r.TLS` est nul alors que le navigateur a bien utilisé https : le cookie partait sans
+  `Secure`. Le défaut datait de la veille et aucun test ne le voyait, parce que tous les
+  tests parlent directement au routeur — jamais à travers un intermédiaire.
+- Croire un en-tête `X-Forwarded-*` par défaut, c'est laisser l'appelant décider qu'il est
+  en sécurité. Toujours conditionner à une déclaration explicite d'exploitation.

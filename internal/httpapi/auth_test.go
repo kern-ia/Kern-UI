@@ -266,3 +266,70 @@ func TestAnUnconfiguredRouterStaysOpen(t *testing.T) {
 		t.Errorf("status = %d, want 200 with no credentials configured", rec.Code)
 	}
 }
+
+// Behind a reverse proxy the connection to us is plain http even though the browser used
+// https, so `r.TLS` is nil and the cookie would go out without Secure — replayable over
+// http. Trusting the proxy's header is the only way to know, and it must be opt-in: any
+// client can forge `X-Forwarded-Proto` when nothing is in front of us.
+func TestTheCookieIsSecureBehindATrustedProxy(t *testing.T) {
+	hash, _ := auth.HashPassword(operatorPass)
+	accounts, _ := auth.LoadAccountsFromLines([]string{operatorName + ":" + hash})
+	h := NewRouter(Config{ProducerToken: producerToken, Accounts: accounts, TrustProxy: true})
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/login",
+		strings.NewReader(`{"name":"`+operatorName+`","password":"`+operatorPass+`"}`))
+	req.Header.Set("X-Forwarded-Proto", "https")
+	h.ServeHTTP(rec, req)
+
+	for _, c := range rec.Result().Cookies() {
+		if c.Name == sessionCookie && !c.Secure {
+			t.Error("the session cookie went out without Secure behind a TLS proxy")
+		}
+	}
+}
+
+// The same header from an untrusted client must change nothing, or Secure becomes something
+// the attacker sets.
+func TestAForgedForwardedHeaderIsIgnored(t *testing.T) {
+	h := guarded(t) // TrustProxy is off
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/login",
+		strings.NewReader(`{"name":"`+operatorName+`","password":"`+operatorPass+`"}`))
+	req.Header.Set("X-Forwarded-Proto", "https")
+	h.ServeHTTP(rec, req)
+
+	for _, c := range rec.Result().Cookies() {
+		if c.Name == sessionCookie && c.Secure {
+			t.Error("an unverified header decided the cookie was safe")
+		}
+	}
+}
+
+// Once a browser has reached us over TLS, it must not be talked back down to http.
+func TestHSTSIsSentOverTLS(t *testing.T) {
+	hash, _ := auth.HashPassword(operatorPass)
+	accounts, _ := auth.LoadAccountsFromLines([]string{operatorName + ":" + hash})
+	h := NewRouter(Config{Accounts: accounts, TrustProxy: true})
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
+	req.Header.Set("X-Forwarded-Proto", "https")
+	h.ServeHTTP(rec, req)
+
+	if got := rec.Header().Get("Strict-Transport-Security"); got == "" {
+		t.Error("no Strict-Transport-Security over a TLS connection")
+	}
+}
+
+// Sending HSTS over plain http is meaningless, and on a development machine it would pin
+// localhost to https in the browser for months.
+func TestHSTSIsNotSentOverPlainHTTP(t *testing.T) {
+	rec := httptest.NewRecorder()
+	NewRouter(Config{}).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/healthz", nil))
+
+	if got := rec.Header().Get("Strict-Transport-Security"); got != "" {
+		t.Errorf("HSTS = %q over plain http; a browser would pin localhost to https", got)
+	}
+}
