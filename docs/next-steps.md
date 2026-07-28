@@ -11,11 +11,18 @@ Written 2026-07-26, updated 2026-07-27 when the skills registry shipped. Read th
 > Il existe pour qu'une reprise n'ait pas à relire le code. Le reste du fichier donne le
 > pourquoi ; celui-ci donne la position.
 
-**Dernier livré** — 2026-07-28 : le rendu mobile (`feature/mobile`), enfin vérifié à l'œil et
-corrigé — quatre défauts, dont une navigation inatteignable. Avant : TLS, puis
-l'authentification de l'API.
+**Dernier livré** — 2026-07-28 : `kern-orch serve` (`feature/daemon-mode`, dans Kern-Orch).
+kern-orch peut tourner en service, accepter des runs par HTTP, les exécuter en tâche de
+fond. C'est le PRÉREQUIS de C5 (lecture des outils/Espace), pas C5 elle-même — aucun outil
+n'est encore lisible depuis l'extérieur. Avant : le rendu mobile, TLS, l'authentification.
 
 **En cours** — rien. Le prochain point de la liste ci-dessous.
+
+**Ce que le mode démon débloque concrètement, et ce qu'il ne débloque pas encore**
+- Débloqué : une instance centralisée est maintenant possible (un process qui reste vivant).
+- PAS débloqué : C5 lui-même. Il reste à écrire le format de tool réutilisable et le
+  chargement des tools depuis les skills (EPIC-03, kern-orch), puis le contrat côté kern-ui
+  qui lit une valeur de widget. Ne pas commencer l'Espace en supposant que C5 est prêt.
 
 **Ensuite, dans l'ordre**
 1. `kern-exec` — le bac à sable. Le trou le plus ancien, et dans un autre repo.

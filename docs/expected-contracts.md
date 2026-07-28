@@ -152,11 +152,11 @@ nothing — and the Grimoire draws a different screen for each.
 **Producer** kern-tools 🟡. **Now the only thing standing between the Espace and its
 widgets** — since C4, the interface knows which tools exist.
 
-**It needed a process before it needed a schema**, and that process was decided on
-2026-07-28: **kern-orch becomes a daemon**. A widget value refreshes on a clock, independently
-of runs, and until then nothing was alive between two graphs to push or be polled. The
-prerequisite is now work rather than a question — the daemon first (kern-orch EPIC-03), this
-contract on top.
+**It needed a process before it needed a schema.** That process shipped 2026-07-28:
+`kern-orch serve` runs as a long-lived service, accepting runs over HTTP. It is the
+prerequisite, not C5 itself — no tool is readable or invokable through it yet. What remains
+in kern-orch (EPIC-03): a reusable tool format, and loading tools from skills. Only once
+those exist does this contract have anything to read from.
 
 **Why** An Espace widget is not just a name: it shows a live measurement — *Pull requests
 ouvertes 4*, *Messages non lus 12*, *Prochain rendez-vous 14:30*. That value has to be read
