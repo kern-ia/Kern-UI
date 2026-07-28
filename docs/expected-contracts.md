@@ -30,7 +30,8 @@ are statements of need. The one contract that exists is specified in [README.md]
 | C8 | Documents and suggestions | kern-memory ⬜ + kern-pilot ⬜ | Rédaction | missing |
 | C9 | Browser session and approval queue | kern-exec ⬜ + kern-pilot ⬜ | Navigateur | missing |
 | C10 | `kern.activity/v1` — live activity signal | kern-orch ✅ | `Réflexion` beacon | **in use** |
-| C11 | Skill & sub-agent authoring | undecided | `Nouveau sous-agent`, `+` compétence | **deferred out of the POC** |
+| C11 | Skill & sub-agent authoring | undecided | `Nouveau sous-agent`, `+` compétence | **deferred; may become graph authoring** |
+| C12 | Messaging channel — notify and be commanded | kern-pilot ⬜ + an external platform 🔌 | Phone reacting; a second command surface | **scope confirmed 2026-07-28** |
 
 **C11 was added on 2026-07-27**, from building C4: it is the first entry on this list that
 is a decision before it is a schema, and it is stated so nobody has to rediscover it.
@@ -264,10 +265,19 @@ sub-agent red for ever, which reads as a statement about the present and was not
 
 ## C11 — Skill and sub-agent authoring · **deferred, 2026-07-28**
 
-> **Decided: not in the POC.** Creating agents arrives "progressively, in a second phase".
-> That is a calendar decision, not a design one — the three questions below are untouched and
-> will all need answering the day it comes back. The Grimoire's `+` stays drawn and disabled,
-> now because it was decided rather than because something is missing.
+> **Decided: not in the POC, and its shape moved.** Creating agents is out of the mobile
+> surface, reserved to the Kern team at first, and — the part that matters here — is headed
+> towards a **no-code node editor** rather than skill authoring: simple blocks a client wires
+> together, an ultra-simplified n8n in the spirit of Scratch.
+>
+> That is not the same contract. Authoring a SKILL.md is writing a file into a registry;
+> wiring a graph is producing **the YAML kern-orch already loads**. The format exists, so
+> such an editor invents nothing and is a kern-ui feature rather than a brick — which also
+> means what it needs from a producer is closer to "store and run this graph" than to
+> anything in the section below.
+>
+> The three questions below stay open and stay relevant, but read them knowing the object
+> may be a graph rather than a skill. The Grimoire's `+` stays drawn and disabled.
 
 
 
@@ -318,6 +328,39 @@ Only two things, and neither is large: a way to submit a new skill or sub-agent 
 whether it was accepted, and a marker on each catalogue entry saying whether this interface
 may edit it. **The write path deserves its contract before its pixels** — same rule as the
 approval queue in C9.
+
+---
+
+## C12 — Messaging channel · **scope confirmed, contract to write**
+
+**Producer** `kern-pilot` ⬜ for the commands, plus whichever platform the client already
+uses — Telegram, Slack or WhatsApp.
+
+**Why** Decided on 2026-07-28: the phone must react, and rather than building push
+notifications kern-ui borrows a messaging app the client already has. It removes native push,
+store presence and encrypted transport from our plate in one move, and meets a user who has
+never heard of Slack but has WhatsApp on their phone.
+
+**It is not only an output.** The intent is that a run can be *piloted* from the chat —
+stopped, approved, refused, nudged. That makes it a second surface over the same contract as
+the conversation bar, which is C6. One steering contract, two surfaces.
+
+**What it needs, beyond C6.** Two things that have no equivalent in the interface:
+
+- **A binding between a messaging account and a Kern account.** Without it, whoever can
+  message the bot can steer an agent. This is authentication living outside our own surface,
+  and it carries the same weight as C9's approval queue.
+- **Outbound delivery that survives the platforms' differences.** A Telegram bot is a token.
+  A Slack app is installed per workspace. WhatsApp needs a verified Meta business account and
+  pre-approved templates for any message we initiate, billed per conversation. The contract
+  should name *what* is being said and let an adapter decide how — otherwise WhatsApp's
+  constraints leak into every caller.
+
+**Not settled, and worth settling before shipping rather than before prototyping.** Whether
+a critical approval may be given by chat at all, or only in the interface. And where the data
+goes: routing a company's work through Meta's or Telegram's servers is a data-processing
+question, most likely a GDPR one before an AI Act one. Neither is something this repo can
+answer on its own.
 
 ---
 
