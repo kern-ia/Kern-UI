@@ -5,7 +5,9 @@
 `../Kern-Orch/docs/ROADMAP.md`, où elle figure comme brique externe au CORE). Le travail
 des agents se passe aujourd'hui dans un terminal : invisible, non pilotable, impossible à
 reprendre en main. **Problème n°1 : rendre lisible et pilotable ce que font les agents,
-sous-agents, skills et serveurs MCP.** Usage interne Kern, pas de produit multi-comptes.
+sous-agents, skills et serveurs MCP.** Usage entreprise : **plusieurs utilisateurs
+simultanés**, tranché au brainstorming du 2026-07-28 (`docs/brainstorming_28_07_2026.html`,
+proposition 02). Cette ligne disait l'inverse jusque-là — voir `docs/a-trancher.md`.
 
 ## Objectifs
 1. Afficher en temps réel l'état des runs orchestrés par `kern-orch`.
@@ -43,7 +45,13 @@ sous-agents, skills et serveurs MCP.** Usage interne Kern, pas de produit multi-
   checkpoints — un schéma interne n'est pas un contrat.
 - Temps réel : **SSE** (`GET /api/v1/stream`, snapshot puis mises à jour), pilotage en POST.
 - Les contrats `kern-obs` et `kern-pilot` émergent des besoins réels de l'UI.
-- Transport vers l'instance centralisée, authentification : _à décider_.
+- **Authentification : obligatoire, pas optionnelle** (tranché 2026-07-28). Comptes
+  individuels, accès sécurisé par collaborateur. Un `Run` devra porter son demandeur — le
+  champ n'existe pas encore.
+- **`kern-orch` passe en mode démon** (tranché 2026-07-28) : un service qui tourne, plus une
+  commande qu'on lance. C'est ce qui débloque la lecture des outils (C5), impossible tant que
+  rien n'est vivant entre deux runs.
+- Transport vers l'instance centralisée : _à décider_.
 
 ## Méthode obligatoire
 - **TDD** : écrire les tests AVANT le code. Go → `go test` ; front → Vitest ; E2E avant merge.

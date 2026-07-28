@@ -47,6 +47,11 @@ cd ../Kern-Orch && KERN_STEP_REPORT_URL=http://127.0.0.1:7777/api/v1/steps \
 | Subject | Decision |
 |---|---|
 | UI backend | **Go for this version.** Confirmed 2026-07-26 after weighing Tauri. |
+| Users | **Multi-user.** Decided 2026-07-28: several people at once, enterprise use. |
+| Authentication | **Mandatory**, individual accounts. Decided 2026-07-28. |
+| kern-orch's nature | **A daemon**, not a command. Decided 2026-07-28. |
+| Confinement | **A sandbox**, control kept outside the agent. Decided 2026-07-28. |
+| Creating sub-agents | **Out of the POC**, deferred. Decided 2026-07-28. |
 | Tauri | **Likely later, not now.** Re-evaluate against the two criteria below. |
 | Rust in the ecosystem | Right tool for `kern-exec` / `kern-guard` / `kern-policy` — they touch syscall-level confinement, which Go handles badly (runtime thread multiplexing vs per-thread seccomp, cgo needed, breaks pure cross-compilation). |
 | Art direction | Grimoire Ambré confirmed. The other two mockups would cost only a `tokens.css`. |
@@ -54,13 +59,20 @@ cd ../Kern-Orch && KERN_STEP_REPORT_URL=http://127.0.0.1:7777/api/v1/steps \
 
 ### What would settle the Tauri question
 
-Two questions, neither answered yet. Answering them decides it; arguing does not.
+Two questions. The first was **half-answered on 2026-07-28** — mobile must show activity and
+**receive notifications**, on restricted views. What is still missing is the reliability
+required: a PWA can receive notifications (iOS 16.4+, with real limits), an installed app
+does it better. The question to put back to the team is narrower than before: *is a missed
+notification an incident, or an inconvenience?*
 
-1. **What must mobile actually do?** Consultation only → today's PWA is enough. Store
-   presence and reliable push → Tauri wins.
-2. **Must policy enforcement share a process with the approval surface?** If yes, a single
-   signed binary holding UI + policy + guard is coherent and Tauri serves it. If the bricks
-   stay separate processes talking by contract, it buys nothing.
+1. ~~What must mobile actually do?~~ **Answered in part**: read activity, manage nodes, get
+   notified — on deliberately restricted views. Only the required reliability of the push is
+   still open.
+2. **Must policy enforcement share a process with the approval surface?** Unanswered, and
+   **more pressing than it was**: remote control — stop, approve, refuse — is now confirmed
+   scope, so an approval surface will exist. If enforcement must sit in the same signed
+   binary as it, Tauri serves that. If the bricks stay separate processes talking by
+   contract, it buys nothing.
 
 Nothing built so far is wasted either way: a Tauri shell wraps this same SPA.
 
@@ -79,16 +91,25 @@ piece of work where Rust is clearly the better tool.
 Belongs to `kern-exec` (⬜ in the roadmap), with `kern-guard` (blocking guardrail) and
 `kern-policy` (rules, budgets, escalation) beside it.
 
-### 2. Authentication and TLS on the kern-ui API
+### 2. Authentication on the kern-ui API · **decided, and it is our brick**
 
-`_à décider_` in CLAUDE.md since the start, and the only thing standing between the current
-binary and a machine other than yours. Verified: `KERN_UI_ADDR=0.0.0.0:7777` already serves
-a remote kern-orch correctly — but with no auth, anyone reachable can read every run and
-inject fake ones.
+No longer `_à décider_`: individual accounts, mandatory. Verified long ago that
+`KERN_UI_ADDR=0.0.0.0:7777` serves a remote kern-orch correctly — and that with no auth,
+anyone reachable reads every run and can inject fake ones.
 
-It stops being optional the moment more than one person uses it. See the open question below.
+**This is the first item on this list that belongs to kern-ui itself**, which makes it the
+natural next piece of work here. Two things travel together and should not be split:
 
-### 3. `C5` — tool invocation and readback · **blocked on a process, not a contract**
+- a caller must prove who it is, on both the ingestion endpoints and the read ones;
+- a run must carry **who asked for it**. That field does not exist, and every run recorded
+  without it is a run that can never be attributed. It costs one field today and a migration
+  later.
+
+One question surfaces at implementation rather than before: where identities come from —
+accounts owned by Kern, or the company's directory. Worth answering before writing, not
+before planning.
+
+### 3. `C5` — tool invocation and readback · **unblocked by the daemon decision**
 
 Since C4 shipped, this is all that stands between the Espace and its widgets. But it cannot
 be built yet, and the reason is structural rather than a missing schema.
@@ -98,12 +119,10 @@ two graphs no kern-orch process is alive, so there is nothing to push and nothin
 Reading tools from kern-ui instead would give the interface a second producer *and* teach it
 how to invoke a tool, which is kern-tools' job.
 
-The prerequisite is already on kern-orch's own roadmap: **EPIC-03, "exposition MCP/API des
-tools (un service unique)"**, sized L. Until something long-running exposes the tools, C5 has
-no producer that can run.
-
-Two ways forward, both deliberate choices rather than defaults: do EPIC-03, or ship widgets
-with an explicit staleness ("12 — il y a 3 h") that only move when a graph runs.
+**Decided 2026-07-28: kern-orch becomes a daemon.** That is exactly the missing prerequisite,
+and it retires the fallback of shipping widgets with an explicit staleness. C5 now waits on
+work rather than on a choice — the daemon first, over in kern-orch (EPIC-03, sized L), then
+this contract on top of it.
 
 ### 4. `C10` — done
 
@@ -118,42 +137,35 @@ team decision before it is work. All stated in the contracts report.
 
 ---
 
-## Open questions, to answer before building
+## Answered, 2026-07-28
 
-Stated in plain language, for a team discussion rather than an implementer, in
-[`a-trancher.md`](a-trancher.md) — which covers the whole set, including the ones that live
-in the ordered list above.
+The brainstorming (`brainstorming_28_07_2026.html`) settled five of the seven questions this
+file used to carry. Stated in plain language, with what follows from each, in
+[`a-trancher.md`](a-trancher.md).
 
-**Does Kern-IA become multi-user?** CLAUDE.md says *"Usage interne Kern, pas de produit
-multi-comptes"*. The question "can one agent receive tasks from several employees" makes
-that line false if the answer is yes, and it changes:
+| Question | Answer | What it changes here |
+|---|---|---|
+| Multi-user? | **Yes** — several people at once | A run must carry who asked for it. The field does not exist. Authentication stops being optional. |
+| Authentication | **Mandatory**, individual accounts | Promoted to the top of the ordered list below |
+| Confinement | **Sandbox**, control kept outside | `kern-exec` confirmed, at its full scope rather than a quick restriction |
+| Tools always available? | **Yes — kern-orch becomes a daemon** | Unblocks C5, and changes what kern-orch *is* |
+| Creating sub-agents | **Deferred**, out of the POC | C11 stays unanswered on purpose; the Grimoire's `+` stays disabled by decision |
 
-- `Run` gains an owner — the field does not exist today;
-- a queue per agent, with arbitration between submitters (`kern-pilot`);
-- who may steer what (`kern-policy`);
-- authentication becomes mandatory, not `_à décider_`;
-- the conversation stone becomes per-user, not global.
+Also confirmed as scope rather than a question: **remote control** — stop an agent, approve
+or refuse one of its decisions, trigger a simple action. That is C6, `kern-pilot`.
 
-**This premise gates items 2, 5 and part of 3.** It is a product decision, not a technical
-one. Answer it before writing `kern-pilot`.
+**Still open.** How mobile notifications are delivered — a PWA can receive them, an installed
+app does it better, and nothing said which reliability is required (see decision 6). And the
+milestone below. Two more will surface during implementation rather than before: where
+identities come from, and how wide the sandbox is.
 
-**Who owns the authoring of skills and sub-agents?** Raised 2026-07-27, on the back of C4.
-A sub-agent is a skill with `type: agent` — one field, one flat directory, read-only. Nothing
-can create one, so the storage question only bites for a sub-agent that is *created*.
+**One correction this forces.** CLAUDE.md said *"Usage interne Kern, pas de produit
+multi-comptes"*. That is now false and has been rewritten. It was the premise under several
+choices already made — anything resting on it deserves a second look.
 
-Three decisions, entangled, stated in full in
-[`docs/expected-contracts.md`](expected-contracts.md) as **C11**:
-
-1. one tier or two — shipped skills versus created ones;
-2. who writes — recommendation: kern-pilot commands, kern-orch writes, because whoever reads
-   a directory should be the one who writes it;
-3. the multi-user question below, which decides whether a created sub-agent needs an owner.
-
-**This is a team decision, not a technical one.** It blocks the Grimoire's `+`, nothing else
-— C5 and C10 are read paths and proceed without it.
-
-**Should `dev` merge to `main`?** Both repos have unmerged work. A milestone tag would make
-the Tauri re-evaluation easier to reason about later.
+**Should `dev` merge to `main`?** Still unanswered, and now worth more than before: the three
+chantiers ahead — sandbox, authentication, daemon — will move a great deal at once. A marked
+point to come back to costs almost nothing today.
 
 ---
 

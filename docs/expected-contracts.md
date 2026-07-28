@@ -30,7 +30,7 @@ are statements of need. The one contract that exists is specified in [README.md]
 | C8 | Documents and suggestions | kern-memory ⬜ + kern-pilot ⬜ | Rédaction | missing |
 | C9 | Browser session and approval queue | kern-exec ⬜ + kern-pilot ⬜ | Navigateur | missing |
 | C10 | `kern.activity/v1` — live activity signal | kern-orch ✅ | `Réflexion` beacon | **in use** |
-| C11 | Skill & sub-agent authoring | **undecided — that is the question** | `Nouveau sous-agent`, `+` compétence | **decision first** |
+| C11 | Skill & sub-agent authoring | undecided | `Nouveau sous-agent`, `+` compétence | **deferred out of the POC** |
 
 **C11 was added on 2026-07-27**, from building C4: it is the first entry on this list that
 is a decision before it is a schema, and it is stated so nobody has to rediscover it.
@@ -151,12 +151,11 @@ nothing — and the Grimoire draws a different screen for each.
 **Producer** kern-tools 🟡. **Now the only thing standing between the Espace and its
 widgets** — since C4, the interface knows which tools exist.
 
-**It needs a process before it needs a schema.** A widget value must refresh on a clock,
-independently of runs. kern-orch is a CLI: between two graphs no kern-orch process is alive,
-so there is nothing to push and nothing to poll. Neither transport works until the tools are
-exposed by something long-running — which is exactly EPIC-03's "exposition MCP/API des
-tools" in the roadmap. Writing the payload shape before that exists would be designing for a
-producer that cannot run.
+**It needed a process before it needed a schema**, and that process was decided on
+2026-07-28: **kern-orch becomes a daemon**. A widget value refreshes on a clock, independently
+of runs, and until then nothing was alive between two graphs to push or be polled. The
+prerequisite is now work rather than a question — the daemon first (kern-orch EPIC-03), this
+contract on top.
 
 **Why** An Espace widget is not just a name: it shows a live measurement — *Pull requests
 ouvertes 4*, *Messages non lus 12*, *Prochain rendez-vous 14:30*. That value has to be read
@@ -174,6 +173,11 @@ deliberately rather than by accident.
 ## C6 — Steering channel · missing
 
 **Producer** kern-pilot ⬜ (steer · queue · replan · nudge).
+
+**Confirmed scope on 2026-07-28**, not a hypothesis any more: stopping an agent, approving or
+refusing one of its decisions, and triggering a simple action are all wanted. Multi-user was
+decided in the same session, so this contract carries **who** is steering from the start —
+retrofitting an actor onto a write path is the expensive kind of change.
 
 **Why** Three separate things in the mockup need it, and all three are inert today:
 
@@ -258,7 +262,14 @@ sub-agent red for ever, which reads as a statement about the present and was not
 
 ---
 
-## C11 — Skill and sub-agent authoring · **decision first, contract second**
+## C11 — Skill and sub-agent authoring · **deferred, 2026-07-28**
+
+> **Decided: not in the POC.** Creating agents arrives "progressively, in a second phase".
+> That is a calendar decision, not a design one — the three questions below are untouched and
+> will all need answering the day it comes back. The Grimoire's `+` stays drawn and disabled,
+> now because it was decided rather than because something is missing.
+
+
 
 **Producer** Undecided. Which brick produces this *is* the open question, and it has to be
 settled by people before anything is written.
