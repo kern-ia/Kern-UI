@@ -172,5 +172,3 @@ the Tauri re-evaluation easier to reason about later.
   says it waits for kern-pilot — same treatment as the conversation bar.
 - **Sub-graph nodes draw as single nodes.** Nesting the child's hive needs the child's
   topology, which nothing sends.
-- **The reporter is synchronous** in kern-orch: a slow sink slows the graph, capped at 2 s
-  per level.

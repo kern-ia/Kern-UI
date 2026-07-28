@@ -101,7 +101,8 @@ is rejected.
 - **`202 Accepted`** on success, **`400`** on a payload violating the schema. A `400` is a
   producer bug, not a transient failure — retrying will not help.
 - **Reporting is never load-bearing.** A producer must treat this endpoint as best-effort
-  and must not fail a run because kern-ui is slow, broken or absent.
+  and must not fail a run because kern-ui is slow, broken or absent — including not running
+  slower for it. kern-orch queues levels and delivers them from a single worker, in order.
 
 #### `ActivityEvent` — contract `kern.activity/v1`
 

@@ -232,3 +232,12 @@ Ce qui a fonctionné ou non, noté au moment où ça mord. Append only.
   selon le `node_id` reçu sur stdin.
 - Le moteur renvoyait la PREMIÈRE erreur du niveau et jetait les autres, alors que `wg.Wait()`
   les avait toutes. Collecter avant de renvoyer ne coûte rien et évite de perdre ce qu'on a.
+
+## 2026-07-28 — rapporteur asynchrone (côté kern-orch)
+
+**À retenir ici, même si le code est dans l'autre repo**
+- Le contrat d'ingestion promettait « best-effort » côté producteur ; il ne disait pas que
+  le producteur ne devait pas non plus RALENTIR pour nous. C'est écrit maintenant.
+- L'ordre des steps est une garantie dont dépend la projection (`ev.Step <= run.Step` rejette
+  un niveau périmé). Si un jour un producteur livre en parallèle, la projection perdra des
+  frontières sans rien signaler. Le README le dit désormais explicitement.
