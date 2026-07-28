@@ -11,8 +11,9 @@ Written 2026-07-26, updated 2026-07-27 when the skills registry shipped. Read th
 > Il existe pour qu'une reprise n'ait pas à relire le code. Le reste du fichier donne le
 > pourquoi ; celui-ci donne la position.
 
-**Dernier livré** — 2026-07-28 : TLS (`feature/tls`). Une adresse publique est servie
-chiffrée ou pas du tout. Avant : l'authentification de l'API.
+**Dernier livré** — 2026-07-28 : le rendu mobile (`feature/mobile`), enfin vérifié à l'œil et
+corrigé — quatre défauts, dont une navigation inatteignable. Avant : TLS, puis
+l'authentification de l'API.
 
 **En cours** — rien. Le prochain point de la liste ci-dessous.
 
@@ -27,8 +28,9 @@ chiffrée ou pas du tout. Avant : l'authentification de l'API.
 **Petites choses notées, non bloquantes**
 - Les identifiants d'étapes s'affichent bruts (`prep`, `nested`). Corriger en amont dans les
   graphes, ou ajouter un libellé optionnel au contrat.
-- Le rendu mobile n'a **jamais** été vérifié à l'œil : `resize_window` ne fonctionne pas dans
-  la session navigateur. À voir sur un vrai téléphone.
+- Le rendu mobile est vérifié depuis le 2026-07-28, par une page qui charge l'application
+  dans un cadre à largeur de téléphone (`resize_window` ne fonctionne toujours pas). Reste à
+  confirmer sur un **vrai** appareil : le tactile et les barres du système ne se simulent pas.
 
 ---
 
@@ -211,9 +213,9 @@ behind `v0.1.0` / `v0.4.0`.
 - **No persistence.** Restarting kern-ui empties the projection. Assumed: kern-orch stays
   authoritative. The day finished-run history matters, ask kern-orch for it — do not copy it
   here.
-- **Mobile never verified visually.** `resize_window` reports success and does not resize
-  the window — confirmed again on 2026-07-27. The one-column layouts rest on a media query
-  at 720 px. Check on a real phone.
+- **Mobile verified at 2026-07-28**, through a page that loads the app inside a
+  phone-width frame — `resize_window` still does nothing. Four defects found and fixed. What
+  a frame cannot show: touch targets, the system bars, and how a real device scrolls.
 - **The Grimoire has no avatars.** The mockup shows a generative avatar per sub-agent;
   nothing generates one, so the skill's rune stands in. A placeholder image would be
   decoration pretending to be data.

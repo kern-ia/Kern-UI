@@ -16,6 +16,15 @@ export type Dock = 'left' | 'right' | null
 export interface Bounds {
   width: number
   height: number
+  /**
+   * Height of a band at the bottom the stone must stay clear of.
+   *
+   * On a phone the navigation lives there and shares this container. Without it the stone
+   * parks on top of the tabs and the whole interface becomes unreachable. The value comes
+   * from CSS — see `--stone-bottom-inset` — so the width at which it applies is decided in
+   * one place, beside the media query that moves the navigation.
+   */
+  bottomInset?: number
 }
 
 export interface StonePosition {
@@ -28,16 +37,19 @@ export interface StonePosition {
 export function defaultStone(bounds: Bounds): StonePosition {
   return {
     x: Math.max(EDGE_MARGIN, bounds.width / 2 - 130),
-    y: Math.max(EDGE_MARGIN, bounds.height - 90),
+    y: Math.max(EDGE_MARGIN, bounds.height - 90 - (bounds.bottomInset ?? 0)),
     docked: null,
   }
 }
 
 /** Keeps a dragged position inside the container. */
 export function clampStone(x: number, y: number, bounds: Bounds): { x: number; y: number } {
+  const floor = bounds.height - (bounds.bottomInset ?? 0) - STONE_SIZE
   return {
     x: Math.max(EDGE_MARGIN, Math.min(x, bounds.width - STONE_SIZE)),
-    y: Math.max(EDGE_MARGIN, Math.min(y, bounds.height - STONE_SIZE)),
+    // The outer max wins when the reserved band is taller than the container: better a
+    // stone overlapping the navigation than one pushed off the top of the screen.
+    y: Math.max(EDGE_MARGIN, Math.min(y, floor)),
   }
 }
 

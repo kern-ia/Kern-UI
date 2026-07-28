@@ -5,6 +5,21 @@
   display: block;
 }
 
+/* On a phone the drawing must not be squeezed: a 1000-wide graph scaled into 375 renders
+   its labels at about four pixels. It keeps a legible width and scrolls sideways inside its
+   own container instead — the page itself never scrolls horizontally. */
+.scroller {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+@media (max-width: 719px) {
+  .frame {
+    width: 680px;
+    max-width: none;
+  }
+}
+
 .edge {
   stroke: var(--gold-faint);
   stroke-width: 1;

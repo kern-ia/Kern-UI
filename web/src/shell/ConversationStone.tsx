@@ -40,11 +40,19 @@ export function ConversationStone({ stateColour }: { stateColour: string }) {
     setPosition(next)
   }, [])
 
+  // The reserved band comes from CSS rather than from a breakpoint repeated here: the width
+  // at which the navigation moves to the bottom is decided once, beside the rule that moves
+  // it. Duplicating it in JS is how the two drift apart.
+  const bottomInset = () => {
+    const raw = getComputedStyle(document.documentElement).getPropertyValue('--stone-bottom-inset')
+    return Number.parseFloat(raw) || 0
+  }
+
   const bounds = useCallback((): Bounds | null => {
     const parent = containerRef.current?.parentElement
     if (!parent) return null
     const rect = parent.getBoundingClientRect()
-    return { width: rect.width, height: rect.height }
+    return { width: rect.width, height: rect.height, bottomInset: bottomInset() }
   }, [])
 
   const originOf = useCallback((): DOMRect | null => {
@@ -52,10 +60,23 @@ export function ConversationStone({ stateColour }: { stateColour: string }) {
   }, [])
 
   // The default position depends on the container, so it can only be computed once mounted.
+  //
+  // A restored position is clamped rather than trusted: it may have been stored on a wide
+  // screen and be impossible on this one — below the navigation, or past the right edge —
+  // and a stone nobody can see is a stone nobody can move back.
   useEffect(() => {
-    if (positionRef.current !== null) return
     const b = bounds()
-    if (b) place(defaultStone(b))
+    if (!b) return
+
+    const current = positionRef.current
+    if (current === null) {
+      place(defaultStone(b))
+      return
+    }
+    const inside = clampStone(current.x, current.y, b)
+    if (inside.x !== current.x || inside.y !== current.y) {
+      place({ ...current, ...inside })
+    }
   }, [bounds, place])
 
   useEffect(() => {

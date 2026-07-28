@@ -146,10 +146,13 @@
   }
 }
 
-/* Mobile navigation: the reduced set, docked under the conversation bar. */
+/* Mobile navigation: the reduced set, docked at the bottom.
+   Above the conversation stone on purpose — a stone parked over the tabs makes the whole
+   interface unreachable, and the stone is draggable where the navigation is not. */
 .mobileNav {
   position: sticky;
   bottom: 0;
+  z-index: 50;
   display: flex;
   justify-content: space-around;
   padding: var(--space-2) var(--space-1);

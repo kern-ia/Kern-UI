@@ -52,6 +52,9 @@
   --radius: 10px;
   --radius-pill: 999px;
   --header-height: 64px;
+  /* Height the conversation stone must stay clear of at the bottom. Zero on a wide screen;
+     the mobile navigation claims it below. Read from JS so the breakpoint lives here only. */
+  --stone-bottom-inset: 0px;
 }
 
 *,
@@ -84,6 +87,14 @@ body {
 *::-webkit-scrollbar-thumb {
   background: rgba(232, 201, 138, 0.2);
   border-radius: 3px;
+}
+
+/* Below the mobile breakpoint the navigation sits at the bottom of the shell and the stone
+   shares that container. Reserving the band is what keeps the tabs reachable. */
+@media (max-width: 899px) {
+  :root {
+    --stone-bottom-inset: 64px;
+  }
 }
 
 @keyframes pulse-glow {
