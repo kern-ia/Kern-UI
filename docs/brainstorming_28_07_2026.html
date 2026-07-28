@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brainstorming — Synthèse des 6 Propositions</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.12);
+      --poc-badge: #f59e0b;
+      --poc-glow: rgba(245, 158, 11, 0.12);
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      line-height: 1.6;
+      padding: 2.5rem 1rem;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      max-width: 860px;
+      width: 100%;
+    }
+
+    header {
+      margin-bottom: 2.5rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 1.5rem;
+    }
+
+    .tag {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      background: var(--accent-glow);
+      padding: 0.3rem 0.75rem;
+      border-radius: 20px;
+      margin-bottom: 0.75rem;
+    }
+
+    header h1 {
+      font-size: 2.1rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.02em;
+      margin-bottom: 0.5rem;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+    }
+
+    @media (min-width: 640px) {
+      .grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .span-2 {
+        grid-column: span 2;
+      }
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: border-color 0.2s ease, transform 0.2s ease;
+    }
+
+    .card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    .card-num {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 0.4rem;
+      display: block;
+    }
+
+    .card h2 {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 0.6rem;
+    }
+
+    .card p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    ul {
+      margin-top: 0.6rem;
+      padding-left: 1.2rem;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    li {
+      margin-bottom: 0.3rem;
+    }
+
+    .highlight {
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    .poc-card {
+      border-color: rgba(245, 158, 11, 0.4);
+      background: linear-gradient(180deg, var(--card-bg) 0%, rgba(245, 158, 11, 0.03) 100%);
+    }
+
+    .poc-card .card-num {
+      color: var(--poc-badge);
+    }
+
+    footer {
+      margin-top: 3rem;
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+      padding-top: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <span class="tag">Compte-rendu d'idées</span>
+      <h1>Synthèse du Brainstorming</h1>
+      <p>Les 6 propositions clés abordées lors de la réflexion globale.</p>
+    </header>
+
+    <div class="grid">
+      
+      <!-- Piste 1 -->
+      <div class="card">
+        <span class="card-num">Proposition 01</span>
+        <h2>Sécurisation par "Bac à Sable" (Sandbox)</h2>
+        <p>Isoler l'environnement des agents pour leur laisser la liberté d'action nécessaire dans leur périmètre tout en garantissant que l'orchestrateur garde le contrôle à l'extérieur pour éviter toute action incontrôlée.</p>
+      </div>
+
+      <!-- Piste 2 -->
+      <div class="card">
+        <span class="card-num">Proposition 02</span>
+        <h2>Gestion Multi-utilisateur & Authentification</h2>
+        <p>Concevoir le système pour un usage entreprise (plusieurs utilisateurs simultanés). Cela implique une authentification robuste et une sécurisation stricte des accès pour chaque collaborateur.</p>
+      </div>
+
+      <!-- Piste 3 -->
+      <div class="card span-2">
+        <span class="card-num">Proposition 03</span>
+        <h2>Architecture Système en Mode "Démon"</h2>
+        <p>Faire fonctionner l'orchestrateur en tâche de fond (processus démon). Cette structure technique assurerait la permanence du service et la continuité des processus de gestion des agents sans interruption.</p>
+      </div>
+
+      <!-- Piste 4 -->
+      <div class="card">
+        <span class="card-num">Proposition 04</span>
+        <h2>Suivi d'Activité & Notifications Mobiles</h2>
+        <p>Proposer une interface affichant clairement les actions en temps réel, couplée à des notifications envoyées sur le téléphone de l'utilisateur pour le tenir informé de l'avancement à distance.</p>
+      </div>
+
+      <!-- Piste 5 -->
+      <div class="card">
+        <span class="card-num">Proposition 05</span>
+        <h2>Contrôle à Distance & Validation des Décisions</h2>
+        <p>Donner la possibilité d'intervenir sur les points critiques :</p>
+        <ul>
+          <li><span class="highlight">Stopper :</span> Interrompre un processus en cas d'alerte.</li>
+          <li><span class="highlight">Valider / Refuser :</span> Arbitrer une décision importante de l'agent.</li>
+          <li><span class="highlight">Actions simples :</span> Lancer des commandes directes (ex: envoi de mail).</li>
+        </ul>
+      </div>
+
+      <!-- Piste 6 (Focus POC) -->
+      <div class="card span-2 poc-card">
+        <span class="card-num">Proposition 06 — Cadrage</span>
+        <h2>Stratégie de Déploiement & Focus POC</h2>
+        <p>Mettre l'accent sur la simplicité pour la version de preuve de concept :</p>
+        <ul>
+          <li><span class="highlight">Vues mobiles restreintes :</span> Limitation à l'essentiel (gestion des nœuds et lecture de l'activité).</li>
+          <li><span class="highlight">Intégration différée :</span> Les fonctionnalités complexes (édition de documents, création d'agents) arriveront progressivement dans un second temps.</li>
+        </ul>
+      </div>
+
+    </div>
+
+    <footer>
+      Notes issues de la session de brainstorming
+    </footer>
+  </div>
+
+</body>
+</html>

@@ -5,7 +5,9 @@
 `../Kern-Orch/docs/ROADMAP.md`, où elle figure comme brique externe au CORE). Le travail
 des agents se passe aujourd'hui dans un terminal : invisible, non pilotable, impossible à
 reprendre en main. **Problème n°1 : rendre lisible et pilotable ce que font les agents,
-sous-agents, skills et serveurs MCP.** Usage interne Kern, pas de produit multi-comptes.
+sous-agents, skills et serveurs MCP.** Usage entreprise : **plusieurs utilisateurs
+simultanés**, tranché au brainstorming du 2026-07-28 (`docs/brainstorming_28_07_2026.html`,
+proposition 02). Cette ligne disait l'inverse jusque-là — voir `docs/a-trancher.md`.
 
 ## Objectifs
 1. Afficher en temps réel l'état des runs orchestrés par `kern-orch`.
@@ -23,19 +25,39 @@ sous-agents, skills et serveurs MCP.** Usage interne Kern, pas de produit multi-
   Cinzel pour les titres, Space Grotesk pour le texte).
 
 ## Décisions techniques
-- Backend : **Go**, binaire unique servant le SPA et poussant l'état en temps réel.
-  Cohérent avec `kern-orch` et `kern-anon`. Tauri et Rust écartés : îlot dans un
-  écosystème Go, aucun code partageable avec les autres briques.
+- Backend : **Go pour cette version**, binaire unique servant le SPA et poussant l'état en
+  temps réel. Cohérent avec `kern-orch` et `kern-anon`, et cross-compilable en une commande.
 - Front : React + Vite + TypeScript, servi par le binaire. Mobile via PWA.
-- Coquille native (Wails) : **écartée de la v1**. Elle casserait la cross-compilation
-  (toolchain natif par OS). À réévaluer si le tray et le raccourci global manquent.
+- Coquille native : **hors périmètre de cette version**, Tauri probable ensuite. Deux
+  questions la trancheront, pas le débat : (1) le mobile doit-il être natif — stores et push
+  — ou la consultation suffit-elle ? (2) l'application des politiques doit-elle partager le
+  processus de la surface d'approbation ? Rien n'est perdu : une coquille Tauri enveloppe
+  ce même SPA. Voir `docs/next-steps.md`.
+- Rust reste pertinent pour `kern-exec`, `kern-guard` et `kern-policy` : elles touchent le
+  confinement au niveau syscall, où Go est mauvais (threads du runtime vs seccomp par
+  thread, cgo requis, cross-compilation cassée). Pas pour l'interface, qui ne fait que de
+  la glu réseau.
 - `kern-ui` ne pilote pas les LLM et ne stocke ni l'état des runs ni la mémoire :
   `kern-orch` checkpointe, `kern-memory` mémorise. Sa base locale ne contient que ce qui
   lui appartient — disposition des widgets, préférences, cache d'affichage.
-- Branchement initial : lecture des checkpoints et du CLI `kern-orch` existants ; les
-  contrats `kern-obs` et `kern-pilot` émergent des besoins réels de l'UI.
-- Protocole temps réel (SSE ou WebSocket), transport vers l'instance centralisée,
-  authentification : _à décider_.
+- Ingestion en **push** : `kern-orch` poste chaque niveau terminé sur
+  `POST /api/v1/steps` (`KERN_STEP_REPORT_URL` de son côté). Jamais de lecture de ses
+  checkpoints — un schéma interne n'est pas un contrat.
+- Temps réel : **SSE** (`GET /api/v1/stream`, snapshot puis mises à jour), pilotage en POST.
+- Les contrats `kern-obs` et `kern-pilot` émergent des besoins réels de l'UI.
+- **Authentification : obligatoire, pas optionnelle** (tranché 2026-07-28). Comptes
+  individuels, accès sécurisé par collaborateur. Un `Run` devra porter son demandeur — le
+  champ n'existe pas encore.
+- **Identités : comptes propres à Kern d'abord** (tranché 2026-07-28). L'annuaire de
+  l'entreprise (SSO/LDAP) est une piste à explorer à partir de clients de plus de cinq
+  employés — donc à ne pas exclure par construction, mais à ne pas bâtir maintenant.
+- **Notifications et pilotage mobile : par une messagerie existante**, pas par du push natif
+  (tranché 2026-07-28). Telegram / WhatsApp / Slack selon le client. Conséquence directe : le
+  critère « push fiable » qui plaidait pour une coquille native tombe.
+- **`kern-orch` passe en mode démon** (tranché 2026-07-28) : un service qui tourne, plus une
+  commande qu'on lance. C'est ce qui débloque la lecture des outils (C5), impossible tant que
+  rien n'est vivant entre deux runs.
+- Transport vers l'instance centralisée : _à décider_.
 
 ## Méthode obligatoire
 - **TDD** : écrire les tests AVANT le code. Go → `go test` ; front → Vitest ; E2E avant merge.
@@ -45,12 +67,16 @@ sous-agents, skills et serveurs MCP.** Usage interne Kern, pas de produit multi-
 - **Code et documentation en anglais** : noms, commentaires, commits, tests, `docs/`.
   Seuls les textes affichés à l'utilisateur restent en français, dans les fichiers de
   traduction, jamais en dur dans un composant.
+  Une exception, assumée et unique : `docs/a-trancher.md` est en français. C'est un support
+  de décision destiné à l'équipe, pas au code — le traduire lui ferait perdre son objet.
 - **Git** : `main` ← `dev` ← `feature/xx`. Jamais de commit direct sur main/dev.
   Tests verts avant merge dans `dev`.
 - **Index OKF** : à la fin de chaque feature, créer/mettre à jour `docs/index/<feature>.md`
   (entête YAML : id, feature, branch, status, files, tests, decisions ; corps ≤ 15 lignes).
   Lire `docs/index/` en début de session au lieu de relire tout le code.
 - **Rétro continue** : noter dans `docs/index/retro.md` ce qui a fonctionné ou non.
+- **Reprise de session** : lire `docs/next-steps.md` (état, décisions, suite ordonnée) et
+  `docs/expected-contracts.md` (les 10 contrats attendus, leur producteur, leur état).
 - Suivre le skill `greenfield-tdd-okf` pour le bootstrap et chaque feature.
 
 ## Règles métier clés
@@ -64,7 +90,9 @@ sous-agents, skills et serveurs MCP.** Usage interne Kern, pas de produit multi-
   `kern-vault` et `kern-link`.
 
 ## Commandes
-_à décider_ — à compléter au bootstrap (dev / test / build / cross-compilation).
+- Dev : `make dev` (Go) + `cd web && npm run dev` (SPA, proxy vers :7777)
+- Tests : `make test` · lint : `make lint` · build : `make build` · toutes cibles : `make dist`
+- Alimenter en direct : `KERN_STEP_REPORT_URL=http://127.0.0.1:7777/api/v1/steps` côté kern-orch
 
 BRAIN: ~/brain/kern-ui
 

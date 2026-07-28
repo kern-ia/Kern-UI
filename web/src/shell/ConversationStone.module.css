@@ -1,0 +1,116 @@
+/* The stone and its bubble travel together; the container positions the pair. */
+.group {
+  position: absolute;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  transition: left 0.18s ease, top 0.18s ease;
+}
+
+.group[data-dragging='true'] {
+  transition: none;
+}
+
+/* Docked right, the bubble would overflow: put the stone last so it stays flush. */
+.group[data-docked='right'] {
+  flex-direction: row-reverse;
+}
+
+.stone {
+  width: 46px;
+  height: 46px;
+  flex: none;
+  padding: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #a4703a, #6b4423 65%, #4a2e18 100%);
+  border: 1.5px solid var(--state-idle);
+  box-shadow:
+    0 0 18px rgba(255, 179, 71, 0.6),
+    0 4px 10px rgba(0, 0, 0, 0.5),
+    inset 0 1px 3px rgba(255, 224, 168, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.stone[data-dragging='true'] {
+  cursor: grabbing;
+}
+
+.stone:focus-visible {
+  outline: 2px solid var(--gold-bright);
+  outline-offset: 3px;
+}
+
+.rune {
+  font: 22px var(--font-display);
+  color: #fff3dc;
+  text-shadow: 0 0 6px var(--state-idle);
+  pointer-events: none;
+}
+
+.bubble {
+  /* Two rows: the field must never be squeezed by the note beside it. */
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 2px var(--space-2);
+  min-width: 340px;
+  max-width: min(60vw, 520px);
+  padding: var(--space-3) var(--space-5);
+  background: rgba(20, 14, 9, 0.75);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--bubble-border);
+  border-radius: 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--dot-colour);
+  box-shadow: 0 0 8px var(--dot-colour);
+}
+
+.field {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 13px;
+  background: none;
+  border: 0;
+}
+
+.field::placeholder {
+  color: var(--text-muted);
+}
+
+.field:disabled {
+  cursor: not-allowed;
+}
+
+.note {
+  grid-column: 2;
+  margin: 0;
+  font-size: 10.5px;
+  color: var(--text-dim);
+}
+
+@media (max-width: 719px) {
+  .bubble {
+    min-width: 0;
+    max-width: 62vw;
+  }
+
+  .note {
+    font-size: 10px;
+  }
+}
