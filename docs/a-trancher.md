@@ -1,5 +1,16 @@
 # À trancher
 
+Les décisions qui attendent une réponse humaine, expliquées sans jargon.
+
+> **Pourquoi ce document existe.** `expected-contracts.md` dit la même chose en langage
+> technique, pour ceux qui écrivent le code. Celui-ci s'adresse à ceux qui décident. Les deux
+> restent d'accord : quand une décision est prise ici, elle est reportée là-bas.
+>
+> _Exception assumée aux conventions du repo : tout ce qui vit dans `docs/` est en anglais.
+> Ce fichier est en français parce qu'il sert à une discussion, pas à du code._
+
+Écrit le 2026-07-28, mis à jour le même jour après le brainstorming
+(`brainstorming_28_07_2026.html`), qui répond à cinq des sept décisions.
 
 ## Ce qu'il faut savoir avant de lire
 
@@ -26,20 +37,37 @@ rempli apprend quelque chose de faux sur l'état réel du système.
 
 ---
 
-## Les décisions, par ordre d'urgence
+## Les décisions et leurs réponses
 
-| # | Décision | Urgence | Ce qui attend |
+| # | Décision | État | Réponse |
 |---|---|---|---|
-| 1 | Le confinement des agents | **Maintenant** | Rien — c'est un risque ouvert |
-| 2 | Plusieurs utilisateurs, ou un seul ? | Élevée | Les décisions 3, 4 et une partie de 5 |
-| 3 | Protéger l'accès à l'interface | Élevée | Toute utilisation à plus d'une personne |
-| 4 | Qui crée les sous-agents, et où vivent-ils ? | Moyenne | Le bouton « Nouveau sous-agent » |
-| 5 | Les outils doivent-ils tourner en permanence ? | Moyenne | La vue Espace et ses widgets |
-| 6 | Le mobile : consulter, ou vraiment s'en servir ? | Basse | Le choix d'une coquille native |
+| 1 | Le confinement des agents | ✅ tranché | Bac à sable ; l'orchestrateur garde le contrôle à l'extérieur |
+| 2 | Plusieurs utilisateurs, ou un seul ? | ✅ tranché | **Plusieurs** — usage entreprise, simultanés |
+| 3 | Protéger l'accès à l'interface | ✅ tranché | Authentification obligatoire, comptes individuels |
+| 4 | Qui crée les sous-agents ? | ✅ reporté | Hors POC ; la question de fond reste entière |
+| 5 | Les outils en permanence ? | ✅ tranché | **Oui** — l'orchestrateur passe en démon |
+| 6 | Le mobile | ⚠️ **partiel** | Vues restreintes + notifications ; le *comment* reste ouvert |
+| 7 | Poser un jalon stable | ⬜ **non abordé** | — |
+
+Une huitième chose est ressortie du brainstorming sans figurer dans cette liste : **le
+contrôle à distance** — stopper un agent, valider ou refuser une de ses décisions, déclencher
+une action simple. Ce n'est pas une question ouverte mais du périmètre confirmé : c'est le
+contrat C6, porté par `kern-pilot`.
+
+**Attention en lisant la suite** : les sections ci-dessous ont été écrites *avant* les
+réponses. Chacune porte maintenant un encadré « Réponse » en tête. Le corps est conservé —
+il dit pourquoi la question se posait, ce qui reste utile pour la mettre en œuvre.
 
 ---
 
 ## 1. Le confinement des agents
+
+> **✅ Réponse (2026-07-28) — bac à sable.** L'agent garde sa liberté d'action *dans son
+> périmètre* ; l'orchestrateur garde le contrôle à l'extérieur. C'est l'option « sérieux »
+> ci-dessous, pas le minimum : la brique `kern-exec`, avec `kern-guard` et `kern-policy`.
+> Reste à cadrer l'étendue du bac (système de fichiers, réseau, budgets) — c'est de la
+> conception, plus un arbitrage.
+
 
 **Ce dont il s'agit.** Quand un agent travaille, kern-orch lance le programme d'IA comme un
 sous-programme de votre machine. Ce sous-programme hérite de **tous vos droits** : il peut
@@ -64,6 +92,14 @@ le bon outil — pour des raisons techniques précises documentées ailleurs, pa
 ---
 
 ## 2. Plusieurs utilisateurs, ou un seul ?
+
+> **✅ Réponse (2026-07-28) — plusieurs.** Usage entreprise, plusieurs collaborateurs
+> simultanés. La ligne de `CLAUDE.md` qui disait le contraire est corrigée.
+>
+> Les cinq conséquences listées plus bas ne sont donc plus des hypothèses. La plus urgente
+> parce qu'elle est structurelle : **une tâche doit porter qui l'a demandée**, et ce champ
+> n'existe nulle part. Plus on enregistre de tâches sans lui, plus il coûte cher.
+
 
 **Ce dont il s'agit.** Aujourd'hui l'hypothèse écrite est : « usage interne Kern, pas de
 produit multi-comptes ». Une seule personne, sa machine, ses agents.
@@ -93,6 +129,14 @@ réponse. C'est une décision produit — qui utilise l'outil — pas une décis
 
 ## 3. Protéger l'accès à l'interface
 
+> **✅ Réponse (2026-07-28) — authentification obligatoire**, comptes individuels, accès
+> sécurisé par collaborateur. Elle découle de la 2 et n'est plus optionnelle.
+>
+> Reste à choisir *comment* : c'est une question technique, pas un arbitrage produit — sauf
+> sur un point, la source des identités (comptes propres à Kern, ou l'annuaire de
+> l'entreprise). Ce point-là mérite une réponse avant l'implémentation.
+
+
 **Ce dont il s'agit.** L'interface est un serveur. Par défaut elle n'écoute que la machine
 locale, et dans ce cas il n'y a pas de problème. Mais elle peut être ouverte au réseau en
 changeant un réglage — c'est vérifié, ça fonctionne.
@@ -115,6 +159,14 @@ la première chose à régler. **Cette décision découle de la 2 : tranchez la 
 ---
 
 ## 4. Qui crée les sous-agents, et où vivent-ils ?
+
+> **✅ Réponse (2026-07-28) — reporté, pas résolu.** La création d'agents est explicitement
+> hors du POC : elle arrivera « progressivement dans un second temps ».
+>
+> C'est une décision de calendrier, pas de conception : les trois questions ci-dessous
+> restent entières et devront être répondues le jour venu. Le `+` du Grimoire reste affiché
+> et désactivé — désormais parce que c'est décidé, plus parce que c'est un manque.
+
 
 **Ce dont il s'agit.** Dans la maquette, le Grimoire a un bouton « Nouveau sous-agent ». Il
 est affiché mais désactivé, parce que rien dans le système ne sait créer quoi que ce soit.
@@ -153,6 +205,14 @@ sans.
 
 ## 5. Les outils doivent-ils tourner en permanence ?
 
+> **✅ Réponse (2026-07-28) — oui : l'orchestrateur passe en mode démon.** Un service qui
+> tourne en tâche de fond, plus une commande qu'on lance et qui s'arrête.
+>
+> C'est la première des trois options ci-dessous. Elle débloque la vue Espace, et elle change
+> bien plus que ça : c'est aussi ce qui rend possible l'instance centralisée, le contrôle à
+> distance et les notifications. Gros chantier, chez `kern-orch`.
+
+
 **Ce dont il s'agit.** La vue **Espace** de la maquette montre des cartes : « Pull requests
 ouvertes : 4 », « Messages non lus : 12 », « Prochain rendez-vous : 14:30 ». Chaque carte
 affiche une mesure vivante prise dans un outil connecté.
@@ -186,6 +246,20 @@ agents. Or le chef d'orchestre est un programme en ligne de commande : entre deu
 
 ## 6. Le mobile : consulter, ou vraiment s'en servir ?
 
+> **⚠️ Réponse partielle (2026-07-28).** Ce qui est décidé : **vues mobiles restreintes**
+> (lecture de l'activité, gestion des nœuds) et **notifications sur le téléphone**.
+>
+> Ce qui ne l'est pas : le *comment*. Une PWA sait recevoir des notifications — sur iOS
+> depuis 16.4, avec des limites réelles (l'utilisateur doit installer la page sur son écran
+> d'accueil, et la fiabilité de livraison est inférieure). Une application installée fait
+> mieux. La question à reposer est donc précise : **une notification manquée est-elle un
+> incident ?** Si oui, coquille native. Si c'est un confort, la PWA actuelle suffit.
+>
+> La seconde question ci-dessous — l'application des politiques doit-elle partager le
+> processus de la surface d'approbation — n'a pas été abordée, et le contrôle à distance
+> validé au brainstorming la rend plus pressante qu'avant.
+
+
 **Ce dont il s'agit.** L'interface est un site web servi par un programme unique. Sur
 téléphone, elle s'affiche dans le navigateur. Une autre approche — dite « coquille native » —
 produirait une vraie application installable.
@@ -210,3 +284,52 @@ de test refuse de redimensionner la fenêtre. À regarder sur un vrai téléphon
 conclure quoi que ce soit.
 
 ---
+
+---
+
+## 7. Poser un jalon stable
+
+> **⬜ Non abordé au brainstorming.** Reste ouvert — et c'est la décision la moins chère de
+> la liste.
+
+**Ce dont il s'agit.** Le travail s'accumule sur la branche de développement des deux
+projets. La branche stable n'a rien reçu depuis le début.
+
+**Pourquoi ça compte un peu.** Un point de reprise identifié rend tout le reste plus facile à
+raisonner : « avant ou après ce jalon » est une phrase qu'on peut dire, « avant ou après ce
+mardi » beaucoup moins. Et les trois chantiers qui arrivent — bac à sable, authentification,
+mode démon — vont remuer beaucoup de choses à la fois.
+
+**Ce que je recommande.** Le poser maintenant, avant d'ouvrir ces trois chantiers plutôt
+qu'après. C'est une pause volontaire, pas un oubli.
+
+---
+
+## Ce qui n'est pas à trancher
+
+Pour éviter de rouvrir des débats déjà clos :
+
+- **Le multi-utilisateur, le bac à sable, le mode démon** — tranchés le 2026-07-28. Ce qui
+  reste à leur sujet est de la conception, plus de l'arbitrage.
+- **Le langage de l'interface** — tranché le 2026-07-26 après examen. On y revient seulement
+  si la décision 6 conclut « coquille native », et les critères sont écrits.
+- **La direction artistique** — validée. Changer de palette coûterait un seul fichier.
+- **L'indépendance des briques** — c'est le principe qui tient l'ensemble. Chaque brique
+  publie ce qu'elle sait faire ; aucune ne connaît les entrailles d'une autre. Plusieurs
+  recommandations de ce document en découlent directement.
+
+---
+
+## Un mot sur la méthode
+
+Ce document ne cache pas les recommandations, il les marque. Là où j'écris « je
+recommande », c'est un avis technique sur une question qui reste la vôtre. Là où j'écris que
+quelque chose est bloqué, c'est un fait vérifié dans le code, pas une prudence.
+
+Les décisions 2, 3 et 4 formaient un bloc, et il s'est résolu dans le bon ordre : la 2 est
+tranchée, la 3 en découle, la 4 est reportée en connaissance de cause.
+
+Il reste **deux questions ouvertes**, et aucune ne bloque le travail en cours : le *comment*
+des notifications mobiles (décision 6) et le jalon (décision 7). Deux autres apparaîtront à
+la mise en œuvre plutôt qu'avant : la source des identités pour l'authentification, et
+l'étendue exacte du bac à sable.
