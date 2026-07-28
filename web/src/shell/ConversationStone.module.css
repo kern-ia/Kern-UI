@@ -107,7 +107,9 @@
 @media (max-width: 719px) {
   .bubble {
     min-width: 0;
-    max-width: 62vw;
+    /* Measured from the stone's own width and margins rather than a share of the viewport:
+       at 375px, 62vw still ran off the right edge because the stone had pushed it there. */
+    max-width: calc(100vw - 110px);
   }
 
   .note {

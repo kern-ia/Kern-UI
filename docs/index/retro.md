@@ -331,3 +331,25 @@ l'attente avait seulement migré du moteur vers la sortie du processus.
   tests parlent directement au routeur — jamais à travers un intermédiaire.
 - Croire un en-tête `X-Forwarded-*` par défaut, c'est laisser l'appelant décider qu'il est
   en sécurité. Toujours conditionner à une déclaration explicite d'exploitation.
+
+## 2026-07-28 — rendu mobile
+
+**Le constat qui compte**
+132 tests au vert et une interface **inutilisable sur téléphone** : la navigation était
+masquée par la pierre de conversation. Aucun test ne pouvait le voir — ils rendent des
+composants dans un DOM sans dimensions, où aucune media query ne s'applique et où rien ne se
+superpose. **Une suite verte ne dit rien de la mise en page.**
+
+**A fonctionné**
+- Contourner l'outil défaillant plutôt que de reporter encore : `resize_window` ne marche pas,
+  mais trois `<iframe>` aux largeurs d'appareils déclenchent les vraies media queries et
+  montrent trois tailles côte à côte.
+- Corriger un défaut en a révélé un autre : réserver la bande du bas a fait disparaître la
+  pierre, parce qu'une position mémorisée n'était pas recadrée. Regarder l'écran APRÈS chaque
+  correction, pas seulement après la dernière.
+
+**À surveiller**
+- Un point de rupture dupliqué entre CSS et JS finit toujours par diverger. Le mettre dans une
+  variable CSS et le lire depuis le JS garde une seule source.
+- Une contrainte écrite dans CLAUDE.md et jamais vérifiée reste fausse pendant des mois. Celle
+  du responsive datait du premier jour.
