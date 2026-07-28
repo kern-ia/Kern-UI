@@ -87,6 +87,7 @@ producer needs one configured URL and stays unaware of our route shape.
 | `topology.nodes[].skill` | string | no | The catalogue entry backing the node. **Not the id** — a node `greet` may run the skill `planner`, so matching the two by name would be a guess. Absent on tool nodes, which name a Go function. |
 | `topology.edges[]` | object | no | `from`, `to[]`, or `dynamic: true` when a router picks the targets at run time. |
 | `error` | object | no | Set on the terminal event of a run that failed; `message` is required. |
+| `parent` | object | no | Set on a **nested run** — the graph a subgraph node ran. `run_id` is the parent run, `node_id` the node it belongs to. Absent on a top-level run. |
 | `error.nodes[]` | string[] | no | The nodes of `frontier` that actually broke. A node in `frontier` and **absent here completed** — the producer waits for the whole level before giving up. Omitted when the producer cannot say, and a consumer then falls back to marking the whole frontier. |
 
 On `POST /api/v1/steps` the `run_id` must be in the body. On
@@ -98,6 +99,12 @@ is rejected.
 - **Idempotent.** Replaying a step, or sending one older than the current level, is accepted
   and changes nothing. A reporter may retry without coordination.
 - **An empty `frontier` closes the run.** Later events for that run are ignored.
+- **A nested run is a run of its own.** A subgraph node reports its child under a fresh
+  `run_id` carrying `parent`, never folded into the parent's stream: the parent's level
+  counter is a sequence, and two graphs advancing against it at once would corrupt it. The
+  reference composes at any depth, where nesting topologies inside topologies would need a
+  recursive schema. The same node running twice is two nested runs, and the interface draws
+  the freshest.
 - **`202 Accepted`** on success, **`400`** on a payload violating the schema. A `400` is a
   producer bug, not a transient failure — retrying will not help.
 - **Reporting is never load-bearing.** A producer must treat this endpoint as best-effort

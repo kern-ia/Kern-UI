@@ -208,3 +208,43 @@ func TestContractV1StillIngests(t *testing.T) {
 		t.Errorf("status = %d, want %d — v1 producers must not be broken by v2", rec.Code, http.StatusAccepted)
 	}
 }
+
+// A nested run: same endpoint, same schema, one extra reference back to the node it
+// belongs to. Byte-identical to the fixture in Kern-Orch/contracts/.
+const contractNested = "../../contracts/kern.step-event.v2.nested.json"
+
+func TestContractNestedIsAcceptedAndLinkedToItsNode(t *testing.T) {
+	cfg := &Config{}
+	h := NewRouterWithDeps(cfg)
+
+	// The parent first, then the child that points at one of its nodes.
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/v1/steps",
+		bytes.NewReader(readFile(t, contractV2))))
+	if rec.Code != http.StatusAccepted {
+		t.Fatalf("the parent was rejected: %d %s", rec.Code, rec.Body)
+	}
+
+	rec = httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/v1/steps",
+		bytes.NewReader(readFile(t, contractNested))))
+	if rec.Code != http.StatusAccepted {
+		t.Fatalf("the nested fixture was rejected: %d %s", rec.Code, rec.Body)
+	}
+
+	child, ok := cfg.Runs.ChildOf("a23ead5373d9b746", "nested")
+	if !ok {
+		t.Fatal("the nested run is not reachable from the node it belongs to")
+	}
+	if child.Graph != "child" {
+		t.Errorf("graph = %q, want the child's own name", child.Graph)
+	}
+	if child.Topology == nil || child.Topology.Entry != "redige" {
+		t.Errorf("the nested run carries no shape of its own: %+v", child.Topology)
+	}
+	// Its parent must be untouched by it.
+	parent, _ := cfg.Runs.Get("a23ead5373d9b746")
+	if parent.Step != 2 {
+		t.Errorf("the parent's step = %d, want 2 — a nested run must not advance it", parent.Step)
+	}
+}

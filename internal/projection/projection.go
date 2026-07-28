@@ -93,6 +93,28 @@ func (t Topology) Validate() error {
 	return nil
 }
 
+// ParentRef points a nested run at the subgraph node it belongs to.
+//
+// A nested run is a run of its own rather than part of its parent's stream: a parent's
+// level counter is a sequence, and two graphs advancing against it at once would corrupt
+// it. The reference also composes at any depth, where nesting topologies inside topologies
+// would need a recursive schema for something that is really just another run.
+type ParentRef struct {
+	RunID  string `json:"run_id"`
+	NodeID string `json:"node_id"`
+}
+
+// Validate checks a parent reference can be followed.
+func (p ParentRef) Validate() error {
+	if strings.TrimSpace(p.RunID) == "" {
+		return fmt.Errorf("%w: parent.run_id is required", ErrInvalidEvent)
+	}
+	if strings.TrimSpace(p.NodeID) == "" {
+		return fmt.Errorf("%w: parent.node_id is required", ErrInvalidEvent)
+	}
+	return nil
+}
+
 // Failure ends a run that did not complete.
 //
 // Nodes names the nodes of the reported frontier that actually broke. A node in that
@@ -119,6 +141,9 @@ type StepEvent struct {
 
 	// Error is set on the terminal event of a run that failed.
 	Error *Failure `json:"error,omitempty"`
+
+	// Parent is set on a nested run and absent on a top-level one.
+	Parent *ParentRef `json:"parent,omitempty"`
 }
 
 // Validate checks the event against the ingestion contract.
@@ -152,6 +177,11 @@ func (e StepEvent) Validate() error {
 	if e.Error != nil && strings.TrimSpace(e.Error.Message) == "" {
 		return fmt.Errorf("%w: error.message is required when error is present", ErrInvalidEvent)
 	}
+	if e.Parent != nil {
+		if err := e.Parent.Validate(); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -176,6 +206,9 @@ type Run struct {
 
 	// Error is set when the run failed.
 	Error *Failure `json:"error,omitempty"`
+
+	// Parent is set when this run is the nested graph of a subgraph node in another run.
+	Parent *ParentRef `json:"parent,omitempty"`
 
 	// Generating lists the nodes whose model is producing output right now, sorted. Fed by
 	// ActivityEvent, emptied when the run ends. It is what lets the beacon tell a run that
@@ -225,7 +258,7 @@ func (p *Projection) Apply(ev StepEvent) (Run, bool, error) {
 	}
 
 	if !known {
-		run = Run{ID: ev.RunID, Graph: ev.Graph, StartedAt: ev.At}
+		run = Run{ID: ev.RunID, Graph: ev.Graph, StartedAt: ev.At, Parent: ev.Parent}
 	}
 
 	run.Step = ev.Step
@@ -265,6 +298,28 @@ func (p *Projection) Apply(ev StepEvent) (Run, bool, error) {
 
 	p.runs[ev.RunID] = run
 	return run, true, nil
+}
+
+// ChildOf returns the nested run that a subgraph node produced, if one has reported.
+//
+// A node may run its subgraph more than once — a retry, a loop — and each execution is its
+// own run. The freshest is the one worth drawing: it is what is happening, where the others
+// are history the Agents view already lists separately.
+func (p *Projection) ChildOf(parentRunID, nodeID string) (Run, bool) {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
+	var newest Run
+	var found bool
+	for _, run := range p.runs {
+		if run.Parent == nil || run.Parent.RunID != parentRunID || run.Parent.NodeID != nodeID {
+			continue
+		}
+		if !found || run.StartedAt.After(newest.StartedAt) {
+			newest, found = run, true
+		}
+	}
+	return newest, found
 }
 
 // Get returns a run by id.

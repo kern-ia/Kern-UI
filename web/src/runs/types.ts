@@ -38,6 +38,12 @@ export interface Failure {
   nodes?: string[]
 }
 
+/** Points a nested run at the subgraph node it belongs to. */
+export interface ParentRef {
+  run_id: string
+  node_id: string
+}
+
 export interface Run {
   id: string
   graph: string
@@ -57,6 +63,8 @@ export interface Run {
   generating?: string[]
   topology?: Topology
   error?: Failure
+  /** Set when this run is the nested graph of a subgraph node in another run. */
+  parent?: ParentRef
 }
 
 /** State of the browser's link to the server. */

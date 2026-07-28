@@ -64,6 +64,10 @@ export const fr = {
       failed: 'Bloqué',
     },
     noTopology: "Ce run n'a pas déclaré sa topologie.",
+    // A subgraph node is a whole graph. Opening it draws the run that happened inside.
+    openNested: (node: string) => `Déplier le sous-agent ${node}`,
+    closeNested: (node: string) => `Replier le sous-agent ${node}`,
+    nestedOf: (node: string) => `Dans ${node}`,
     // A run opened by its activity signal is visible before any level has completed, so
     // its shape has not arrived yet. Saying it was never declared would be wrong.
     topologyPending: 'Topologie en attente du premier niveau.',
