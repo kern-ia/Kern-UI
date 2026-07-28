@@ -1,0 +1,103 @@
+/* The way in, in the same light as the rest: the backdrop and the rune of the shell, so the
+   first screen already looks like the product. Every value comes from tokens.css. */
+
+.page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding: var(--space-5);
+  background: var(--backdrop);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 100%;
+  max-width: 360px;
+  padding: var(--space-6);
+  text-align: center;
+  background: var(--surface-veil);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+.glyph {
+  font-family: var(--font-display);
+  font-size: 34px;
+  line-height: 1;
+  color: var(--gold);
+  text-shadow: 0 0 18px rgba(232, 201, 138, 0.35);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 20px;
+  letter-spacing: var(--tracking-display);
+  color: var(--text);
+}
+
+.subtitle {
+  margin: 0 0 var(--space-2);
+  font-size: 12.5px;
+  color: var(--text-dim);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  text-align: left;
+}
+
+.label {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.input {
+  padding: var(--space-3);
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--text);
+  background: var(--surface-base);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(232, 201, 138, 0.12);
+}
+
+.refused {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--state-error);
+}
+
+.submit {
+  padding: var(--space-3);
+  font-family: var(--font-body);
+  font-size: 13px;
+  letter-spacing: var(--tracking-label);
+  color: var(--surface-base);
+  background: var(--gold);
+  border: none;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+
+.submit:hover:not(:disabled) {
+  background: var(--gold-bright);
+}
+
+.submit:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/yoann/kern-ui/internal/auth"
 	"github.com/yoann/kern-ui/internal/projection"
 	"github.com/yoann/kern-ui/internal/registry"
 	"github.com/yoann/kern-ui/internal/stream"
@@ -21,6 +22,10 @@ const defaultHeartbeat = 25 * time.Second
 // dropping them for that connection. The snapshot sent on connect is what makes dropping
 // safe.
 const subscriberBuffer = 64
+
+// sessionLifetime is how long a browser stays logged in. A working day, so nobody is thrown
+// out mid-task, and nobody stays logged in over a weekend on a shared machine.
+const sessionLifetime = 12 * time.Hour
 
 // Config holds the router's dependencies. The zero value is usable: missing dependencies
 // are created on first use, and NewRouterWithDeps hands them back to the caller.
@@ -43,6 +48,18 @@ type Config struct {
 
 	// Heartbeat is the interval between SSE keep-alive comments. Defaults to 25s.
 	Heartbeat time.Duration
+
+	// ProducerToken is the secret a producer presents to post events. **Empty leaves the
+	// ingestion endpoints open**, which is what local development wants and what a public
+	// address must never have — `cmd/kern-ui` refuses to listen on one without it.
+	ProducerToken string
+
+	// Accounts are the people who may read. **An empty store leaves the read endpoints
+	// open**, same reasoning and same refusal at startup.
+	Accounts *auth.Accounts
+
+	// Sessions holds the browser sessions. Created on first use.
+	Sessions *auth.Sessions
 }
 
 func (c *Config) fillDefaults() {
@@ -54,6 +71,9 @@ func (c *Config) fillDefaults() {
 	}
 	if c.Registry == nil {
 		c.Registry = registry.New()
+	}
+	if c.Sessions == nil {
+		c.Sessions = auth.NewSessions(sessionLifetime)
 	}
 	if c.Heartbeat <= 0 {
 		c.Heartbeat = defaultHeartbeat
@@ -72,15 +92,25 @@ func NewRouterWithDeps(cfg *Config) http.Handler {
 	s := &server{cfg: cfg}
 
 	mux := http.NewServeMux()
+
+	// Open: a liveness probe carries no credential, and the login page has to be reachable
+	// before anyone has a session.
 	mux.HandleFunc("GET /healthz", handleHealthz)
-	mux.HandleFunc("POST /api/v1/steps", s.handleIngestStep)
-	mux.HandleFunc("POST /api/v1/runs/{id}/steps", s.handleIngestStep)
-	mux.HandleFunc("GET /api/v1/runs", s.handleListRuns)
-	mux.HandleFunc("GET /api/v1/runs/{id}", s.handleGetRun)
-	mux.HandleFunc("GET /api/v1/stream", s.handleStream)
-	mux.HandleFunc("POST /api/v1/activity", s.handleIngestActivity)
-	mux.HandleFunc("POST /api/v1/registry", s.handlePublishRegistry)
-	mux.HandleFunc("GET /api/v1/registry", s.handleGetRegistry)
+	mux.HandleFunc("POST /api/v1/login", s.handleLogin)
+	mux.HandleFunc("POST /api/v1/logout", s.handleLogout)
+	mux.HandleFunc("GET /api/v1/session", s.handleSession)
+
+	// Producers post; they never read.
+	mux.HandleFunc("POST /api/v1/steps", s.requireProducer(s.handleIngestStep))
+	mux.HandleFunc("POST /api/v1/runs/{id}/steps", s.requireProducer(s.handleIngestStep))
+	mux.HandleFunc("POST /api/v1/activity", s.requireProducer(s.handleIngestActivity))
+	mux.HandleFunc("POST /api/v1/registry", s.requireProducer(s.handlePublishRegistry))
+
+	// People read; they never post events.
+	mux.HandleFunc("GET /api/v1/runs", s.requireSession(s.handleListRuns))
+	mux.HandleFunc("GET /api/v1/runs/{id}", s.requireSession(s.handleGetRun))
+	mux.HandleFunc("GET /api/v1/stream", s.requireSession(s.handleStream))
+	mux.HandleFunc("GET /api/v1/registry", s.requireSession(s.handleGetRegistry))
 
 	if cfg.WebDir != "" {
 		mux.Handle("GET /", http.FileServer(http.Dir(cfg.WebDir)))

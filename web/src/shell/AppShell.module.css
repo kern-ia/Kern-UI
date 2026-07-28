@@ -213,3 +213,21 @@
   letter-spacing: var(--tracking-label);
   color: var(--text-dim);
 }
+
+/* Who is logged in, and the way out. Quiet: it is not what anyone came to look at. */
+.signOut {
+  padding: var(--space-1) var(--space-3);
+  font-family: var(--font-body);
+  font-size: 11.5px;
+  letter-spacing: var(--tracking-label);
+  color: var(--text-dim);
+  background: none;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+
+.signOut:hover {
+  color: var(--gold);
+  border-color: var(--border);
+}

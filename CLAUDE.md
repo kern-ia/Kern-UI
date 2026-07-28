@@ -57,6 +57,16 @@ proposition 02). Cette ligne disait l'inverse jusque-là — voir `docs/a-tranch
 - **`kern-orch` passe en mode démon** (tranché 2026-07-28) : un service qui tourne, plus une
   commande qu'on lance. C'est ce qui débloque la lecture des outils (C5), impossible tant que
   rien n'est vivant entre deux runs.
+- **Authentification livrée** (2026-07-28) : deux identités distinctes. Un **producteur**
+  présente `Authorization: Bearer` (`KERN_UI_TOKEN` ici, `KERN_SINK_TOKEN` côté kern-orch) et
+  ne peut qu'écrire ; une **personne** ouvre une session par cookie et ne peut que lire.
+  Aucune des deux n'ouvre les portes de l'autre. Mots de passe en PBKDF2-SHA256 (600 000
+  itérations, bibliothèque standard — kern-ui reste sans dépendance). Comptes créés par
+  `kern-ui useradd`, jamais à la main.
+- **Le binaire REFUSE de démarrer** sur une adresse publique sans jeton ni compte. Un
+  avertissement se rate ; un processus qui ne démarre pas, non.
+- **TLS reste à faire.** Sans lui, mot de passe et session voyagent en clair : un
+  avertissement le dit au démarrage. Un proxy inverse devant suffit.
 - Transport vers l'instance centralisée : _à décider_.
 
 ## Méthode obligatoire
