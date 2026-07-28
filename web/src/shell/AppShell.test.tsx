@@ -99,7 +99,7 @@ it('switches view on click', () => {
     'aria-selected',
     'true',
   )
-  expect(screen.getByText(fr.missing.noBrick)).toBeInTheDocument()
+  expect(screen.getByText(fr.missing.awaiting.memoire)).toBeInTheDocument()
 })
 
 it('draws the catalogue kern-orch published in the Grimoire', async () => {
@@ -123,14 +123,24 @@ it('draws the catalogue kern-orch published in the Grimoire', async () => {
   expect(screen.getByText('Analyse')).toBeInTheDocument()
 })
 
-// The Espace has the catalogue now; what it still lacks is the reading behind a widget.
-// Naming kern-orch alone would send a reader to the wrong brick.
-it('tells the Espace apart: it waits for the readings, not for the registry', () => {
+// The Espace has the catalogue; what it lacks is the reading behind a widget. It says so in
+// the reader's terms, and says nothing about which module owes it.
+it('tells the Espace apart: it waits for the readings, not for the catalogue', () => {
   render(<AppShell />)
 
   fireEvent.click(within(nav()).getByRole('tab', { name: fr.views.espace }))
 
-  expect(screen.getByText(fr.missing.detail.espaceValues)).toBeInTheDocument()
+  expect(screen.getByText(fr.missing.awaiting.outils)).toBeInTheDocument()
+})
+
+// A demo audience must never read our module layout off a screen.
+it('names no brick anywhere in the shell', () => {
+  const { container } = render(<AppShell />)
+
+  for (const view of VIEWS) {
+    fireEvent.click(within(nav()).getByRole('tab', { name: fr.views[view.id] }))
+    expect(container.textContent).not.toMatch(/kern-(orch|pilot|memory|exec|obs)/i)
+  }
 })
 
 it('shows live runs in the Agents view', () => {
