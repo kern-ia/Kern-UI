@@ -256,3 +256,25 @@ Ce qui a fonctionné ou non, noté au moment où ça mord. Append only.
   sont pas comptés comme échoués. Toujours lire la ligne **Test Files**, pas seulement Tests.
 - Deux glyphes de la maquette ne sont pas dans les polices embarquées (`▸`, `▾`). Vérifier à
   l'écran tout caractère décoratif, les tests ne voient pas une police manquante.
+
+## 2026-07-28 — jalon v0.1.0
+
+**Ce que la session a donné**
+Cinq features livrées en un jour — registre des skills, signal d'activité, nœud en échec,
+rapporteur asynchrone, runs imbriqués — plus les décisions produit tranchées et consignées.
+De 58 à 117 tests front, de 3 à 4 paquets Go.
+
+**Le motif le plus utile de la session**
+Trois fois sur cinq, la donnée nécessaire existait déjà chez le producteur et se perdait en
+route : la référence `skill` d'un nœud, l'id du nœud en échec, les niveaux d'un sous-graphe.
+Aucune ne demandait un nouveau calcul, seulement d'arrêter de la jeter. **Réflexe à garder :
+avant d'écrire un champ de contrat, chercher s'il n'est pas déjà connu quelque part.**
+
+**Le second motif**
+Une fiche de contrat écrite depuis une maquette est plus large que le contrat réel. C3 a
+rétréci, C4 a rétréci et n'a débloqué qu'une vue au lieu de deux, C10 s'est révélé à moitié
+déjà faisable. Instruire le besoin, ne pas implémenter le schéma.
+
+**Ce qui a le mieux payé en méthode**
+Mesurer plutôt que déduire. Le rapporteur asynchrone semblait fini ; la mesure a montré que
+l'attente avait seulement migré du moteur vers la sortie du processus.

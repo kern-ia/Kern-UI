@@ -47,7 +47,7 @@ rempli apprend quelque chose de faux sur l'état réel du système.
 | 4 | Qui crée les sous-agents ? | ✅ reporté | Hors POC ; la question de fond reste entière |
 | 5 | Les outils en permanence ? | ✅ tranché | **Oui** — l'orchestrateur passe en démon |
 | 6 | Le mobile | ✅ tranché | **Par une messagerie existante** — Telegram / WhatsApp / Slack |
-| 7 | Poser un jalon stable | ⬜ **non abordé** | — |
+| 7 | Poser un jalon stable | ✅ fait | Posé le 2026-07-28, avant les trois gros chantiers |
 
 Une huitième chose est ressortie du brainstorming sans figurer dans cette liste : **le
 contrôle à distance** — stopper un agent, valider ou refuser une de ses décisions, déclencher
@@ -337,8 +337,9 @@ passe par le chat.
 
 ## 7. Poser un jalon stable
 
-> **⬜ Non abordé au brainstorming.** Reste ouvert — et c'est la décision la moins chère de
-> la liste.
+> **✅ Fait le 2026-07-28.** `dev` fusionné dans `main` des deux côtés, étiqueté **v0.1.0**
+> pour l'interface et **v0.4.0** pour l'orchestrateur — avant d'ouvrir le bac à sable,
+> l'authentification et le mode démon, pas après.
 
 **Ce dont il s'agit.** Le travail s'accumule sur la branche de développement des deux
 projets. La branche stable n'a rien reçu depuis le début.
@@ -377,7 +378,7 @@ quelque chose est bloqué, c'est un fait vérifié dans le code, pas une prudenc
 Les décisions 2, 3 et 4 formaient un bloc, et il s'est résolu dans le bon ordre : la 2 est
 tranchée, la 3 en découle, la 4 est reportée en connaissance de cause.
 
-**Six décisions sur sept sont tranchées.** Reste le jalon (décision 7), qui ne bloque rien.
+**Les sept décisions sont réglées.**
 
 Trois questions nouvelles sont nées des réponses, et c'est normal — une décision ouvre le
 niveau de détail en dessous :
