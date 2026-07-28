@@ -28,7 +28,15 @@ const connectionColour: Record<Connection, string> = {
   error: 'var(--state-error)',
 }
 
-export function AppShell() {
+export function AppShell({
+  user = '',
+  onSignOut,
+}: {
+  /** Empty when the server has no accounts: there is nobody to greet. */
+  user?: string
+  /** Absent when there is no session to end. */
+  onSignOut?: () => void
+} = {}) {
   const [view, setView] = useState<ViewId>(DEFAULT_VIEW)
   const { runs, connection } = useRunStream(STREAM_URL)
   const state = systemState(runs)
@@ -65,6 +73,11 @@ export function AppShell() {
             />
             {fr.systemState[state]}
           </p>
+          {onSignOut && (
+            <button type="button" className={styles.signOut} onClick={onSignOut}>
+              {user !== '' ? fr.login.signedInAs(user) : fr.login.signOut}
+            </button>
+          )}
           <p className={styles.connection} role="status">
             <span
               className={styles.dot}

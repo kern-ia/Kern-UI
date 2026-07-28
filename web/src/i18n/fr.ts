@@ -16,6 +16,21 @@
 export const fr = {
   appName: 'Kern-IA',
 
+  login: {
+    title: 'Kern-IA',
+    subtitle: 'Identifiez-vous pour accéder à vos agents.',
+    name: 'Identifiant',
+    password: 'Mot de passe',
+    submit: 'Entrer',
+    submitting: 'Vérification…',
+    // Deliberately says nothing about which of the two was wrong: the server does not tell
+    // us, and it should not — that answer is a way to find out who works here.
+    refused: 'Identifiant ou mot de passe incorrect.',
+    unreachable: 'Le serveur ne répond pas. Réessayez dans un instant.',
+    signOut: 'Se déconnecter',
+    signedInAs: (name: string) => `Connecté en tant que ${name}`,
+  },
+
   nav: {
     primary: 'Navigation',
     compact: 'Navigation compacte',

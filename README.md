@@ -49,6 +49,38 @@ Base URL defaults to `http://127.0.0.1:7777` (`KERN_UI_ADDR`).
 A producer should target `POST /api/v1/steps`: the run id travels in the body, so the
 producer needs one configured URL and stays unaware of our route shape.
 
+### Authentication
+
+Two credentials, because there are two kinds of caller wanting opposite things.
+
+| Caller | Presents | May |
+|---|---|---|
+| A producer (kern-orch) | `Authorization: Bearer <KERN_UI_TOKEN>` | **post** events only |
+| A person (browser) | a session cookie, from `POST /api/v1/login` | **read** only |
+
+Neither opens the other's doors: a producer token cannot enumerate runs, and a session
+cannot inject events. Collapsing them into one credential would mean the secret configured
+on every machine also reads everything.
+
+`GET /healthz`, the login endpoints and the SPA itself stay open — a probe carries no
+credential, and the login page has to be reachable before anyone has a session.
+
+**With nothing configured, everything is open.** That is the local development case, and it
+is safe only because the binary **refuses to start** on a public address without both
+`KERN_UI_TOKEN` and at least one account. An empty host counts as public: `:7777` looks
+innocent and binds every interface.
+
+Accounts live in `KERN_UI_ACCOUNTS` (default `./data/accounts`), one `name:hash` per line,
+written by `kern-ui useradd <name>` — the password is read from standard input, never given
+as an argument where the shell history and the process list would keep it. Hashes are
+PBKDF2-HMAC-SHA256 at 600 000 iterations, from the standard library: argon2id resists
+purpose-built cracking hardware better, and costs this binary its only dependency-free
+property. Revisit that trade the day a hash database could leak.
+
+**TLS is not handled here.** Without it a password and a session travel in clear, which the
+server warns about at startup. Put a reverse proxy in front before anyone logs in over a
+network.
+
 #### `StepEvent` — contract `kern.step-event/v2`
 
 <!-- CANONICAL BLOCK — mirrored verbatim in Kern-UI/README.md and Kern-Orch/README.md.

@@ -295,3 +295,22 @@ l'attente avait seulement migré du moteur vers la sortie du processus.
 - L'honnêteté et la lisibilité ne s'opposaient pas : dire « la mémoire n'est pas branchée »
   est aussi vrai que « attend kern-memory », et compréhensible. Quand les deux semblent
   s'opposer, c'est souvent qu'on n'a pas cherché la bonne formulation.
+
+## 2026-07-28 — authentification de l'API
+
+**A fonctionné**
+- Chercher dans la bibliothèque standard avant d'ajouter une dépendance : `crypto/pbkdf2`
+  est entré en Go 1.24. kern-ui garde zéro dépendance, ce qui est la raison pour laquelle
+  cinq cibles se compilent en une commande.
+- Faire échouer le DÉMARRAGE plutôt qu'avertir. Un avertissement dans un journal se rate le
+  premier jour chargé ; une API ouverte ne s'annonce pas.
+- Écrire les tests de refus avant les tests d'acceptation : c'est en listant les endpoints à
+  protéger qu'apparaît celui qu'on allait oublier.
+
+**À surveiller**
+- Un jeton non configuré doit refuser TOUT, pas tout accepter. C'est le cas le plus probable
+  d'un mauvais déploiement, et le plus facile à écrire à l'envers.
+- Le temps de réponse d'une page de connexion est une information : sans haché leurre, un
+  compte inconnu répond plus vite et la page devient un annuaire du personnel.
+- L'authentification sans TLS ne protège que d'un curieux, pas d'un réseau. Livrer l'une en
+  laissant croire que l'autre est faite serait pire que de n'avoir rien livré.

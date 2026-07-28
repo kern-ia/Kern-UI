@@ -89,23 +89,22 @@ piece of work where Rust is clearly the better tool.
 Belongs to `kern-exec` (⬜ in the roadmap), with `kern-guard` (blocking guardrail) and
 `kern-policy` (rules, budgets, escalation) beside it.
 
-### 2. Authentication on the kern-ui API · **decided, and it is our brick**
+### 2. Authentication · **done, 2026-07-28**
 
-No longer `_à décider_`: individual accounts, mandatory. Verified long ago that
-`KERN_UI_ADDR=0.0.0.0:7777` serves a remote kern-orch correctly — and that with no auth,
-anyone reachable reads every run and can inject fake ones.
+Two credentials, because there are two kinds of caller wanting opposite things. A producer
+presents a bearer token and may only post; a person opens a cookie session and may only read.
+Neither opens the other's doors — collapsing them would mean the token configured on every
+machine also reads everything.
 
-**This is the first item on this list that belongs to kern-ui itself**, which makes it the
-natural next piece of work here. Two things travel together and should not be split:
+The binary **refuses to listen** on a public address without a token and at least one
+account. A warning scrolls past; a process that will not start does not.
 
-- a caller must prove who it is, on both the ingestion endpoints and the read ones;
-- a run must carry **who asked for it**. That field does not exist, and every run recorded
-  without it is a run that can never be attributed. It costs one field today and a migration
-  later.
+**TLS is still missing**, and it is the next thing this needs. Passwords and sessions travel
+in clear without it, which a startup warning says out loud. A reverse proxy in front is
+enough; kern-ui terminating TLS itself is a separate decision.
 
-One question surfaces at implementation rather than before: where identities come from —
-accounts owned by Kern, or the company's directory. Worth answering before writing, not
-before planning.
+Not built, deliberately: **who asked for a mission**. No mission is started from the
+interface yet, so the field could only be empty or false. It arrives with steering.
 
 ### 3. `C5` — tool invocation and readback · **unblocked by the daemon decision**
 
