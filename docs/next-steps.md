@@ -11,13 +11,24 @@ Written 2026-07-26, updated 2026-07-27 when the skills registry shipped. Read th
 > Il existe pour qu'une reprise n'ait pas à relire le code. Le reste du fichier donne le
 > pourquoi ; celui-ci donne la position.
 
-**Dernier livré** — 2026-07-29 : backend Linux réel pour `kern-exec` (`landlock` + espace
-de noms réseau), vérifié dans une vraie VM (Ubuntu 24.04, noyau 6.8, via `colima` — déjà
-installé, dépôt monté directement dedans). macOS et Linux sont maintenant tous les deux
-confinés pour de vrai ; Windows reste un refus explicite (aucune machine pour vérifier).
-36 tests au total côté kern-exec (macOS + Linux). `dev` à jour, `main` toujours pas posé.
-Avant : le câblage `kern-exec` ↔ kern-orch prouvé sur macOS ; avant ça, `kern-exec` v1 macOS
-seul ; avant ça, `kern-orch serve` (mode démon).
+**Dernier livré** — 2026-07-29 : quatre features fusionnées dans `dev` (kern-notify + deux
+repos kern-orch/kern-ui) dans la même journée :
+1. **C12 livré** — nouveau dépôt `kern-notify` (relais SSE kern-ui → Telegram, notifications
+   seules, vérifié contre un vrai bot Telegram).
+2. **EPIC-03 clos côté kern-orch** — un skill `type: tool` déclare `command`/`params` en
+   frontmatter, exécuté en subprocess, exposé par `kern-orch serve`
+   (`GET /api/v1/tools`, `POST /api/v1/tools/{name}/invoke`).
+3. **C5 clos côté kern-ui** — l'Espace lit ce catalogue à la demande (pull, pas push comme
+   les autres contrats) et affiche une carte par outil sans paramètre requis. **Vérifié dans
+   un vrai navigateur** : compte créé, connexion au clavier, la carte `heartbeat` affiche une
+   vraie heure venue d'un vrai subprocess Python.
+4. **Sujet consigné, pas tranché** : MCP stateless (spec 2026-07-28) noté dans
+   `a-trancher.md` — pas un besoin aujourd'hui, mais l'endpoint tools de kern-orch est déjà
+   dans cet esprit si le besoin apparaît un jour.
+
+`dev` à jour dans les deux dépôts, `main` toujours pas repositionné depuis le jalon
+2026-07-28. Avant ça : backend Linux réel pour `kern-exec` (`landlock` + espace de noms
+réseau), vérifié dans une vraie VM ; avant ça, le câblage `kern-exec` ↔ kern-orch sur macOS.
 
 **Asymétrie Linux à connaître** : `landlock` ne couvre que les fichiers (son propre contrôle
 réseau, ABI4+, ne restreint que TCP par port — UDP passerait). Le réseau se coupe par un
@@ -45,19 +56,19 @@ start` la relance en une commande si un futur travail sur le backend Linux en a 
 - NE fait PAS : budgets, escalade, politique fine — ça reste `kern-policy`, non construit.
 - NE fonctionne PAS sur Linux ni Windows — refus explicite, pas une fausse protection.
 
-**Ce que le mode démon a débloqué, et ce qu'il ne débloque pas encore**
-- Débloqué : une instance centralisée est maintenant possible (un process qui reste vivant).
-- PAS débloqué : C5 lui-même. Il reste à écrire le format de tool réutilisable et le
-  chargement des tools depuis les skills (EPIC-03, kern-orch), puis le contrat côté kern-ui
-  qui lit une valeur de widget. Ne pas commencer l'Espace en supposant que C5 est prêt.
+**Ce que le mode démon a débloqué** — une instance centralisée est possible (un process qui
+reste vivant), et c'était le prérequis de C5, livré depuis (voir ci-dessus).
 
 **Ensuite, dans l'ordre**
-1. `kern-exec` — le bac à sable. Le trou le plus ancien, et dans un autre repo.
-2. `kern-orch` en démon — décidé le 2026-07-28 ; c'est ce qui débloque C5 (les valeurs de
-   l'Espace) et rend possible l'instance centralisée.
-3. `C12` — la messagerie (Telegram d'abord, un bot et un jeton).
-4. `C6` — le pilotage : arrêter, valider, refuser. C'est là qu'arrive « qui a demandé cette
-   mission », pas avant.
+1. ~~`kern-exec` — le bac à sable.~~ Fait, macOS + Linux, refus explicite sur Windows.
+2. ~~`kern-orch` en démon~~ Fait, 2026-07-28.
+3. ~~`C12` — la messagerie~~ Fait, 2026-07-29 (`kern-notify`, notifications seules).
+4. ~~C5 — les valeurs de l'Espace~~ Fait, 2026-07-29 (EPIC-03 + Espace kern-ui).
+5. **`C6` — le pilotage : arrêter, valider, refuser.** Prochain gros morceau. C'est là
+   qu'arrive « qui a demandé cette mission », pas avant. Discuté le 2026-07-29 : le sens
+   sortant d'agent-vers-humain existe déjà (`notify` builtin tool, C12) ; le sens entrant
+   (Telegram → agent, tâches et documents) est explicitement le périmètre de C6, à cadrer
+   avant d'être construit — pas encore fait.
 
 **Petites choses notées, non bloquantes**
 - Les identifiants d'étapes s'affichent bruts (`prep`, `nested`). Corriger en amont dans les
@@ -94,9 +105,9 @@ cd ../Kern-Orch && KERN_STEP_REPORT_URL=http://127.0.0.1:7777/api/v1/steps \
   what is running, dashed stub where a router decides at run time.
 - **Grimoire** draws the skills catalogue kern-orch publishes: competences left, sub-agents
   right, each sub-agent coloured by whether a run is exercising it right now.
-- The four unfed views name the brick or the contract they wait for. They render no data on
-  purpose, and a test enforces that. The Espace now names C5 rather than kern-orch: it has
-  the catalogue, it lacks the readings.
+- The three still-unfed views (Cerveau, Navigateur, Rédaction) name the capability they wait
+  for. They render no data on purpose, and a test enforces that. The Espace is live since
+  2026-07-29: one card per tool with no required param, read from kern-orch on demand.
 - Floating conversation on a draggable rune stone, dockable to either edge, position
   persisted. Inert: there is nothing to talk to yet.
 - Contracts `kern.step-event/v2`, `kern.registry/v1` and `kern.activity/v1` in use, with
