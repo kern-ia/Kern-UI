@@ -20,6 +20,7 @@ import (
 
 	"github.com/yoann/kern-ui/internal/auth"
 	"github.com/yoann/kern-ui/internal/httpapi"
+	"github.com/yoann/kern-ui/internal/tools"
 )
 
 const shutdownGrace = 10 * time.Second
@@ -45,6 +46,12 @@ func run() error {
 	producerToken := os.Getenv("KERN_UI_TOKEN")
 	certFile, keyFile := os.Getenv("KERN_UI_TLS_CERT"), os.Getenv("KERN_UI_TLS_KEY")
 	trustProxy := os.Getenv("KERN_UI_TRUST_PROXY") != ""
+	// kern-ui is the caller here, not the one being called: KERN_ORCH_URL/TOKEN are the
+	// credential *we* present to kern-orch's daemon, the opposite direction from
+	// KERN_UI_TOKEN above. Empty KERN_ORCH_URL leaves the Espace's tool source unconfigured
+	// rather than pointed at nothing.
+	orchURL := os.Getenv("KERN_ORCH_URL")
+	orchToken := os.Getenv("KERN_ORCH_TOKEN")
 
 	if err := checkTLSPair(certFile, keyFile); err != nil {
 		return err
@@ -78,6 +85,7 @@ func run() error {
 			ProducerToken: producerToken,
 			Accounts:      accounts,
 			TrustProxy:    trustProxy,
+			Tools:         &tools.Client{BaseURL: orchURL, Token: orchToken},
 		}),
 		ReadHeaderTimeout: 5 * time.Second,
 		// TLS 1.2 is the floor: everything below it is broken, and everything that speaks

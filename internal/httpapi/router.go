@@ -12,6 +12,7 @@ import (
 	"github.com/yoann/kern-ui/internal/projection"
 	"github.com/yoann/kern-ui/internal/registry"
 	"github.com/yoann/kern-ui/internal/stream"
+	"github.com/yoann/kern-ui/internal/tools"
 )
 
 // defaultHeartbeat keeps idle SSE connections alive through proxies that would otherwise
@@ -45,6 +46,12 @@ type Config struct {
 	// rather than the run stream: it changes when skills are installed, not when a graph
 	// advances, and the browser fetches it when the Grimoire opens.
 	Registry *registry.Store
+
+	// Tools reads and invokes kern-orch's tool catalogue for the Espace's widgets (C5).
+	// A nil or unconfigured Client (Enabled() false) means no tool source is wired —
+	// distinct from kern-orch answering with an empty catalogue, same reasoning as
+	// Registry's 404-vs-empty split.
+	Tools *tools.Client
 
 	// Heartbeat is the interval between SSE keep-alive comments. Defaults to 25s.
 	Heartbeat time.Duration
@@ -116,6 +123,8 @@ func NewRouterWithDeps(cfg *Config) http.Handler {
 	mux.HandleFunc("GET /api/v1/runs/{id}", s.requireSession(s.handleGetRun))
 	mux.HandleFunc("GET /api/v1/stream", s.requireSession(s.handleStream))
 	mux.HandleFunc("GET /api/v1/registry", s.requireSession(s.handleGetRegistry))
+	mux.HandleFunc("GET /api/v1/tools", s.requireSession(s.handleListTools))
+	mux.HandleFunc("POST /api/v1/tools/{name}/invoke", s.requireSession(s.handleInvokeTool))
 
 	if cfg.WebDir != "" {
 		mux.Handle("GET /", http.FileServer(http.Dir(cfg.WebDir)))

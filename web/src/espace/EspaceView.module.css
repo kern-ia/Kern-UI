@@ -1,0 +1,85 @@
+/* The Espace, after design/mockups/Agentic OS.dc.html: a grid of widget cards, a gold
+   top-border accent, a metric line and a large value. Every value comes from tokens.css. */
+
+.espace {
+  padding: var(--space-6) 40px;
+  height: 100%;
+  overflow: auto;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  padding: var(--space-4);
+  background: var(--surface-veil);
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--gold);
+  border-radius: 12px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.glyph {
+  font-size: 15px;
+  color: var(--gold);
+}
+
+.name {
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  color: var(--gold-dim);
+}
+
+.metric {
+  margin-bottom: var(--space-2);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.value {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--gold-muted);
+}
+
+.notice {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: center;
+  align-content: center;
+  min-height: 55vh;
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+}
+
+.noticeGlyph {
+  font-size: 34px;
+  line-height: 1;
+  color: var(--gold-faint);
+}
+
+.noticeMessage {
+  margin: 0;
+  max-width: 46ch;
+  color: var(--text-muted);
+}
+
+.noticeHint {
+  margin: 0;
+  max-width: 46ch;
+  font-size: 12px;
+  color: var(--text-dim);
+}
