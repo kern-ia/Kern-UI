@@ -47,3 +47,7 @@ stack du projet en cours — inutile de charger le reste en contexte.
   suppression. Valable tant que la charge tient dans un paquet.
 - Vérifier un état « en cours » en E2E demande un vrai travail lent : un stub instantané
   montre l'état final et laisse croire que la dérivation marche.
+- **Struct Go sans tag `json:"..."` → sérialise en PascalCase sur le fil.** `go test`
+  ne le voit jamais (assertions sur la struct décodée, pas sur le JSON brut) ; seul un
+  vrai `curl` contre le serveur le révèle. Poser les tags dès l'écriture d'un type destiné
+  à un contrat, pas après coup.
