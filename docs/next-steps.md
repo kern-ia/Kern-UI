@@ -11,14 +11,25 @@ Written 2026-07-26, updated 2026-07-27 when the skills registry shipped. Read th
 > Il existe pour qu'une reprise n'ait pas à relire le code. Le reste du fichier donne le
 > pourquoi ; celui-ci donne la position.
 
-**Dernier livré** — 2026-07-28 : `kern-orch serve` (`feature/daemon-mode`, dans Kern-Orch).
-kern-orch peut tourner en service, accepter des runs par HTTP, les exécuter en tâche de
-fond. C'est le PRÉREQUIS de C5 (lecture des outils/Espace), pas C5 elle-même — aucun outil
-n'est encore lisible depuis l'extérieur. Avant : le rendu mobile, TLS, l'authentification.
+**Dernier livré** — 2026-07-29 : `kern-exec` v1 (**nouveau dépôt**,
+`/Users/yoann/Developer/kern/kern-exec`, Rust). Confinement réel sur macOS (Seatbelt),
+refus explicite sur Linux/Windows — personne n'a de machine pour les vérifier. 27 tests
+(15 unitaires + 12 d'intégration contre le vrai binaire). `dev` à jour, **`main` pas encore
+posé** — pause délibérée, comme pour les deux autres repos avant leur jalon. Avant :
+`kern-orch serve` (mode démon).
 
 **En cours** — rien. Le prochain point de la liste ci-dessous.
 
-**Ce que le mode démon débloque concrètement, et ce qu'il ne débloque pas encore**
+**Ce que kern-exec débloque, et ce qu'il NE fait PAS**
+- Débloque : un agent kern-orch peut être confiné (dossiers, réseau, délai) — le trou le
+  plus ancien de la liste est enfin fermé, sur macOS.
+- Zéro changement de code kern-orch pour le câbler : `KERN_AGENT_CLI=kern-exec run
+  --allow-read <dir> ... -- <cli réel>`. Pas encore fait — décision de câblage réel (quels
+  dossiers autoriser pour un agent donné) à prendre avant de l'activer en pratique.
+- NE fait PAS : budgets, escalade, politique fine — ça reste `kern-policy`, non construit.
+- NE fonctionne PAS sur Linux ni Windows — refus explicite, pas une fausse protection.
+
+**Ce que le mode démon a débloqué, et ce qu'il ne débloque pas encore**
 - Débloqué : une instance centralisée est maintenant possible (un process qui reste vivant).
 - PAS débloqué : C5 lui-même. Il reste à écrire le format de tool réutilisable et le
   chargement des tools depuis les skills (EPIC-03, kern-orch), puis le contrat côté kern-ui
