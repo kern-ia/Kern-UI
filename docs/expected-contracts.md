@@ -173,7 +173,16 @@ than inventing a form the mockup never drew, such a tool is left out of the grid
 SKILL.md, `stdin`/`stdout` JSON — the same shape agents already use), and what crosses to
 kern-ui is a plain HTTP contract, not the Model Context Protocol. kern-ui is not an agent
 client; a `fetch()` is the whole cost this needs. Real MCP would earn its keep the day an
-external agent client, not a browser, needs to call these same tools.
+external agent client, not a browser, needs to call these same tools — tracked as an open
+question in `a-trancher.md` rather than decided here.
+
+**Worth knowing for that day**: the MCP specification changed substantially on 2026-07-28
+(still a release candidate as of this writing) — Streamable HTTP dropped the
+`initialize`/`initialized` handshake and `Mcp-Session-Id` entirely, moving to a stateless
+request/response model where each call carries its own context. A remote server is now
+expected to be a full OAuth 2.1 resource server. The direction matters more than the date:
+`internal/tools`' own shape here — one call in, one call's worth of state, nothing kept
+between invocations — already matches where MCP is heading, not where it used to be.
 
 ---
 
