@@ -11,12 +11,24 @@ Written 2026-07-26, updated 2026-07-27 when the skills registry shipped. Read th
 > Il existe pour qu'une reprise n'ait pas à relire le code. Le reste du fichier donne le
 > pourquoi ; celui-ci donne la position.
 
-**Dernier livré** — 2026-07-29 : câblage `kern-exec` ↔ kern-orch, prouvé sur un vrai run
-(voir ci-dessous). Avant : `kern-exec` v1 (**nouveau dépôt**,
-`/Users/yoann/Developer/kern/kern-exec`, Rust) — confinement réel sur macOS (Seatbelt),
-refus explicite sur Linux/Windows. 27 tests (15 unitaires + 12 d'intégration contre le vrai
-binaire). `dev` à jour, **`main` pas encore posé** — pause délibérée, comme pour les deux
-autres repos avant leur jalon. Avant ça : `kern-orch serve` (mode démon).
+**Dernier livré** — 2026-07-29 : backend Linux réel pour `kern-exec` (`landlock` + espace
+de noms réseau), vérifié dans une vraie VM (Ubuntu 24.04, noyau 6.8, via `colima` — déjà
+installé, dépôt monté directement dedans). macOS et Linux sont maintenant tous les deux
+confinés pour de vrai ; Windows reste un refus explicite (aucune machine pour vérifier).
+36 tests au total côté kern-exec (macOS + Linux). `dev` à jour, `main` toujours pas posé.
+Avant : le câblage `kern-exec` ↔ kern-orch prouvé sur macOS ; avant ça, `kern-exec` v1 macOS
+seul ; avant ça, `kern-orch serve` (mode démon).
+
+**Asymétrie Linux à connaître** : `landlock` ne couvre que les fichiers (son propre contrôle
+réseau, ABI4+, ne restreint que TCP par port — UDP passerait). Le réseau se coupe par un
+espace de noms réseau vide à la place. Sans droits root, le créer exige un espace de noms
+utilisateur, qu'Ubuntu 24.04+ bloque par défaut — sur une telle machine sans root,
+**kern-exec refuse purement et simplement** de lancer une commande avec réseau interdit
+plutôt que de replier sur une garantie plus faible en silence. Vérifié dans les deux sens
+(root et non-root) sur la même VM.
+
+**La VM colima est arrêtée** après usage (elle consommait 8 Go de RAM alloués) ; `colima
+start` la relance en une commande si un futur travail sur le backend Linux en a besoin.
 
 **En cours** — rien. Le prochain point de la liste ci-dessous.
 

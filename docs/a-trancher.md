@@ -62,12 +62,14 @@ il dit pourquoi la question se posait, ce qui reste utile pour la mettre en œuv
 
 ## 1. Le confinement des agents
 
-> **✅ Réponse (2026-07-28), livrée le 2026-07-29.** `kern-exec` existe : confinement réel
-> sur macOS (dossiers autorisés, réseau coupé par défaut, délai d'exécution), refus
-> explicite sur Linux et Windows tant que personne n'a de machine pour les vérifier — jamais
-> une fausse protection silencieuse. Pas encore câblé dans un run réel de kern-orch (aucun
-> changement de code requis pour le faire, juste une variable d'environnement à poser). Les
-> budgets et l'escalade restent `kern-policy`, non construit.
+> **✅ Réponse (2026-07-28), livrée le 2026-07-29, étendue le même jour.** `kern-exec`
+> confine réellement sur **macOS et Linux** (dossiers autorisés, réseau coupé par défaut —
+> par namespace vide sur Linux, pas par landlock seul, dont le contrôle réseau est plus
+> étroit —, délai d'exécution), vérifié dans une vraie VM pour Linux. Windows reste un refus
+> explicite tant que personne n'a de machine pour le vérifier. Câblé et prouvé sur un vrai
+> run kern-orch (macOS), via un script wrapper — `KERN_AGENT_CLI` ne porte pas d'arguments,
+> donc aucun changement de code kern-orch. Les budgets et l'escalade restent `kern-policy`,
+> non construit.
 
 
 **Ce dont il s'agit.** Quand un agent travaille, kern-orch lance le programme d'IA comme un
