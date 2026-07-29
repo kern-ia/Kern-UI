@@ -11,21 +11,25 @@ Written 2026-07-26, updated 2026-07-27 when the skills registry shipped. Read th
 > Il existe pour qu'une reprise n'ait pas à relire le code. Le reste du fichier donne le
 > pourquoi ; celui-ci donne la position.
 
-**Dernier livré** — 2026-07-29 : `kern-exec` v1 (**nouveau dépôt**,
-`/Users/yoann/Developer/kern/kern-exec`, Rust). Confinement réel sur macOS (Seatbelt),
-refus explicite sur Linux/Windows — personne n'a de machine pour les vérifier. 27 tests
-(15 unitaires + 12 d'intégration contre le vrai binaire). `dev` à jour, **`main` pas encore
-posé** — pause délibérée, comme pour les deux autres repos avant leur jalon. Avant :
-`kern-orch serve` (mode démon).
+**Dernier livré** — 2026-07-29 : câblage `kern-exec` ↔ kern-orch, prouvé sur un vrai run
+(voir ci-dessous). Avant : `kern-exec` v1 (**nouveau dépôt**,
+`/Users/yoann/Developer/kern/kern-exec`, Rust) — confinement réel sur macOS (Seatbelt),
+refus explicite sur Linux/Windows. 27 tests (15 unitaires + 12 d'intégration contre le vrai
+binaire). `dev` à jour, **`main` pas encore posé** — pause délibérée, comme pour les deux
+autres repos avant leur jalon. Avant ça : `kern-orch serve` (mode démon).
 
 **En cours** — rien. Le prochain point de la liste ci-dessous.
 
 **Ce que kern-exec débloque, et ce qu'il NE fait PAS**
 - Débloque : un agent kern-orch peut être confiné (dossiers, réseau, délai) — le trou le
   plus ancien de la liste est enfin fermé, sur macOS.
-- Zéro changement de code kern-orch pour le câbler : `KERN_AGENT_CLI=kern-exec run
-  --allow-read <dir> ... -- <cli réel>`. Pas encore fait — décision de câblage réel (quels
-  dossiers autoriser pour un agent donné) à prendre avant de l'activer en pratique.
+- Câblage prouvé le 2026-07-29, en A/B sur un vrai run kern-orch : un faux agent qui
+  lit un fichier hors périmètre y arrive en direct, échoue derrière kern-exec, le run se
+  termine proprement dans les deux cas, signal d'activité intact. **Correction au passage** :
+  `KERN_AGENT_CLI` ne porte qu'un chemin sans arguments — le câblage direct annoncé la
+  veille était inexact. La bonne forme est un script wrapper (`kern-exec/examples/wrap-agent-cli.sh`),
+  toujours sans changement de code kern-orch. Reste à décider quels dossiers autoriser pour
+  un agent donné en production — un choix produit, pas technique.
 - NE fait PAS : budgets, escalade, politique fine — ça reste `kern-policy`, non construit.
 - NE fonctionne PAS sur Linux ni Windows — refus explicite, pas une fausse protection.
 
