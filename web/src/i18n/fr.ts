@@ -123,6 +123,22 @@ export const fr = {
     creationUnavailable: 'La création d\'agents n\'est pas encore disponible.',
   },
 
+  espace: {
+    label: 'Espace des outils connectés',
+    loading: 'Chargement des outils…',
+    // No source configured on kern-ui — distinct from kern-orch answering with none.
+    unconfigured: 'Aucun outil n\'est connecté pour le moment.',
+    unconfiguredHint: 'Un outil apparaîtra ici dès qu\'il sera branché.',
+    // Configured and genuinely empty, or every tool still needs an argument binding that
+    // does not exist yet — both read the same here: nothing to show without inventing a
+    // card the mockup never drew an input for.
+    empty: 'Aucun outil ne peut encore afficher sa valeur ici.',
+    emptyHint: 'Certains outils attendent une configuration qui n\'existe pas encore.',
+    error: 'Les outils connectés n\'ont pas pu être chargés.',
+    widgetLoading: '…',
+    widgetError: 'Valeur indisponible',
+  },
+
   runs: {
     heading: 'Ruche des sous-agents',
     empty: 'Aucune mission pour le moment.',

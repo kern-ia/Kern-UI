@@ -38,11 +38,9 @@ export const VIEWS: ViewDef[] = [
 
   { id: 'agents', glyph: '⬡', source: { kind: 'live' }, onMobile: true },
 
-  // Widgets stand for MCP servers, which are tools/skills the agent wires on demand — not
-  // a brick of their own, and the Grimoire's contract now names them. What is still
-  // missing is the reading behind each widget: a card shows a live measurement, and
-  // nothing can be asked for one yet (C5).
-  { id: 'espace', glyph: '▦', source: { kind: 'awaiting', capability: 'outils' }, onMobile: true },
+  // kern-orch reads a widget's value on request (C5). Only a tool with no required param
+  // becomes a card: a required one has no config saying what to bind it to yet.
+  { id: 'espace', glyph: '▦', source: { kind: 'live' }, onMobile: true },
 
   // Driving a browser would belong to kern-exec, which is not started.
   { id: 'navigateur', glyph: '◫', source: { kind: 'awaiting', capability: 'navigateur' }, onMobile: false },

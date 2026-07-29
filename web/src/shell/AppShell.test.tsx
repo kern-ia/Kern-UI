@@ -123,14 +123,40 @@ it('draws the catalogue kern-orch published in the Grimoire', async () => {
   expect(screen.getByText('Analyse')).toBeInTheDocument()
 })
 
-// The Espace has the catalogue; what it lacks is the reading behind a widget. It says so in
-// the reader's terms, and says nothing about which module owes it.
-it('tells the Espace apart: it waits for the readings, not for the catalogue', () => {
-  render(<AppShell />)
+it('draws a live widget in the Espace once kern-orch answers', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn((url: string) => {
+      const isInvoke = url.includes('/invoke')
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: async () =>
+          isInvoke
+            ? { label: 'Battement', value: '17:09:11', as_of: '2026-07-29T17:09:11+02:00' }
+            : [{ name: 'heartbeat', description: 'reports the time' }],
+      } as Response)
+    }),
+  )
 
+  render(<AppShell />)
   fireEvent.click(within(nav()).getByRole('tab', { name: fr.views.espace }))
 
-  expect(screen.getByText(fr.missing.awaiting.outils)).toBeInTheDocument()
+  expect(await screen.findByText('Battement')).toBeInTheDocument()
+})
+
+// No tool source configured reads the same way an unpublished registry does: a fact the
+// reader can be told, not a blank screen.
+it('says so when no tool source is configured for the Espace', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue({ ok: false, status: 404, json: async () => ({}) } as Response),
+  )
+
+  render(<AppShell />)
+  fireEvent.click(within(nav()).getByRole('tab', { name: fr.views.espace }))
+
+  expect(await screen.findByText(fr.espace.unconfigured)).toBeInTheDocument()
 })
 
 // A demo audience must never read our module layout off a screen.

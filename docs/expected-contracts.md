@@ -24,7 +24,7 @@ are statements of need. The one contract that exists is specified in [README.md]
 | C2 | Run topology — nodes and edges | kern-orch ✅ | Agents as the mockup draws it | **in use** |
 | C3 | Run failure | kern-orch ✅ | Agents node colours, failed runs | **in use** |
 | C4 | `kern.registry/v1` — skills & tools registry | kern-orch ✅ | Grimoire | **in use** |
-| C5 | Tool invocation and readback | kern-tools 🟡 | Espace widget values | missing |
+| C5 | Tool invocation and readback | kern-orch ✅ | Espace widget values | **in use** |
 | C6 | Steering channel | kern-pilot ⬜ | Conversation, sub-agent creation, accept/ignore | missing |
 | C7 | Memory graph | kern-memory ⬜ | Cerveau | missing |
 | C8 | Documents and suggestions | kern-memory ⬜ + kern-pilot ⬜ | Rédaction | missing |
@@ -39,8 +39,9 @@ is a decision before it is a schema, and it is stated so nobody has to rediscove
 **C2 and C3 shipped on 2026-07-26** as `kern.step-event/v2`: the Agents view draws the hive
 the mockup shows. **C4 shipped on 2026-07-27** as `kern.registry/v1`: the Grimoire is live.
 **C10 shipped on 2026-07-27** as `kern.activity/v1`: the beacon reaches all four of its
-colours. **C5** is the next one worth having — and it needs a process before it needs a
-schema, see below.
+colours. **C5 shipped on 2026-07-29**: the Espace draws a live widget per tool that needs
+no argument binding — see below for why that scope is narrower than the mockup's five
+cards.
 
 Two corrections from building them, both in the same direction — a contract stated from a
 mockup is wider than the one the code needs:
@@ -147,27 +148,32 @@ nothing — and the Grimoire draws a different screen for each.
 
 ---
 
-## C5 — Tool invocation and readback · missing
+## C5 — Tool invocation and readback · **in use**
 
-**Producer** kern-tools 🟡. **Now the only thing standing between the Espace and its
-widgets** — since C4, the interface knows which tools exist.
+**Producer** kern-orch, via `kern-orch serve`.
 
-**It needed a process before it needed a schema.** That process shipped 2026-07-28:
-`kern-orch serve` runs as a long-lived service, accepting runs over HTTP. It is the
-prerequisite, not C5 itself — no tool is readable or invokable through it yet. What remains
-in kern-orch (EPIC-03): a reusable tool format, and loading tools from skills. Only once
-those exist does this contract have anything to read from.
+**Shipped 2026-07-29, and pulled rather than pushed** — the one contract on this list that
+is not a producer pushing to kern-ui. A widget's value is asked for when it opens, not
+emitted on kern-orch's own schedule, so kern-ui calls out: `GET /api/v1/tools` (catalogue)
+and `POST /api/v1/tools/{name}/invoke` (a label, a rendered string, and when it was asked —
+"how stale it may be"), both proxied through kern-ui's own session-protected endpoints of
+the same shape, never called directly from the browser.
 
-**Why** An Espace widget is not just a name: it shows a live measurement — *Pull requests
-ouvertes 4*, *Messages non lus 12*, *Prochain rendez-vous 14:30*. That value has to be read
-from the tool behind the widget.
+**The open question below is answered: kern-orch reads on its own behalf.** kern-ui holds
+one more outbound credential (`KERN_ORCH_URL` / `KERN_ORCH_TOKEN`, the reverse direction
+from `KERN_UI_TOKEN`) and talks to no second producer — consistent with every other
+contract shipped so far.
 
-**Needed** A way to ask a wired tool for a display value: a label and a rendered string, plus
-how stale it may be. kern-ui must never format domain data itself.
+**Narrower than the widgets need, on purpose.** Only a tool with no required param becomes
+a card. A required param has no binding to a value yet — which widget, which argument, whose
+job it is to supply one — and that gap is the same one C11 names for skill authoring. Rather
+than inventing a form the mockup never drew, such a tool is left out of the grid entirely.
 
-**Open question** Whether kern-ui reads tools directly or whether kern-orch reads on its
-behalf. Reading directly would give kern-ui a second producer to talk to — worth deciding
-deliberately rather than by accident.
+**Not MCP.** kern-orch's tool skills execute as a subprocess (a `command` declared in
+SKILL.md, `stdin`/`stdout` JSON — the same shape agents already use), and what crosses to
+kern-ui is a plain HTTP contract, not the Model Context Protocol. kern-ui is not an agent
+client; a `fetch()` is the whole cost this needs. Real MCP would earn its keep the day an
+external agent client, not a browser, needs to call these same tools.
 
 ---
 

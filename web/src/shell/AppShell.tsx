@@ -6,6 +6,8 @@ import { MissingSource } from '../views/MissingSource'
 import { AgentsView } from '../views/AgentsView'
 import { GrimoireView } from '../grimoire/GrimoireView'
 import { useRegistry } from '../grimoire/useRegistry'
+import { EspaceView } from '../espace/EspaceView'
+import { useTools } from '../espace/useTools'
 import { useRunStream } from '../runs/useRunStream'
 import { systemState, type SystemState } from './systemState'
 import { DEFAULT_VIEW, VIEWS, mobileViews, viewById, type ViewDef, type ViewId } from './views'
@@ -13,6 +15,7 @@ import type { Connection, Run } from '../runs/types'
 
 const STREAM_URL = '/api/v1/stream'
 const REGISTRY_URL = '/api/v1/registry'
+const TOOLS_URL = '/api/v1/tools'
 
 /** Colours come from the mockup's stateMap; tokens.css holds the values. */
 const stateColour: Record<SystemState, string> = {
@@ -146,6 +149,9 @@ function ViewBody({ view, runs }: { view: ViewId; runs: Run[] }) {
   if (view === 'grimoire') {
     return <GrimoireBody runs={runs} />
   }
+  if (view === 'espace') {
+    return <EspaceBody />
+  }
   return <AgentsView runs={runs} />
 }
 
@@ -157,4 +163,9 @@ function ViewBody({ view, runs }: { view: ViewId; runs: Run[] }) {
  */
 function GrimoireBody({ runs }: { runs: Run[] }) {
   return <GrimoireView registry={useRegistry(REGISTRY_URL)} runs={runs} />
+}
+
+/** Same reasoning as GrimoireBody: the catalogue is fetched only while the Espace is open. */
+function EspaceBody() {
+  return <EspaceView tools={useTools(TOOLS_URL)} />
 }
