@@ -62,11 +62,12 @@ il dit pourquoi la question se posait, ce qui reste utile pour la mettre en œuv
 
 ## 1. Le confinement des agents
 
-> **✅ Réponse (2026-07-28) — bac à sable.** L'agent garde sa liberté d'action *dans son
-> périmètre* ; l'orchestrateur garde le contrôle à l'extérieur. C'est l'option « sérieux »
-> ci-dessous, pas le minimum : la brique `kern-exec`, avec `kern-guard` et `kern-policy`.
-> Reste à cadrer l'étendue du bac (système de fichiers, réseau, budgets) — c'est de la
-> conception, plus un arbitrage.
+> **✅ Réponse (2026-07-28), livrée le 2026-07-29.** `kern-exec` existe : confinement réel
+> sur macOS (dossiers autorisés, réseau coupé par défaut, délai d'exécution), refus
+> explicite sur Linux et Windows tant que personne n'a de machine pour les vérifier — jamais
+> une fausse protection silencieuse. Pas encore câblé dans un run réel de kern-orch (aucun
+> changement de code requis pour le faire, juste une variable d'environnement à poser). Les
+> budgets et l'escalade restent `kern-policy`, non construit.
 
 
 **Ce dont il s'agit.** Quand un agent travaille, kern-orch lance le programme d'IA comme un
