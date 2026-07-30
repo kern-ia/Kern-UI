@@ -45,7 +45,8 @@ export const VIEWS: ViewDef[] = [
   // Driving a browser would belong to kern-exec, which is not started.
   { id: 'navigateur', glyph: '◫', source: { kind: 'awaiting', capability: 'navigateur' }, onMobile: false },
 
-  { id: 'redaction', glyph: '✎', source: { kind: 'awaiting', capability: 'documents' }, onMobile: false },
+  // kern-memory (C8's storage slice) serves documents and suggestions on request.
+  { id: 'redaction', glyph: '✎', source: { kind: 'live' }, onMobile: false },
 
   // kern-orch publishes its skills catalogue on kern.registry/v1.
   { id: 'grimoire', glyph: 'ᛝ', source: { kind: 'live' }, onMobile: true },
