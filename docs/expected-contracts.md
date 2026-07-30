@@ -27,7 +27,7 @@ are statements of need. The one contract that exists is specified in [README.md]
 | C5 | Tool invocation and readback | kern-orch ✅ | Espace widget values | **in use** |
 | C6 | Steering channel | kern-pilot ⬜ | Conversation, sub-agent creation, accept/ignore | missing |
 | C7 | Memory graph | kern-memory ⬜ | Cerveau | missing |
-| C8 | Documents and suggestions | kern-memory ⬜ + kern-pilot ⬜ | Rédaction | missing |
+| C8 | Documents and suggestions | kern-memory ✅ (storage slice) | Rédaction | **v1 shipped 2026-07-30; suggestion generation still missing** |
 | C9 | Browser session and approval queue | kern-exec ⬜ + kern-pilot ⬜ | Navigateur | missing |
 | C10 | `kern.activity/v1` — live activity signal | kern-orch ✅ | `Réflexion` beacon | **in use** |
 | C11 | Skill & sub-agent authoring | undecided | `Nouveau sous-agent`, `+` compétence | **deferred; may become graph authoring** |
@@ -221,16 +221,30 @@ interface can ask for a sub-graph.
 
 ---
 
-## C8 — Documents and suggestions · missing
+## C8 — Documents and suggestions · v1 shipped 2026-07-30, suggestion generation still missing
 
-**Producer** kern-memory ⬜ for documents, kern-pilot ⬜ for the accept/ignore path.
+**Producer** `kern-memory` ✅ — a new, minimal repo (sibling of kern-notify), not the
+EPIC-13 kern-memory in kern-orch's roadmap (RAG, embeddings, `.okf`). Storage only: a
+document's content, its suggestions, and their pending/accepted/ignored status. kern-ui
+proxies it session-protected, same shape as C5/C6.
 
 **Why** The Rédaction view holds notes (*Notes — Vision du produit*, *482 mots · sauvegardé à
 l'instant*), a `Journal des décisions`, and inline suggestions the user accepts or ignores.
 
-**Needed** Document content and save state, an append-only decision log, and a suggestion
-stream whose entries can be resolved. Whether a document lives in kern-memory or somewhere
-else is not settled.
+**Shipped in v1** Document content, word count, an "updated" label, and a suggestion stream
+whose entries can be accepted or ignored — read and decide only. A suggestion's own content
+is written directly via `kern-memory seed`; there is no HTTP write path for it yet, matching
+the "no editing, no generation" scope decided 2026-07-30.
+
+**Not the Rédaction endgame — noted 2026-07-30**: Rédaction is not meant to become a plain
+text editor. The direction is a sub-agent expert in writing (drafting, critiquing, proposing
+the suggestions themselves) that a person steers from this view — closer to a collaborator
+than a document store with a UI on top. What C8 v1 built (storage + accept/ignore) is the
+substrate that agent's output would flow through, not the feature itself. Scoping *that*
+agent — what it drafts unprompted vs. on request, how it differs from a generic skill
+dispatched via `/skill`, whether it needs its own contract beyond C8's storage shape — is
+undecided and deliberately deferred; this note exists so the next session does not mistake
+v1's narrow read/accept/ignore slice for the whole of what this view is meant to become.
 
 ---
 
