@@ -11,24 +11,34 @@ Written 2026-07-26, updated 2026-07-27 when the skills registry shipped. Read th
 > Il existe pour qu'une reprise n'ait pas à relire le code. Le reste du fichier donne le
 > pourquoi ; celui-ci donne la position.
 
-**Dernier livré** — 2026-07-29 : quatre features fusionnées dans `dev` (kern-notify + deux
-repos kern-orch/kern-ui) dans la même journée :
-1. **C12 livré** — nouveau dépôt `kern-notify` (relais SSE kern-ui → Telegram, notifications
-   seules, vérifié contre un vrai bot Telegram).
-2. **EPIC-03 clos côté kern-orch** — un skill `type: tool` déclare `command`/`params` en
-   frontmatter, exécuté en subprocess, exposé par `kern-orch serve`
-   (`GET /api/v1/tools`, `POST /api/v1/tools/{name}/invoke`).
-3. **C5 clos côté kern-ui** — l'Espace lit ce catalogue à la demande (pull, pas push comme
-   les autres contrats) et affiche une carte par outil sans paramètre requis. **Vérifié dans
-   un vrai navigateur** : compte créé, connexion au clavier, la carte `heartbeat` affiche une
-   vraie heure venue d'un vrai subprocess Python.
-4. **Sujet consigné, pas tranché** : MCP stateless (spec 2026-07-28) noté dans
-   `a-trancher.md` — pas un besoin aujourd'hui, mais l'endpoint tools de kern-orch est déjà
-   dans cet esprit si le besoin apparaît un jour.
+**Dernier livré** — 2026-07-30 : **C6 v1 complet**, quatre branches à travers kern-orch et
+kern-ui, plus deux correctifs trouvés en vérifiant en réel :
+1. **Pilotage d'un run déjà lancé** (kern-orch) — `stop`/`nudge`/`decide` : un nœud
+   `type: approval` bloque réellement (réutilise le concurrency model existant), `nudge`
+   s'applique entre deux niveaux, `stop` annule le contexte du run. Chaque run porte
+   maintenant un `Requester` (vide = ouvert à tous, comme avant).
+2. **Lancement depuis le chat** (kern-orch) — `POST /api/v1/dispatch` : `/skill texte…`
+   invoque un tool directement (délègue à C5) ou lance un run à un nœud pour un skill
+   `type: agent` (le texte devient le prompt entier, aucun gabarit).
+3. **Proxy kern-ui** — quatre endpoints session-protégés qui présentent l'acteur de la
+   session, jamais celui du corps de la requête.
+4. **Front kern-ui** — bouton « Arrêter » sur la ruche (désactivé + expliqué si un autre
+   demandeur a lancé le run), panneau « Valider »/« Refuser » à côté du graphe, pierre de
+   conversation devenue vivante (`/skill` ou message simple qui nudge la mission ouverte).
+
+**Trois bugs réels, aucun visible en tests unitaires isolés, tous trouvés en pilotant les
+deux vrais binaires ensemble** (détails dans `docs/index/retro.md` des deux dépôts,
+2026-07-29/30) : `Requester` jamais ajouté pour de vrai au contrat `report.StepEvent` malgré
+le plan ; `projection.validKinds` côté kern-ui ignorait le nouveau `kind: approval` ;
+un run parqué sur une approbation ne rapportait rien à kern-ui avant d'être décidé (corrigé
+en réutilisant le signal d'activité C10). **Limite connue, non résolue** : une approbation
+en tout premier nœud d'un graphe n'a aucun chemin d'interface pour être décidée — le signal
+d'activité ne porte pas le type du nœud.
 
 `dev` à jour dans les deux dépôts, `main` toujours pas repositionné depuis le jalon
-2026-07-28. Avant ça : backend Linux réel pour `kern-exec` (`landlock` + espace de noms
-réseau), vérifié dans une vraie VM ; avant ça, le câblage `kern-exec` ↔ kern-orch sur macOS.
+2026-07-28. Avant ça : C12 (`kern-notify`) + C5 (Espace) livrés le 2026-07-29 ; avant ça,
+backend Linux réel pour `kern-exec` (`landlock` + espace de noms réseau), vérifié dans une
+vraie VM ; avant ça, le câblage `kern-exec` ↔ kern-orch sur macOS.
 
 **Asymétrie Linux à connaître** : `landlock` ne couvre que les fichiers (son propre contrôle
 réseau, ABI4+, ne restreint que TCP par port — UDP passerait). Le réseau se coupe par un
@@ -64,11 +74,16 @@ reste vivant), et c'était le prérequis de C5, livré depuis (voir ci-dessus).
 2. ~~`kern-orch` en démon~~ Fait, 2026-07-28.
 3. ~~`C12` — la messagerie~~ Fait, 2026-07-29 (`kern-notify`, notifications seules).
 4. ~~C5 — les valeurs de l'Espace~~ Fait, 2026-07-29 (EPIC-03 + Espace kern-ui).
-5. **`C6` — le pilotage : arrêter, valider, refuser.** Prochain gros morceau. C'est là
-   qu'arrive « qui a demandé cette mission », pas avant. Discuté le 2026-07-29 : le sens
-   sortant d'agent-vers-humain existe déjà (`notify` builtin tool, C12) ; le sens entrant
-   (Telegram → agent, tâches et documents) est explicitement le périmètre de C6, à cadrer
-   avant d'être construit — pas encore fait.
+5. ~~`C6` v1 — arrêter, valider/refuser, nudger un run en cours + lancer depuis le chat~~
+   Fait, 2026-07-30. `Requester` porté par chaque run (vide = ouvert à tous). Périmètre
+   volontairement pas couvert : `queue`/`replan` au sens large d'EPIC-05, l'interprétation
+   en langage naturel d'un message sans `/commande` (nommée comme direction future, pas
+   cadrée), et une approbation en tout premier nœud d'un graphe (limite technique connue,
+   voir `docs/retro.md`).
+6. **Prochain sujet à choisir.** Rien d'ordonné pour l'instant au-delà de C6 — voir
+   `docs/expected-contracts.md` pour les contrats encore manquants (C7 Cerveau/mémoire, C8
+   Rédaction, C9 Navigateur) et `docs/ROADMAP.md` de kern-orch pour le cercle de Willis
+   (kern-guard, EPIC-07) mis de côté le 2026-07-29.
 
 **Petites choses notées, non bloquantes**
 - Les identifiants d'étapes s'affichent bruts (`prep`, `nested`). Corriger en amont dans les
