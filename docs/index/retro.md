@@ -384,3 +384,33 @@ superpose. **Une suite verte ne dit rien de la mise en page.**
   `projection.validKinds`) doit être mise à jour dans la MÊME feature, pas découverte à
   l'usage. Chercher `validKinds`/équivalent chez le consommateur dès qu'un `Kind` nouveau
   apparaît côté producteur.
+
+## 2026-07-30 — C6 (front : bouton Arrêter, panneau d'approbation, chat vivant)
+
+**A fonctionné**
+- Remonter la sélection de mission dans `AppShell` plutôt que la garder locale à
+  `AgentsView` : la pierre de conversation en avait besoin pour savoir quelle mission
+  nudger, et un état possédé par le mauvais composant se découvre toujours à l'usage, pas
+  à la conception.
+- Un panneau à côté de la ruche plutôt que des boutons dans le SVG pour l'approbation : la
+  maquette n'a jamais dessiné d'entrée sur un nœud, et deviner un emplacement aurait été
+  plus risqué que de sortir du canevas.
+
+**Un troisième bug, trouvé en pilotant le vrai navigateur jusqu'au bout**
+- Après avoir corrigé le signal d'activité côté kern-orch (voir son propre retro), le
+  panneau d'approbation restait quand même invisible : `examples/steer.yaml` avait
+  l'approbation comme nœud d'ENTRÉE, et la topologie (donc savoir qu'un nœud est de type
+  `approval`) ne voyage que sur le premier step event — qui n'arrive jamais tant que rien
+  n'est décidé quand ce premier nœud EST l'approbation. Aucun test unitaire ne pouvait le
+  voir : chaque côté testait son propre bout du contrat, jamais la vraie séquence
+  événementielle qu'un humain regarde à l'écran.
+- Corrigé côté exemple (réordonné), pas côté protocole. Consigné comme limite connue plutôt
+  que résolu en profondeur : une approbation en tout premier nœud d'un graphe restera sans
+  chemin d'interface tant que le signal d'activité ne portera pas aussi le type du nœud.
+
+**Règle à retenir**
+- Trois bugs cette feature, tous invisibles en tests unitaires isolés, tous trouvés en
+  pilotant réellement les deux binaires ensemble jusqu'au clic final. Une fonctionnalité de
+  pilotage (C6) est exactement le genre de chemin qu'aucune suite de tests séparée ne peut
+  garantir de bout en bout — la vérifier au clavier n'est pas une option, c'est la seule
+  preuve qui compte ici.

@@ -186,14 +186,12 @@ it('moves the beacon from rest to action when a run is live', () => {
   expect(screen.getByTestId('system-state')).toHaveTextContent(fr.systemState.action)
 })
 
-it('keeps the conversation bar on every view, disabled and saying why', () => {
+it('keeps the conversation bar reachable on every view', () => {
   render(<AppShell />)
 
   for (const view of VIEWS) {
     fireEvent.click(within(nav()).getByRole('tab', { name: fr.views[view.id] }))
 
-    const input = screen.getByPlaceholderText(fr.chat.placeholder)
-    expect(input).toBeDisabled()
-    expect(screen.getByText(fr.chat.unavailable)).toBeInTheDocument()
+    expect(screen.getByPlaceholderText(fr.chat.placeholder)).toBeInTheDocument()
   }
 })
