@@ -60,11 +60,19 @@ export const fr = {
 
   chat: {
     placeholder: 'Demande-moi n\'importe quoi…',
-    // The conversation bar is part of the design but has nothing to talk to: steering an
-    // agent is kern-pilot's job, and that brick is not started.
-    unavailable: 'La conversation n\'est pas encore branchée.',
     stoneHide: 'Ranger la conversation sur le côté',
     stoneShow: 'Déplier la conversation',
+    // Sent as `/skill-name texte…`, matched against the catalogue.
+    launching: 'Lancement…',
+    launched: (name: string) => `Mission « ${name} » lancée.`,
+    // No run selected, and the message was not a /compétence command.
+    needsATarget: 'Ouvrez une mission ou tapez /suivi-d\'une-compétence.',
+    unknownSkill: (known: string[]) =>
+      known.length > 0
+        ? `Compétence inconnue. Disponibles : ${known.join(', ')}.`
+        : 'Compétence inconnue.',
+    sendFailed: 'Le message n\'a pas pu être envoyé.',
+    sentToRun: (graph: string) => `Message transmis à la mission « ${graph} ».`,
   },
 
   missing: {
@@ -153,5 +161,14 @@ export const fr = {
     frontier: 'En cours',
     idle: 'En attente',
     count: (n: number) => (n === 1 ? '1 mission' : `${n} missions`),
+    stop: 'Arrêter',
+    stopping: 'Arrêt…',
+    // Someone else asked for this mission — steering it is theirs to do, not this reader's.
+    stopUnavailable: 'Seul le demandeur de cette mission peut l\'arrêter.',
+    awaitingDecision: (label: string) => `« ${label} » attend une décision.`,
+    approve: 'Valider',
+    refuse: 'Refuser',
+    deciding: '…',
+    decisionFailed: 'La décision n\'a pas pu être transmise.',
   },
 } as const

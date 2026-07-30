@@ -9,6 +9,7 @@ import { useRegistry } from '../grimoire/useRegistry'
 import { EspaceView } from '../espace/EspaceView'
 import { useTools } from '../espace/useTools'
 import { useRunStream } from '../runs/useRunStream'
+import { topLevelRuns } from '../runs/nested'
 import { systemState, type SystemState } from './systemState'
 import { DEFAULT_VIEW, VIEWS, mobileViews, viewById, type ViewDef, type ViewId } from './views'
 import type { Connection, Run } from '../runs/types'
@@ -43,6 +44,12 @@ export function AppShell({
   const [view, setView] = useState<ViewId>(DEFAULT_VIEW)
   const { runs, connection } = useRunStream(STREAM_URL)
   const state = systemState(runs)
+
+  // Lifted out of the Agents view so the conversation stone can nudge whichever mission is
+  // open, on any tab — not only while the Agents view itself is on screen.
+  const [pickedRunId, setPickedRunId] = useState<string | null>(null)
+  const listedRuns = topLevelRuns(runs)
+  const selectedRun = listedRuns.find((r) => r.id === pickedRunId) ?? listedRuns[0] ?? null
 
   return (
     <div className={styles.shell}>
@@ -93,12 +100,18 @@ export function AppShell({
       </header>
 
       <main className={styles.main}>
-        <ViewBody view={view} runs={runs} />
+        <ViewBody
+          view={view}
+          runs={runs}
+          user={user}
+          selectedId={selectedRun?.id ?? null}
+          onSelect={setPickedRunId}
+        />
       </main>
 
       {/* Floats over the content and can be tidied against either edge — the mockup's
           rune stone is the handle. */}
-      <ConversationStone stateColour={stateColour[state]} />
+      <ConversationStone stateColour={stateColour[state]} selectedRun={selectedRun} />
 
       <nav className={styles.mobileNav} aria-label={fr.nav.compact}>
         {mobileViews().map((v) => (
@@ -140,7 +153,19 @@ function Tab({
   )
 }
 
-function ViewBody({ view, runs }: { view: ViewId; runs: Run[] }) {
+function ViewBody({
+  view,
+  runs,
+  user,
+  selectedId,
+  onSelect,
+}: {
+  view: ViewId
+  runs: Run[]
+  user: string
+  selectedId: string | null
+  onSelect: (id: string) => void
+}) {
   const def = viewById(view)
 
   if (def.source.kind !== 'live') {
@@ -152,7 +177,7 @@ function ViewBody({ view, runs }: { view: ViewId; runs: Run[] }) {
   if (view === 'espace') {
     return <EspaceBody />
   }
-  return <AgentsView runs={runs} />
+  return <AgentsView runs={runs} user={user} selectedId={selectedId} onSelect={onSelect} />
 }
 
 /**

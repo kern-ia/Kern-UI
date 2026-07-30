@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import styles from './ConversationStone.module.css'
 import { fr } from '../i18n/fr'
+import { dispatch, nudge, SteerError } from '../steer/api'
+import type { Run } from '../runs/types'
 import {
   clampStone,
   defaultStone,
@@ -23,10 +25,20 @@ const STORAGE_KEY = 'kern-ui.stone'
  * and a keyboard path, because a control you can only drag is a control some people simply
  * cannot use.
  */
-export function ConversationStone({ stateColour }: { stateColour: string }) {
+export function ConversationStone({
+  stateColour,
+  selectedRun = null,
+}: {
+  stateColour: string
+  /** The mission a plain message nudges. A `/skill-name` command needs none. */
+  selectedRun?: Run | null
+}) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [position, setPosition] = useState<StonePosition | null>(readStored)
   const [dragging, setDragging] = useState(false)
+  const [message, setMessage] = useState('')
+  const [sending, setSending] = useState(false)
+  const [feedback, setFeedback] = useState<string | null>(null)
   const grabOffset = useRef({ x: 0, y: 0 })
 
   // Pointer handlers must read the live drag state, not the value captured when they were
@@ -144,6 +156,44 @@ export function ConversationStone({ stateColour }: { stateColour: string }) {
   const docked = position?.docked ?? null
   const label = docked ? fr.chat.stoneShow : fr.chat.stoneHide
 
+  // `/skill-name texte…` dispatches a compétence — no mission needed. Anything else nudges
+  // the mission currently open; with none open, there is nothing honest to do with it.
+  const submit = async () => {
+    const text = message.trim()
+    if (text === '' || sending) return
+
+    setSending(true)
+    setFeedback(null)
+    try {
+      if (text.startsWith('/')) {
+        const [command, ...rest] = text.slice(1).split(/\s+/)
+        const skillText = rest.join(' ')
+        setFeedback(fr.chat.launching)
+        const result = await dispatch(command, skillText)
+        setFeedback(
+          result.kind === 'tool' && result.result
+            ? `${result.result.label} : ${result.result.value}`
+            : fr.chat.launched(command),
+        )
+      } else if (selectedRun) {
+        await nudge(selectedRun.id, 'message', text)
+        setFeedback(fr.chat.sentToRun(selectedRun.graph))
+      } else {
+        setFeedback(fr.chat.needsATarget)
+        return
+      }
+      setMessage('')
+    } catch (err) {
+      if (err instanceof SteerError && err.known) {
+        setFeedback(fr.chat.unknownSkill(err.known))
+      } else {
+        setFeedback(fr.chat.sendFailed)
+      }
+    } finally {
+      setSending(false)
+    }
+  }
+
   return (
     <div
       ref={containerRef}
@@ -189,12 +239,22 @@ export function ConversationStone({ stateColour }: { stateColour: string }) {
           <input
             className={styles.field}
             placeholder={fr.chat.placeholder}
-            disabled
-            aria-describedby="chat-note"
+            value={message}
+            disabled={sending}
+            aria-describedby={feedback ? 'chat-note' : undefined}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                void submit()
+              }
+            }}
           />
-          <p className={styles.note} id="chat-note">
-            {fr.chat.unavailable}
-          </p>
+          {feedback && (
+            <p className={styles.note} id="chat-note" role="status">
+              {feedback}
+            </p>
+          )}
         </div>
       )}
     </div>
