@@ -20,6 +20,7 @@ import (
 
 	"github.com/yoann/kern-ui/internal/auth"
 	"github.com/yoann/kern-ui/internal/httpapi"
+	"github.com/yoann/kern-ui/internal/steer"
 	"github.com/yoann/kern-ui/internal/tools"
 )
 
@@ -86,6 +87,7 @@ func run() error {
 			Accounts:      accounts,
 			TrustProxy:    trustProxy,
 			Tools:         &tools.Client{BaseURL: orchURL, Token: orchToken},
+			Steer:         &steer.Client{BaseURL: orchURL, Token: orchToken},
 		}),
 		ReadHeaderTimeout: 5 * time.Second,
 		// TLS 1.2 is the floor: everything below it is broken, and everything that speaks
