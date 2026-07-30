@@ -414,3 +414,24 @@ superpose. **Une suite verte ne dit rien de la mise en page.**
   pilotage (C6) est exactement le genre de chemin qu'aucune suite de tests séparée ne peut
   garantir de bout en bout — la vérifier au clavier n'est pas une option, c'est la seule
   preuve qui compte ici.
+
+## 2026-07-30 — C8 (kern-memory + proxy + Rédaction)
+
+**A fonctionné**
+- Réutiliser tel quel le contrat C5/C6 (`Client` typé, `Enabled()`, erreurs typées, non
+  configuré lu comme 404) pour `internal/memory` : aucune surprise, aucun aller-retour —
+  troisième fois que cette forme sert, elle est maintenant le patron par défaut d'un client
+  vers une autre brique.
+- `relativeUpdate` gardé pur (retourne `{unit, count}`, jamais de texte) avec `fr.ts` qui
+  compose le français par-dessus : la règle du repo sur le vocabulaire tenue sans effort
+  parce que la fonction n'avait tout simplement pas la possibilité de contenir du texte.
+
+**Un piège, retrouvé et corrigé dans la foulée**
+- Le commit de la feature `c8-frontend` est parti directement sur `dev` : la branche
+  `feature/c8-frontend` n'avait jamais été créée avant l'édition des fichiers (contrairement
+  aux deux branches précédentes de cette même feature, où `git checkout -b` avait bien été
+  fait en premier). Repéré immédiatement après le commit, au moment du merge — corrigé en
+  créant la branche a posteriori sur ce commit, puis `git reset --hard` de `dev` juste avant,
+  puis un vrai merge `--no-ff`. Même catégorie d'oubli que celui du frontend C6 (voir le
+  retro de kern-orch, C6) : à chaque nouvelle feature, `git checkout -b` est la toute
+  première commande, avant le premier `Write`.
