@@ -20,6 +20,7 @@ import (
 
 	"github.com/yoann/kern-ui/internal/auth"
 	"github.com/yoann/kern-ui/internal/httpapi"
+	"github.com/yoann/kern-ui/internal/memory"
 	"github.com/yoann/kern-ui/internal/steer"
 	"github.com/yoann/kern-ui/internal/tools"
 )
@@ -53,6 +54,11 @@ func run() error {
 	// rather than pointed at nothing.
 	orchURL := os.Getenv("KERN_ORCH_URL")
 	orchToken := os.Getenv("KERN_ORCH_TOKEN")
+	// Same direction as KERN_ORCH_URL/TOKEN above: the credential kern-ui presents to
+	// kern-memory's daemon, not one it checks. Empty KERN_MEMORY_URL leaves Rédaction's
+	// document source unconfigured rather than pointed at nothing.
+	memoryURL := os.Getenv("KERN_MEMORY_URL")
+	memoryToken := os.Getenv("KERN_MEMORY_TOKEN")
 
 	if err := checkTLSPair(certFile, keyFile); err != nil {
 		return err
@@ -88,6 +94,7 @@ func run() error {
 			TrustProxy:    trustProxy,
 			Tools:         &tools.Client{BaseURL: orchURL, Token: orchToken},
 			Steer:         &steer.Client{BaseURL: orchURL, Token: orchToken},
+			Memory:        &memory.Client{BaseURL: memoryURL, Token: memoryToken},
 		}),
 		ReadHeaderTimeout: 5 * time.Second,
 		// TLS 1.2 is the floor: everything below it is broken, and everything that speaks

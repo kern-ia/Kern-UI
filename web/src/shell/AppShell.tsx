@@ -8,6 +8,9 @@ import { GrimoireView } from '../grimoire/GrimoireView'
 import { useRegistry } from '../grimoire/useRegistry'
 import { EspaceView } from '../espace/EspaceView'
 import { useTools } from '../espace/useTools'
+import { RedactionView } from '../redaction/RedactionView'
+import { useDocuments } from '../redaction/useDocuments'
+import { useDocument } from '../redaction/useDocument'
 import { useRunStream } from '../runs/useRunStream'
 import { topLevelRuns } from '../runs/nested'
 import { systemState, type SystemState } from './systemState'
@@ -17,6 +20,7 @@ import type { Connection, Run } from '../runs/types'
 const STREAM_URL = '/api/v1/stream'
 const REGISTRY_URL = '/api/v1/registry'
 const TOOLS_URL = '/api/v1/tools'
+const DOCUMENTS_URL = '/api/v1/documents'
 
 /** Colours come from the mockup's stateMap; tokens.css holds the values. */
 const stateColour: Record<SystemState, string> = {
@@ -177,6 +181,9 @@ function ViewBody({
   if (view === 'espace') {
     return <EspaceBody />
   }
+  if (view === 'redaction') {
+    return <RedactionBody />
+  }
   return <AgentsView runs={runs} user={user} selectedId={selectedId} onSelect={onSelect} />
 }
 
@@ -193,4 +200,26 @@ function GrimoireBody({ runs }: { runs: Run[] }) {
 /** Same reasoning as GrimoireBody: the catalogue is fetched only while the Espace is open. */
 function EspaceBody() {
   return <EspaceView tools={useTools(TOOLS_URL)} />
+}
+
+/**
+ * Wraps Rédaction: the document list is fetched only while the view is open, the selected
+ * document only once one is picked (defaulting to the first once the list arrives).
+ */
+function RedactionBody() {
+  const documents = useDocuments(DOCUMENTS_URL)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+
+  const openId =
+    selectedId ?? (documents.status === 'ready' ? (documents.documents[0]?.id ?? null) : null)
+  const [document, refetchDocument] = useDocument(DOCUMENTS_URL, openId)
+
+  return (
+    <RedactionView
+      documents={documents}
+      document={openId === null ? null : document}
+      onSelect={setSelectedId}
+      onResolved={refetchDocument}
+    />
+  )
 }

@@ -171,4 +171,26 @@ export const fr = {
     deciding: '…',
     decisionFailed: 'La décision n\'a pas pu être transmise.',
   },
+
+  redaction: {
+    label: 'Documents',
+    loading: 'Chargement des documents…',
+    // No source configured on kern-ui — distinct from kern-memory answering with none.
+    unconfigured: 'Aucun document n\'est connecté pour le moment.',
+    unconfiguredHint: 'Un document apparaîtra ici dès qu\'une source sera branchée.',
+    empty: 'Aucun document pour le moment.',
+    error: 'Les documents n\'ont pas pu être chargés.',
+    documentError: 'Ce document n\'a pas pu être chargé.',
+    wordCount: (n: number) => (n === 1 ? '1 mot' : `${n} mots`),
+    updated: (r: { unit: 'now' } | { unit: 'minutes' | 'hours' | 'days'; count: number }) => {
+      if (r.unit === 'now') return 'sauvegardé à l\'instant'
+      const label = { minutes: 'min', hours: 'h', days: 'j' } as const
+      return `sauvegardé il y a ${r.count} ${label[r.unit]}`
+    },
+    suggestion: (title: string) => `Suggestion — ${title}`,
+    accept: 'Accepter',
+    ignore: 'Ignorer',
+    resolving: '…',
+    resolveFailed: 'La décision n\'a pas pu être transmise.',
+  },
 } as const
