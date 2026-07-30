@@ -353,3 +353,34 @@ superpose. **Une suite verte ne dit rien de la mise en page.**
   variable CSS et le lire depuis le JS garde une seule source.
 - Une contrainte écrite dans CLAUDE.md et jamais vérifiée reste fausse pendant des mois. Celle
   du responsive datait du premier jour.
+
+## 2026-07-29/30 — C6 (proxy kern-ui : stop/nudge/decide/dispatch)
+
+**A fonctionné**
+- Même forme que C5 (`internal/tools` → `internal/steer`) : client typé, `Enabled()`,
+  erreurs typées (`InvalidInputError`, `UnknownSkillError`) plutôt que des chaînes à
+  parser. La deuxième fois qu'un patron se répète, l'écrire devient un copier-coller
+  informé plutôt qu'une nouvelle conception.
+- L'acteur ne vient JAMAIS du corps de la requête côté kern-ui : lu depuis la session
+  (`s.currentUser(r)`), jamais depuis ce que le navigateur prétend. kern-orch, lui, fait
+  confiance à l'acteur transmis — deux niveaux de confiance différents, documentés comme
+  tels plutôt que mélangés.
+
+**Le bug que seul le vrai kern-orch + le vrai kern-ui a montré**
+- `requester` sur un run dispatché n'atteignait jamais la projection de kern-ui : le champ
+  existait bien côté `report.StepEvent`… sauf qu'il n'avait en fait jamais été ajouté —
+  écart entre le plan et le code, découvert seulement en lisant les logs kern-orch
+  (« sink answered 400 Bad Request »).
+- Une fois corrigé, un DEUXIÈME bug est apparu derrière : kern-ui rejetait purement et
+  simplement l'événement `steer.yaml` avec `kind: approval` — `validKinds` côté
+  `projection.go` ne connaissait que `tool|agent|subgraph`. Le nouveau type de nœud du
+  moteur kern-orch (C6) n'avait jamais été répercuté sur la liste kern-ui qui valide la
+  topologie reçue. Aucun test unitaire des deux côtés ne pouvait le voir : chacun testait
+  contre sa propre idée du contrat, pas contre l'autre application réelle.
+
+**Règle à retenir**
+- Un nouveau `Kind`/type de nœud côté kern-orch est un CHANGEMENT DE CONTRAT, pas un détail
+  interne au moteur — toute liste de kinds valides côté consommateur (ici
+  `projection.validKinds`) doit être mise à jour dans la MÊME feature, pas découverte à
+  l'usage. Chercher `validKinds`/équivalent chez le consommateur dès qu'un `Kind` nouveau
+  apparaît côté producteur.

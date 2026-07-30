@@ -11,6 +11,7 @@ import (
 	"github.com/yoann/kern-ui/internal/auth"
 	"github.com/yoann/kern-ui/internal/projection"
 	"github.com/yoann/kern-ui/internal/registry"
+	"github.com/yoann/kern-ui/internal/steer"
 	"github.com/yoann/kern-ui/internal/stream"
 	"github.com/yoann/kern-ui/internal/tools"
 )
@@ -52,6 +53,10 @@ type Config struct {
 	// distinct from kern-orch answering with an empty catalogue, same reasoning as
 	// Registry's 404-vs-empty split.
 	Tools *tools.Client
+
+	// Steer reaches kern-orch's C6 write path (stop/nudge/decide/dispatch) on behalf of
+	// the logged-in caller. Same unconfigured-means-404 reasoning as Tools.
+	Steer *steer.Client
 
 	// Heartbeat is the interval between SSE keep-alive comments. Defaults to 25s.
 	Heartbeat time.Duration
@@ -125,6 +130,10 @@ func NewRouterWithDeps(cfg *Config) http.Handler {
 	mux.HandleFunc("GET /api/v1/registry", s.requireSession(s.handleGetRegistry))
 	mux.HandleFunc("GET /api/v1/tools", s.requireSession(s.handleListTools))
 	mux.HandleFunc("POST /api/v1/tools/{name}/invoke", s.requireSession(s.handleInvokeTool))
+	mux.HandleFunc("POST /api/v1/runs/{id}/stop", s.requireSession(s.handleStopRun))
+	mux.HandleFunc("POST /api/v1/runs/{id}/nudge", s.requireSession(s.handleNudge))
+	mux.HandleFunc("POST /api/v1/runs/{id}/nodes/{node}/decide", s.requireSession(s.handleDecide))
+	mux.HandleFunc("POST /api/v1/dispatch", s.requireSession(s.handleDispatch))
 
 	if cfg.WebDir != "" {
 		mux.Handle("GET /", http.FileServer(http.Dir(cfg.WebDir)))
