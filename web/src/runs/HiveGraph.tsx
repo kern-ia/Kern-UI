@@ -33,6 +33,7 @@ export function HiveGraph({
   nested?: boolean;
 }) {
   const [opened, setOpened] = useState<string[]>([]);
+  const [selectedNode, setSelectedNode] = useState<string | null>(null);
 
   if (!run.topology) return null;
 
@@ -54,6 +55,17 @@ export function HiveGraph({
     setOpened((current) =>
       current.includes(id) ? current.filter((n) => n !== id) : [...current, id],
     );
+
+  // Every node handler writes its human-readable summary under "display:<nodeId>" (a
+  // convention, not a per-graph mapping — any node in any graph can opt into this by
+  // writing that one key, so this component never needs to know what a given graph's
+  // nodes are actually called). See Kern-Orch/skills/prospection/agent_cli.py for the
+  // convention's first producer.
+  const outputOf = (id: string): string | null => {
+    const state = run.state as Record<string, unknown> | undefined;
+    const text = state?.[`display:${id}`];
+    return typeof text === 'string' && text.trim() !== '' ? text : null;
+  };
 
   return (
     <>
@@ -108,7 +120,23 @@ export function HiveGraph({
             const isEntry = n.id === run.topology!.entry;
 
             return (
-              <g key={n.id}>
+              <g
+                key={n.id}
+                className={styles.node}
+                role="button"
+                tabIndex={0}
+                aria-label={fr.hive.selectNode(n.id)}
+                aria-pressed={selectedNode === n.id}
+                onClick={() =>
+                  setSelectedNode((current) => (current === n.id ? null : n.id))
+                }
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setSelectedNode((current) => (current === n.id ? null : n.id));
+                  }
+                }}
+              >
                 {status === "active" && (
                   <circle
                     className={styles.halo}
@@ -142,6 +170,25 @@ export function HiveGraph({
           })}
         </svg>
       </div>
+
+      {selectedNode && (
+        <div className={styles.nodeDetail}>
+          <div className={styles.nodeDetailHead}>
+            <p className={styles.nodeDetailTitle}>{selectedNode}</p>
+            <button
+              type="button"
+              className={styles.nodeDetailClose}
+              aria-label={fr.hive.closeNode(selectedNode)}
+              onClick={() => setSelectedNode(null)}
+            >
+              ×
+            </button>
+          </div>
+          <p className={styles.nodeDetailBody}>
+            {outputOf(selectedNode) ?? fr.hive.nodeOutputPending}
+          </p>
+        </div>
+      )}
 
       {nestedNodes.map(({ node, child }) => {
         const isOpen = opened.includes(node.id);
