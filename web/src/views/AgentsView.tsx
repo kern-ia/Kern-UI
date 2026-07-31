@@ -140,12 +140,17 @@ function ApprovalPanel({ run }: { run: Run }) {
 
 /**
  * The plan an earlier agent node proposed, if the run's state carries one — approving a
- * decision a person cannot read is not a real review. `run.state` is the full graph state
- * (`graph.State`'s own `{step, frozen, data, zones}` wire shape), so a value an agent
- * node wrote lives under `state.data`, never at the top level.
+ * decision a person cannot read is not a real review.
+ *
+ * `run.state` on the wire is a FLAT map, not `graph.State`'s own `{step, frozen, data,
+ * zones}` checkpoint shape: `report.flatten` (Kern-Orch's internal/report/http.go)
+ * builds the reported state by copying every key straight from `graph.State.Get`, with
+ * no wrapper — that shape is for persistence/resume, this one is for the live step
+ * event. Corrected after finding it live in a real browser: the first version of this
+ * function read `state.data.plan_propose`, which is never populated on this path.
  */
 function planProposed(run: Run): string | null {
-  const state = run.state as { data?: Record<string, unknown> } | undefined
-  const plan = state?.data?.plan_propose
+  const state = run.state as Record<string, unknown> | undefined
+  const plan = state?.plan_propose
   return typeof plan === 'string' && plan.trim() !== '' ? plan : null
 }

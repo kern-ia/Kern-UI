@@ -117,9 +117,11 @@ it('shows the approval panel for a run parked on an approval node', async () => 
 })
 
 // The plan itself, not just "a decision is pending" — a caller approving a mystery box
-// is not a real review. run.state carries the full graph state (see graph.State's own
-// {step,frozen,data,zones} wire shape), so the value an earlier agent node wrote lives
-// under state.data, not at the top level.
+// is not a real review. run.state on the wire is a FLAT map (report.flatten copies
+// every graph.State key straight across, no {step,frozen,data,zones} wrapper — that
+// shape is the checkpoint's, for persistence/resume, not the live step event's).
+// Corrected after finding it live in a real browser: the first version of this test
+// wrapped the fixture in {data: {...}}, matching the wrong shape.
 it('shows the proposed plan text next to Valider/Refuser', () => {
   const parked = run({
     frontier: ['confirm'],
@@ -127,7 +129,7 @@ it('shows the proposed plan text next to Valider/Refuser', () => {
       entry: 'confirm',
       nodes: [{ id: 'confirm', kind: 'approval' }],
     },
-    state: { step: 2, frozen: 0, data: { plan_propose: 'Créer le contact Dupont.' }, zones: {} },
+    state: { plan_propose: 'Créer le contact Dupont.' },
   })
   render(<AgentsView runs={[parked]} />)
 
