@@ -89,3 +89,32 @@ it('does not repeat the legend inside a nested hive', () => {
 
   expect(screen.getAllByText(fr.hive.status.active)).toHaveLength(1)
 })
+
+// A mission is not just coloured dots — clicking a node shows what it actually produced,
+// via the "display:<nodeId>" convention any node handler can opt into.
+it('shows a node\'s real output once clicked', () => {
+  const withOutput: Run = { ...parent, state: { 'display:prep': 'Bonjour, voici la fiche.' } }
+  render(<HiveGraph run={withOutput} runs={[withOutput, child]} />)
+
+  fireEvent.click(screen.getByRole('button', { name: fr.hive.selectNode('prep') }))
+
+  expect(screen.getByText('Bonjour, voici la fiche.')).toBeInTheDocument()
+})
+
+it('says a node has nothing to show yet, rather than nothing at all', () => {
+  render(<HiveGraph run={parent} runs={[parent, child]} />)
+
+  fireEvent.click(screen.getByRole('button', { name: fr.hive.selectNode('prep') }))
+
+  expect(screen.getByText(fr.hive.nodeOutputPending)).toBeInTheDocument()
+})
+
+it('closes the node detail again', () => {
+  const withOutput: Run = { ...parent, state: { 'display:prep': 'Bonjour, voici la fiche.' } }
+  render(<HiveGraph run={withOutput} runs={[withOutput, child]} />)
+
+  fireEvent.click(screen.getByRole('button', { name: fr.hive.selectNode('prep') }))
+  fireEvent.click(screen.getByRole('button', { name: fr.hive.closeNode('prep') }))
+
+  expect(screen.queryByText('Bonjour, voici la fiche.')).not.toBeInTheDocument()
+})

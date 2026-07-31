@@ -105,6 +105,11 @@ export const fr = {
     // A run opened by its activity signal is visible before any level has completed, so
     // its shape has not arrived yet. Saying it was never declared would be wrong.
     topologyPending: 'Le déroulé s\'affichera dès la première étape terminée.',
+    // Clicking a node shows what it actually produced — a mission is not just coloured
+    // dots, it is agents that said something.
+    selectNode: (node: string) => `Voir ce que ${node} a produit`,
+    closeNode: (node: string) => `Fermer le détail de ${node}`,
+    nodeOutputPending: 'Rien à montrer pour le moment : cette étape n\'a encore rien produit.',
   },
 
   grimoire: {
