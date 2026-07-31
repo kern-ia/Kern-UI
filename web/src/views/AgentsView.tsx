@@ -119,9 +119,12 @@ function ApprovalPanel({ run }: { run: Run }) {
     }
   }
 
+  const plan = planProposed(run)
+
   return (
     <div className={styles.approval}>
       <p>{fr.runs.awaitingDecision(node.id)}</p>
+      {plan && <p className={styles.approvalPlan}>{plan}</p>}
       <div className={styles.approvalActions}>
         <button type="button" disabled={deciding} onClick={() => answer('approve')}>
           {deciding ? fr.runs.deciding : fr.runs.approve}
@@ -133,4 +136,16 @@ function ApprovalPanel({ run }: { run: Run }) {
       {failed && <p className={styles.approvalError}>{fr.runs.decisionFailed}</p>}
     </div>
   )
+}
+
+/**
+ * The plan an earlier agent node proposed, if the run's state carries one — approving a
+ * decision a person cannot read is not a real review. `run.state` is the full graph state
+ * (`graph.State`'s own `{step, frozen, data, zones}` wire shape), so a value an agent
+ * node wrote lives under `state.data`, never at the top level.
+ */
+function planProposed(run: Run): string | null {
+  const state = run.state as { data?: Record<string, unknown> } | undefined
+  const plan = state?.data?.plan_propose
+  return typeof plan === 'string' && plan.trim() !== '' ? plan : null
 }
