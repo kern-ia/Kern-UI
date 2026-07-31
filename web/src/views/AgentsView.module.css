@@ -42,13 +42,27 @@
 
 .approval {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   gap: var(--space-3);
   margin: var(--space-3) 0;
   padding: var(--space-3) var(--space-4);
   font-size: 12px;
   color: var(--text-dim);
   border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+}
+
+.approvalPlan {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  max-width: 60ch;
+  white-space: pre-wrap;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-muted);
+  background: var(--surface-veil);
+  border-left: 2px solid var(--gold-dim);
   border-radius: var(--radius);
 }
 

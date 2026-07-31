@@ -116,6 +116,37 @@ it('shows the approval panel for a run parked on an approval node', async () => 
   expect(JSON.parse(init.body as string)).toEqual({ decision: 'approve' })
 })
 
+// The plan itself, not just "a decision is pending" — a caller approving a mystery box
+// is not a real review. run.state carries the full graph state (see graph.State's own
+// {step,frozen,data,zones} wire shape), so the value an earlier agent node wrote lives
+// under state.data, not at the top level.
+it('shows the proposed plan text next to Valider/Refuser', () => {
+  const parked = run({
+    frontier: ['confirm'],
+    topology: {
+      entry: 'confirm',
+      nodes: [{ id: 'confirm', kind: 'approval' }],
+    },
+    state: { step: 2, frozen: 0, data: { plan_propose: 'Créer le contact Dupont.' }, zones: {} },
+  })
+  render(<AgentsView runs={[parked]} />)
+
+  expect(screen.getByText('Créer le contact Dupont.')).toBeInTheDocument()
+})
+
+it('shows no plan text when the state carries none yet', () => {
+  const parked = run({
+    frontier: ['confirm'],
+    topology: {
+      entry: 'confirm',
+      nodes: [{ id: 'confirm', kind: 'approval' }],
+    },
+  })
+  render(<AgentsView runs={[parked]} />)
+
+  expect(screen.getByText(fr.runs.awaitingDecision('confirm'))).toBeInTheDocument()
+})
+
 it('shows no approval panel once the node is no longer active', () => {
   const done = run({
     status: 'finished',
