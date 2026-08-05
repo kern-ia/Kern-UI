@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/yoann/kern-ui/internal/auth"
+	"github.com/yoann/kern-ui/internal/firewall"
 	"github.com/yoann/kern-ui/internal/memory"
 	"github.com/yoann/kern-ui/internal/projection"
 	"github.com/yoann/kern-ui/internal/registry"
@@ -63,6 +64,16 @@ type Config struct {
 	// unconfigured-means-404 reasoning as Tools and Steer.
 	Memory *memory.Client
 
+	// Firewall reads the AI firewall's consumption snapshot (C4) for Vigie. Same
+	// unconfigured-means-404 reasoning as Tools, Steer and Memory.
+	Firewall *firewall.Client
+
+	// DecisionsHub broadcasts every behavioural decision relayed from the AI firewall's
+	// own C3 stream (see internal/firewall.Relay) to the connected browsers. A separate
+	// hub from Hub: a decision is not a run change, and conflating the two streams would
+	// make a browser interested in one pay for buffering the other.
+	DecisionsHub *stream.Hub[firewall.Decision]
+
 	// Heartbeat is the interval between SSE keep-alive comments. Defaults to 25s.
 	Heartbeat time.Duration
 
@@ -90,6 +101,9 @@ func (c *Config) fillDefaults() {
 	}
 	if c.Hub == nil {
 		c.Hub = stream.NewHub[projection.Run](subscriberBuffer)
+	}
+	if c.DecisionsHub == nil {
+		c.DecisionsHub = stream.NewHub[firewall.Decision](subscriberBuffer)
 	}
 	if c.Registry == nil {
 		c.Registry = registry.New()
@@ -135,6 +149,8 @@ func NewRouterWithDeps(cfg *Config) http.Handler {
 	mux.HandleFunc("GET /api/v1/registry", s.requireSession(s.handleGetRegistry))
 	mux.HandleFunc("GET /api/v1/tools", s.requireSession(s.handleListTools))
 	mux.HandleFunc("POST /api/v1/tools/{name}/invoke", s.requireSession(s.handleInvokeTool))
+	mux.HandleFunc("GET /api/v1/vigie/budget", s.requireSession(s.handleFirewallBudget))
+	mux.HandleFunc("GET /api/v1/vigie/decisions", s.requireSession(s.handleFirewallDecisions))
 	mux.HandleFunc("POST /api/v1/runs/{id}/stop", s.requireSession(s.handleStopRun))
 	mux.HandleFunc("POST /api/v1/runs/{id}/nudge", s.requireSession(s.handleNudge))
 	mux.HandleFunc("POST /api/v1/runs/{id}/nodes/{node}/decide", s.requireSession(s.handleDecide))

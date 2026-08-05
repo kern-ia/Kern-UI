@@ -19,13 +19,20 @@ import (
 	"time"
 
 	"github.com/yoann/kern-ui/internal/auth"
+	"github.com/yoann/kern-ui/internal/firewall"
 	"github.com/yoann/kern-ui/internal/httpapi"
 	"github.com/yoann/kern-ui/internal/memory"
 	"github.com/yoann/kern-ui/internal/steer"
+	"github.com/yoann/kern-ui/internal/stream"
 	"github.com/yoann/kern-ui/internal/tools"
 )
 
 const shutdownGrace = 10 * time.Second
+
+// decisionsBuffer matches internal/httpapi's own subscriberBuffer — how many
+// decisions a browser may lag behind before the hub starts dropping them for
+// that connection.
+const decisionsBuffer = 64
 
 func main() {
 	// One subcommand, because creating an account must never mean typing a hash by hand.
@@ -59,6 +66,11 @@ func run() error {
 	// document source unconfigured rather than pointed at nothing.
 	memoryURL := os.Getenv("KERN_MEMORY_URL")
 	memoryToken := os.Getenv("KERN_MEMORY_TOKEN")
+	// Same direction as KERN_ORCH_URL/TOKEN above: the credential kern-ui presents to
+	// the AI firewall's own C3/C4 read surfaces. Empty KERN_FIREWALL_URL leaves Vigie's
+	// consumption source unconfigured rather than pointed at nothing.
+	firewallURL := os.Getenv("KERN_FIREWALL_URL")
+	firewallToken := os.Getenv("KERN_FIREWALL_TOKEN")
 
 	if err := checkTLSPair(certFile, keyFile); err != nil {
 		return err
@@ -85,6 +97,12 @@ func run() error {
 			"set KERN_UI_TOKEN and KERN_UI_ACCOUNTS before exposing it")
 	}
 
+	// Constructed explicitly, not left to httpapi.Config.fillDefaults, so this same
+	// instance can also be handed to the relay goroutine below — the router and the
+	// relay must publish to and subscribe from the one hub.
+	decisionsHub := stream.NewHub[firewall.Decision](decisionsBuffer)
+	firewallClient := &firewall.Client{BaseURL: firewallURL, Token: firewallToken}
+
 	srv := &http.Server{
 		Addr: addr,
 		Handler: httpapi.NewRouter(httpapi.Config{
@@ -95,6 +113,8 @@ func run() error {
 			Tools:         &tools.Client{BaseURL: orchURL, Token: orchToken},
 			Steer:         &steer.Client{BaseURL: orchURL, Token: orchToken},
 			Memory:        &memory.Client{BaseURL: memoryURL, Token: memoryToken},
+			Firewall:      firewallClient,
+			DecisionsHub:  decisionsHub,
 		}),
 		ReadHeaderTimeout: 5 * time.Second,
 		// TLS 1.2 is the floor: everything below it is broken, and everything that speaks
@@ -104,6 +124,11 @@ func run() error {
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+
+	// Best-effort, fire-and-forget: the relay stops on its own once ctx is done (the
+	// same shutdown signal the server itself reacts to), and nothing here waits on it —
+	// an AI firewall that never answers must never delay kern-ui's own shutdown.
+	go firewall.Relay(ctx, firewallClient, decisionsHub)
 
 	errc := make(chan error, 1)
 	go func() {

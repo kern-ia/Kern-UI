@@ -43,6 +43,7 @@ export const fr = {
     navigateur: 'Navigateur',
     redaction: 'Rédaction',
     grimoire: 'Grimoire',
+    vigie: 'Vigie',
   },
 
   systemState: {
@@ -84,6 +85,7 @@ export const fr = {
       outils: 'Les outils connectés ne savent pas encore transmettre leurs valeurs.',
       navigateur: "Le pilotage du navigateur par un agent n'est pas encore branché.",
       documents: "L'espace de rédaction n'est pas encore branché.",
+      supervision: "La supervision de la consommation et du comportement des agents n'est pas encore branchée.",
     },
     why: 'Rien n\'est affiché ici plutôt que des données inventées.',
   },
@@ -150,6 +152,28 @@ export const fr = {
     error: 'Les outils connectés n\'ont pas pu être chargés.',
     widgetLoading: '…',
     widgetError: 'Valeur indisponible',
+  },
+
+  vigie: {
+    label: 'Vigie : consommation et comportement des agents',
+    loading: 'Chargement de la vigie…',
+    // No source configured on kern-ui — distinct from it answering with an empty snapshot.
+    unconfigured: "Aucune vigie n'est connectée pour le moment.",
+    unconfiguredHint: 'Les données de consommation apparaîtront ici dès qu\'une vigie sera branchée.',
+    error: "Les données de la vigie n'ont pas pu être chargées.",
+    budget: {
+      heading: 'Consommation',
+      spent: 'Dépensé',
+      limit: 'Limite',
+      unpriced: 'Appels non tarifés',
+      unaccounted: 'Appels non comptés',
+      resetsAt: (when: string) => `Se réinitialise ${when}`,
+    },
+    decisions: {
+      heading: 'Comportement',
+      empty: 'Aucune alerte de comportement pour le moment.',
+      emptyHint: "Une alerte apparaîtra ici dès qu'une règle se déclenche.",
+    },
   },
 
   runs: {

@@ -8,6 +8,9 @@ import { GrimoireView } from '../grimoire/GrimoireView'
 import { useRegistry } from '../grimoire/useRegistry'
 import { EspaceView } from '../espace/EspaceView'
 import { useTools } from '../espace/useTools'
+import { VigieView } from '../vigie/VigieView'
+import { useBudget } from '../vigie/useBudget'
+import { useDecisions } from '../vigie/useDecisions'
 import { RedactionView } from '../redaction/RedactionView'
 import { useDocuments } from '../redaction/useDocuments'
 import { useDocument } from '../redaction/useDocument'
@@ -21,6 +24,8 @@ const STREAM_URL = '/api/v1/stream'
 const REGISTRY_URL = '/api/v1/registry'
 const TOOLS_URL = '/api/v1/tools'
 const DOCUMENTS_URL = '/api/v1/documents'
+const VIGIE_BUDGET_URL = '/api/v1/vigie/budget'
+const VIGIE_DECISIONS_URL = '/api/v1/vigie/decisions'
 
 /** Colours come from the mockup's stateMap; tokens.css holds the values. */
 const stateColour: Record<SystemState, string> = {
@@ -181,6 +186,9 @@ function ViewBody({
   if (view === 'espace') {
     return <EspaceBody />
   }
+  if (view === 'vigie') {
+    return <VigieBody />
+  }
   if (view === 'redaction') {
     return <RedactionBody />
   }
@@ -200,6 +208,17 @@ function GrimoireBody({ runs }: { runs: Run[] }) {
 /** Same reasoning as GrimoireBody: the catalogue is fetched only while the Espace is open. */
 function EspaceBody() {
   return <EspaceView tools={useTools(TOOLS_URL)} />
+}
+
+/**
+ * Same reasoning as EspaceBody: the budget snapshot is fetched, and the decision stream
+ * subscribed to, only while Vigie is open — a browser sitting on another view holds neither
+ * a polling timer nor an EventSource it is not drawing.
+ */
+function VigieBody() {
+  const budget = useBudget(VIGIE_BUDGET_URL)
+  const feed = useDecisions(VIGIE_DECISIONS_URL)
+  return <VigieView budget={budget} feed={feed} />
 }
 
 /**
