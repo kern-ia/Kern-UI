@@ -435,3 +435,28 @@ superpose. **Une suite verte ne dit rien de la mise en page.**
   puis un vrai merge `--no-ff`. Même catégorie d'oubli que celui du frontend C6 (voir le
   retro de kern-orch, C6) : à chaque nouvelle feature, `git checkout -b` est la toute
   première commande, avant le premier `Write`.
+
+## 2026-08-05 — hive-timeline-cards
+
+**A fonctionné**
+- Centraliser la traduction id→texte DANS les fonctions de `fr.ts` (`nodeInfo` appelé par
+  `selectNode`/`openNested`/etc, pas par les appelants) plutôt que de la faire faire aux
+  composants : les tests existants qui appellent ces fonctions avec l'id brut sont restés
+  corrects sans une seule modification, parce qu'ils traversent la même traduction que le
+  rendu réel. Un vrai bénéfice concret de la convention "tout le texte affiché est dans un
+  seul fichier" déjà en place — ce n'est pas la première fois qu'elle rapporte (voir
+  `vocabulaire-demo.md`).
+- Rejouer le bug réel (dispatch de `community-management-agency`, capturé dans une session
+  précédente) comme cas de test avant de toucher au layout : `hive.test.ts` reproduit la
+  forme exacte du graphe qui écrasait 6 nœuds sur un rang, donc la correction est vérifiée
+  contre le vrai bug, pas contre une intuition de ce qui le causait.
+
+**Un piège**
+- Un test (`does not repeat the legend inside a nested hive`) comptait tout le texte
+  "Actif" affiché — cassé par les nouvelles cartes qui montrent aussi leur propre statut en
+  texte. Le test testait une intention plus précise ("la légende ne se répète pas") que ce
+  qu'il vérifiait ("il n'y a qu'un seul Actif à l'écran") ; les deux coïncidaient par
+  accident tant qu'aucun autre élément n'affichait ce mot. Corrigé en scopant l'assertion à
+  la légende elle-même (`within(getByRole('list'))`). Piège générique : un test qui compte
+  du texte sur toute la page vérifie souvent moins que ce que son nom promet — quand
+  possible, scoper au conteneur dont le nom du test parle.

@@ -101,16 +101,104 @@ export const fr = {
     },
     noTopology: "Le déroulé de cette mission n'a pas été déclaré.",
     // A subgraph node is a whole graph. Opening it draws the run that happened inside.
-    openNested: (node: string) => `Déplier le sous-agent ${node}`,
-    closeNested: (node: string) => `Replier le sous-agent ${node}`,
-    nestedOf: (node: string) => `Dans ${node}`,
+    // Takes the raw node id (call sites pass what the topology declares) and translates it
+    // through nodeInfo — the id itself never reaches the screen.
+    openNested(id: string) {
+      return `Déplier le sous-agent ${this.nodeInfo(id).name}`
+    },
+    closeNested(id: string) {
+      return `Replier le sous-agent ${this.nodeInfo(id).name}`
+    },
+    nestedOf(id: string) {
+      return `Dans ${this.nodeInfo(id).name}`
+    },
     // A run opened by its activity signal is visible before any level has completed, so
     // its shape has not arrived yet. Saying it was never declared would be wrong.
     topologyPending: 'Le déroulé s\'affichera dès la première étape terminée.',
     // Clicking a node shows what it actually produced — a mission is not just coloured
     // dots, it is agents that said something.
-    selectNode: (node: string) => `Voir ce que ${node} a produit`,
-    closeNode: (node: string) => `Fermer le détail de ${node}`,
+    selectNode(id: string) {
+      return `Voir ce que ${this.nodeInfo(id).name} a produit`
+    },
+    closeNode(id: string) {
+      return `Fermer le détail de ${this.nodeInfo(id).name}`
+    },
+    zoomIn: 'Zoomer',
+    zoomOut: 'Dézoomer',
+    // What each step of a mission is, in the reader's words — never the internal node id
+    // shown raw. Covers the two missions live today (prospection,
+    // community-management-agency); anything not listed falls back to a title-cased id and
+    // a generic line rather than breaking the view.
+    nodes: {
+      // prospection (Kern-Orch/skills/prospection/agent_cli.py)
+      secretaire: {
+        name: 'Secrétaire',
+        description: 'Lit le dossier du client et prépare une fiche de synthèse.',
+      },
+      commercial: {
+        name: 'Commercial',
+        description: "Propose un plan d'action pour ce client, à partir de la fiche préparée.",
+      },
+      confirm: {
+        name: 'Validation',
+        description: "Attend votre accord avant que quoi que ce soit ne soit fait pour de vrai.",
+      },
+      approved: {
+        name: 'Exécution',
+        description: 'Réalise les actions validées.',
+      },
+      refused: {
+        name: 'Annulé',
+        description: "Rien n'est fait : le plan a été refusé.",
+      },
+      // community-management-agency (Kern-Orch/skills/community-management-agency/agent_cli.py)
+      audience: {
+        name: 'Public visé',
+        description: "Identifie à qui s'adresse le message et ce qui va l'intéresser.",
+      },
+      strategiste: {
+        name: 'Stratégie',
+        description: "Donne un avis sur votre idée, ou en propose une si vous n'en avez pas.",
+      },
+      confirm_strategie: {
+        name: 'Validation de la stratégie',
+        description: 'Attend votre accord sur la stratégie proposée.',
+      },
+      strategie_refusee: {
+        name: 'Stratégie refusée',
+        description: "Rien n'est rédigé : la stratégie n'a pas été retenue.",
+      },
+      redacteur: {
+        name: 'Rédaction',
+        description: 'Écrit le texte final, prêt à publier, pour chaque plateforme concernée.',
+      },
+      confirm_publication: {
+        name: 'Validation de la publication',
+        description: 'Attend votre accord avant toute publication réelle.',
+      },
+      publieur: {
+        name: 'Publication',
+        description:
+          "Publie le contenu validé, ou signale qu'aucun outil de publication n'est branché.",
+      },
+      refus_publication: {
+        name: 'Publication annulée',
+        description: "Rien n'est publié : la publication a été refusée.",
+      },
+    } as Record<string, { name: string; description: string }>,
+    // A node id no one wrote a plain-language line for yet — still readable, never a raw
+    // technical string.
+    nodeFallback: (id: string) => ({
+      name: id
+        .replace(/[_-]+/g, ' ')
+        .replace(/\b\w/g, (c) => c.toUpperCase()),
+      description: 'Une étape de la mission.',
+    }),
+    // The one entry point components should call: known id → its written line, unknown id
+    // → the fallback, never a raw id leaking through.
+    nodeInfo(id: string): { name: string; description: string } {
+      return this.nodes[id] ?? this.nodeFallback(id)
+    },
     nodeOutputPending: 'Rien à montrer pour le moment : cette étape n\'a encore rien produit.',
   },
 
