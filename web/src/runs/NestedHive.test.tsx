@@ -121,3 +121,42 @@ it('closes the node detail again', () => {
 
   expect(screen.queryByText('Bonjour, voici la fiche.')).not.toBeInTheDocument()
 })
+
+// An agent's own output is markdown (headers, bold, lists — see any real strategiste
+// output). Showing it as literal asterisks and hashes is not the same as showing nothing;
+// it is showing the wrong thing.
+it("renders a node's output as formatted markdown, not literal markup characters", () => {
+  const withOutput: Run = {
+    ...parent,
+    state: { 'display:prep': '## Brief\n\n**Angle** : parler concret, pas de jargon.' },
+  }
+  render(<HiveGraph run={withOutput} runs={[withOutput, child]} />)
+
+  fireEvent.click(screen.getByRole('button', { name: fr.hive.selectNode('prep') }))
+
+  expect(screen.getByRole('heading', { name: 'Brief' })).toBeInTheDocument()
+  expect(screen.getByText('Angle').tagName).toBe('STRONG')
+  expect(screen.queryByText(/\*\*Angle\*\*/)).not.toBeInTheDocument()
+})
+
+// A card's own content is meant to take the reading space it needs — a fixed small box
+// under the timeline was not enough for a real agent output (see the LinkedIn strategy
+// brief from the live community-management-agency run).
+it('opens the node detail as a full-screen dialog', () => {
+  const withOutput: Run = { ...parent, state: { 'display:prep': 'Bonjour, voici la fiche.' } }
+  render(<HiveGraph run={withOutput} runs={[withOutput, child]} />)
+
+  fireEvent.click(screen.getByRole('button', { name: fr.hive.selectNode('prep') }))
+
+  expect(screen.getByRole('dialog', { name: fr.hive.nodeInfo('prep').name })).toBeInTheDocument()
+})
+
+it('closes the full-screen detail on Escape', () => {
+  const withOutput: Run = { ...parent, state: { 'display:prep': 'Bonjour, voici la fiche.' } }
+  render(<HiveGraph run={withOutput} runs={[withOutput, child]} />)
+
+  fireEvent.click(screen.getByRole('button', { name: fr.hive.selectNode('prep') }))
+  fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
+
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+})
