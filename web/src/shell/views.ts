@@ -1,12 +1,16 @@
 /**
- * The six views of the Agentic OS, in the order and with the glyphs of
+ * The seven views of the Agentic OS, in the order and with the glyphs of
  * design/mockups/Agentic OS.dc.html.
  *
  * Each view declares where its data comes from. Only `live` views show real data; the
  * others say on screen what they are waiting for rather than displaying invented content.
  * Promoting one is a one-line change here.
+ *
+ * Vigie (added 2026-08-05) reads consumption and behaviour data relayed from the AI
+ * firewall — the mockup was updated alongside this file rather than left to drift, since
+ * it is this file's own stated source of truth for the view count.
  */
-export type ViewId = 'cerveau' | 'agents' | 'espace' | 'navigateur' | 'redaction' | 'grimoire'
+export type ViewId = 'cerveau' | 'agents' | 'espace' | 'navigateur' | 'redaction' | 'grimoire' | 'vigie'
 
 export type ViewSource =
   /** A brick feeds this view today. */
@@ -22,7 +26,7 @@ export type ViewSource =
  * that is not built — is real and is recorded in docs/expected-contracts.md. It is invisible
  * to whoever is looking at the screen, so it does not belong here.
  */
-export type Capability = 'memoire' | 'outils' | 'navigateur' | 'documents'
+export type Capability = 'memoire' | 'outils' | 'navigateur' | 'documents' | 'supervision'
 
 export interface ViewDef {
   id: ViewId
@@ -50,6 +54,12 @@ export const VIEWS: ViewDef[] = [
 
   // kern-orch publishes its skills catalogue on kern.registry/v1.
   { id: 'grimoire', glyph: 'ᛝ', source: { kind: 'live' }, onMobile: true },
+
+  // The AI firewall's C4 (budget) and C3 (decisions, relayed) — see internal/firewall.
+  // Live regardless of whether a deployment actually configured KERN_FIREWALL_URL: the
+  // route always exists, and VigieView itself renders 'unconfigured' at runtime, the
+  // same split Espace already makes for a tool source.
+  { id: 'vigie', glyph: '◉', source: { kind: 'live' }, onMobile: false },
 ]
 
 export const DEFAULT_VIEW: ViewId = 'agents'
