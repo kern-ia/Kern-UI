@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
 import { fr } from "../i18n/fr";
 import styles from "./HiveGraph.module.css";
 import { layoutHive, nodeStatus } from "./hive";
@@ -45,6 +46,13 @@ export function HiveGraph({
   const [opened, setOpened] = useState<string[]>([]);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [zoomIndex, setZoomIndex] = useState(DEFAULT_ZOOM_INDEX);
+  const detailRef = useRef<HTMLDivElement>(null);
+
+  // A full-screen dialog must catch Escape even when the reader never clicked inside it
+  // first — the click that opened it moved focus to the card, not to the panel.
+  useEffect(() => {
+    if (selectedNode) detailRef.current?.focus();
+  }, [selectedNode]);
 
   if (!run.topology) return null;
 
@@ -213,7 +221,20 @@ export function HiveGraph({
       </div>
 
       {selectedNode && (
-        <div className={styles.nodeDetail}>
+        <div
+          ref={detailRef}
+          className={styles.nodeDetail}
+          role="dialog"
+          aria-modal="true"
+          aria-label={fr.hive.nodeInfo(selectedNode).name}
+          tabIndex={-1}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") {
+              e.preventDefault();
+              setSelectedNode(null);
+            }
+          }}
+        >
           <div className={styles.nodeDetailHead}>
             <p className={styles.nodeDetailTitle}>{fr.hive.nodeInfo(selectedNode).name}</p>
             <button
@@ -225,9 +246,9 @@ export function HiveGraph({
               ×
             </button>
           </div>
-          <p className={styles.nodeDetailBody}>
-            {outputOf(selectedNode) ?? fr.hive.nodeOutputPending}
-          </p>
+          <div className={styles.nodeDetailBody}>
+            <ReactMarkdown>{outputOf(selectedNode) ?? fr.hive.nodeOutputPending}</ReactMarkdown>
+          </div>
         </div>
       )}
 
