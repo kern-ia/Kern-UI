@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { HiveGraph } from './HiveGraph'
 import { fr } from '../i18n/fr'
 import type { Run } from './types'
@@ -82,12 +82,15 @@ it('offers nothing on a node that is not a subgraph', () => {
 })
 
 // The legend is a key to the colours, and one is enough on screen: repeating it inside
-// every nested hive turns a reading aid into clutter.
+// every nested hive turns a reading aid into clutter. Cards each carry their own status
+// text too now (readable without relying on colour alone), so the count that matters is
+// the legend's own list, not every "Actif" on screen.
 it('does not repeat the legend inside a nested hive', () => {
   render(<HiveGraph run={parent} runs={[parent, child]} />)
   fireEvent.click(screen.getByRole('button', { name: fr.hive.openNested('nested') }))
 
-  expect(screen.getAllByText(fr.hive.status.active)).toHaveLength(1)
+  expect(screen.getAllByRole('list')).toHaveLength(1)
+  expect(within(screen.getByRole('list')).getAllByText(fr.hive.status.active)).toHaveLength(1)
 })
 
 // A mission is not just coloured dots — clicking a node shows what it actually produced,

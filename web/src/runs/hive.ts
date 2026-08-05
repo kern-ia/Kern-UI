@@ -1,11 +1,17 @@
 import type { NodeStatus, Run, Topology } from './types'
 
-/** Drawing width; the view scales it with a viewBox. Height follows the content. */
-export const HIVE_WIDTH = 1000
-
-const TOP_MARGIN = 70
-const RANK_HEIGHT = 130
-const BOTTOM_MARGIN = 50
+// A frieze read left to right: rank (depth from the entry) is the X axis, and siblings in
+// one rank stack down the Y axis at a fixed row height each. This replaced a fixed-width
+// canvas that spread a rank's nodes evenly by COUNT alone — when several router-driven
+// nodes (no declared static target) fell through to the same fallback rank, that crammed
+// them onto one row regardless of how many there were, and their labels collided. Stacking
+// at a fixed row height instead means a busy rank grows the frame taller, never crowds it.
+const LEFT_MARGIN = 100
+const COLUMN_WIDTH = 220
+const RIGHT_MARGIN = 80
+const TOP_MARGIN = 60
+const ROW_HEIGHT = 110
+const BOTTOM_MARGIN = 60
 
 export interface PlacedNode {
   id: string
@@ -26,16 +32,18 @@ export interface PlacedEdge {
 }
 
 /**
- * Arranges a declared topology as the mockup's hive: the entry on top, its targets on the
- * rank below, and so on. Depth comes from the declared edges, which is all we have — a
- * router-driven branch has no declared target, so the node it leaves is flagged open-ended
- * rather than drawn as a dead end.
+ * Arranges a declared topology as a horizontal timeline: the entry on the left, its targets
+ * one column to the right, and so on. Depth comes from the declared edges, which is all we
+ * have — a router-driven branch has no declared target, so the node it leaves is flagged
+ * open-ended rather than drawn as a dead end.
  *
- * Deterministic by construction: ranks and order follow the declaration, never a map walk.
+ * Deterministic by construction: columns, rows and order follow the declaration, never a
+ * map walk.
  */
 export function layoutHive(topology: Topology): {
   nodes: PlacedNode[]
   edges: PlacedEdge[]
+  width: number
   height: number
 } {
   const rank = rankNodes(topology)
@@ -50,14 +58,15 @@ export function layoutHive(topology: Topology): {
   )
 
   const placed = new Map<string, PlacedNode>()
+  let busiestRank = 1
   for (const [r, ids] of [...byRank.entries()].sort((a, b) => a[0] - b[0])) {
-    const slot = HIVE_WIDTH / (ids.length + 1)
+    busiestRank = Math.max(busiestRank, ids.length)
     ids.forEach((id, i) => {
       placed.set(id, {
         id,
         kind: topology.nodes.find((n) => n.id === id)?.kind ?? 'tool',
-        x: Math.round(slot * (i + 1)),
-        y: TOP_MARGIN + r * RANK_HEIGHT,
+        x: LEFT_MARGIN + r * COLUMN_WIDTH,
+        y: TOP_MARGIN + i * ROW_HEIGHT,
         openEnded: openEnded.has(id),
       })
     })
@@ -75,11 +84,13 @@ export function layoutHive(topology: Topology): {
     }
   }
 
-  // The frame follows the graph: a two-node run should not sit marooned in a tall canvas.
+  // The frame follows the graph: width grows with depth, height with the busiest column —
+  // a two-node run should not sit marooned in a wide, tall canvas either way.
   const deepest = Math.max(0, ...[...byRank.keys()])
-  const height = TOP_MARGIN + deepest * RANK_HEIGHT + BOTTOM_MARGIN
+  const width = LEFT_MARGIN + deepest * COLUMN_WIDTH + RIGHT_MARGIN
+  const height = TOP_MARGIN + (busiestRank - 1) * ROW_HEIGHT + BOTTOM_MARGIN
 
-  return { nodes: [...placed.values()], edges, height }
+  return { nodes: [...placed.values()], edges, width, height }
 }
 
 /** Depth of each node, following declared edges from the entry. */
