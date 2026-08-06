@@ -337,5 +337,8 @@ export const fr = {
     selectItem: (title: string) => `Voir « ${title} »`,
     closeItem: 'Fermer',
     platformLabel: 'Plateforme',
+    copy: 'Copier',
+    copied: 'Copié !',
+    copyFailed: 'La copie a échoué.',
   },
 } as const
