@@ -201,9 +201,55 @@
 
 .detailBody {
   flex: 1;
-  margin: var(--space-4) 0 0;
+  width: 100%;
   max-width: 72ch;
+  margin: var(--space-4) 0 0;
+  padding: var(--space-3);
+  font-family: var(--font-body);
   font-size: 14px;
   line-height: 1.7;
-  color: var(--text-muted);
+  color: var(--text);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  resize: vertical;
+}
+
+.detailBody:focus {
+  outline: 1px solid var(--gold-faint);
+  border-color: var(--border);
+}
+
+.detailActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.copyButton {
+  padding: var(--space-2) var(--space-4);
+  font-family: var(--font-body);
+  font-size: 12px;
+  letter-spacing: var(--tracking-label);
+  color: var(--gold);
+  background: var(--surface-veil-strong);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+
+.copyButton:hover {
+  color: var(--gold-bright);
+  border-color: var(--border-strong);
+}
+
+.copyFeedback {
+  font-size: 12px;
+  color: var(--state-idle);
+}
+
+.copyFeedbackError {
+  font-size: 12px;
+  color: var(--state-error);
 }

@@ -90,7 +90,9 @@ export function MarketingView({ runs }: { runs: Run[] }) {
         </div>
       )}
 
-      {selected && <ItemDetail item={selected} onClose={() => setSelected(null)} />}
+      {/* Keyed by runId so opening a different item starts from its own text — an edit
+          left uncopied on one item must never bleed into the next. */}
+      {selected && <ItemDetail key={selected.runId} item={selected} onClose={() => setSelected(null)} />}
     </section>
   )
 }
@@ -112,10 +114,24 @@ function ItemPill({ item, onSelect }: { item: ContentItem; onSelect: (i: Content
 
 function ItemDetail({ item, onClose }: { item: ContentItem; onClose: () => void }) {
   const ref = useRef<HTMLDivElement>(null)
+  const [text, setText] = useState(item.text)
+  const [copied, setCopied] = useState(false)
+  const [copyError, setCopyError] = useState(false)
 
   useEffect(() => {
     ref.current?.focus()
   }, [])
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopyError(false)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      setCopyError(true)
+    }
+  }
 
   return (
     <div
@@ -143,10 +159,25 @@ function ItemDetail({ item, onClose }: { item: ContentItem; onClose: () => void 
           ×
         </button>
       </div>
-      <div className={styles.detailBody}>
-        {item.text.split('\n').map((line, i) => (
-          <p key={i}>{line}</p>
-        ))}
+      <textarea
+        className={styles.detailBody}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+      />
+      <div className={styles.detailActions}>
+        <button type="button" className={styles.copyButton} onClick={copy}>
+          {fr.marketing.copy}
+        </button>
+        {copied && (
+          <span className={styles.copyFeedback} role="status">
+            {fr.marketing.copied}
+          </span>
+        )}
+        {copyError && (
+          <span className={styles.copyFeedbackError} role="status">
+            {fr.marketing.copyFailed}
+          </span>
+        )}
       </div>
     </div>
   )
