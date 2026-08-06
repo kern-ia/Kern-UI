@@ -14,6 +14,7 @@ import { useDecisions } from '../vigie/useDecisions'
 import { RedactionView } from '../redaction/RedactionView'
 import { useDocuments } from '../redaction/useDocuments'
 import { useDocument } from '../redaction/useDocument'
+import { MarketingView } from '../redaction/MarketingView'
 import { useRunStream } from '../runs/useRunStream'
 import { topLevelRuns } from '../runs/nested'
 import { systemState, type SystemState } from './systemState'
@@ -190,7 +191,7 @@ function ViewBody({
     return <VigieBody />
   }
   if (view === 'redaction') {
-    return <RedactionBody />
+    return <RedactionBody runs={runs} />
   }
   return <AgentsView runs={runs} user={user} selectedId={selectedId} onSelect={onSelect} />
 }
@@ -221,11 +222,49 @@ function VigieBody() {
   return <VigieView budget={budget} feed={feed} />
 }
 
+type RedactionTab = 'memoire' | 'marketing'
+
 /**
- * Wraps Rédaction: the document list is fetched only while the view is open, the selected
- * document only once one is picked (defaulting to the first once the list arrives).
+ * Wraps Rédaction: a sub-tab between the document editor (Mémoire, kern-memory-backed)
+ * and the comm content calendar (Marketing, read from the same run data the Agents
+ * timeline already draws — see redaction/marketing.ts). Two unrelated capabilities
+ * sharing one nav entry, kept apart here rather than one component doing both jobs.
  */
-function RedactionBody() {
+function RedactionBody({ runs }: { runs: Run[] }) {
+  const [tab, setTab] = useState<RedactionTab>('memoire')
+
+  return (
+    <div className={styles.redactionBody}>
+      <div role="tablist" className={styles.redactionTabs}>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'memoire'}
+          className={styles.redactionTab}
+          onClick={() => setTab('memoire')}
+        >
+          {fr.redaction.tabs.memoire}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'marketing'}
+          className={styles.redactionTab}
+          onClick={() => setTab('marketing')}
+        >
+          {fr.redaction.tabs.marketing}
+        </button>
+      </div>
+      {tab === 'memoire' ? <MemoireBody /> : <MarketingView runs={runs} />}
+    </div>
+  )
+}
+
+/**
+ * The document list is fetched only while Mémoire is open, the selected document only
+ * once one is picked (defaulting to the first once the list arrives).
+ */
+function MemoireBody() {
   const documents = useDocuments(DOCUMENTS_URL)
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
