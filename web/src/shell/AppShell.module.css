@@ -234,3 +234,37 @@
   color: var(--gold);
   border-color: var(--border);
 }
+
+.redactionBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.redactionTabs {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.redactionTab {
+  padding: var(--space-2) var(--space-4);
+  font-family: var(--font-body);
+  font-size: 12px;
+  letter-spacing: var(--tracking-label);
+  color: var(--text-dim);
+  background: none;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+
+.redactionTab:hover {
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.redactionTab[aria-selected='true'] {
+  color: var(--gold);
+  border-color: var(--border);
+  background: var(--surface-veil-strong);
+}

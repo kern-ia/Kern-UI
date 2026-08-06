@@ -290,6 +290,10 @@ export const fr = {
   },
 
   redaction: {
+    tabs: {
+      memoire: 'Mémoire',
+      marketing: 'Marketing',
+    },
     label: 'Documents',
     loading: 'Chargement des documents…',
     // No source configured on kern-ui — distinct from kern-memory answering with none.
@@ -309,5 +313,29 @@ export const fr = {
     ignore: 'Ignorer',
     resolving: '…',
     resolveFailed: 'La décision n\'a pas pu être transmise.',
+  },
+
+  marketing: {
+    label: 'Calendrier des publications',
+    empty: 'Aucune publication pour le moment.',
+    emptyHint: 'Confiez une demande de communication à un agent : elle apparaîtra ici.',
+    previousMonth: 'Mois précédent',
+    nextMonth: 'Mois suivant',
+    unscheduled: 'Sans date',
+    unscheduledHint: 'Contenu prêt, mais sans date de publication précisée.',
+    status: {
+      publie: 'Publié',
+      brouillon: 'Brouillon',
+      refuse: 'Refusé',
+      en_cours: 'En cours',
+    },
+    weekdays: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
+    months: [
+      'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+      'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
+    ],
+    selectItem: (title: string) => `Voir « ${title} »`,
+    closeItem: 'Fermer',
+    platformLabel: 'Plateforme',
   },
 } as const
