@@ -1,4 +1,5 @@
-import { contentItemOf, isCommRun, monthGrid } from './marketing'
+import { contentItemOf, isCommRun, mergeItems, monthGrid } from './marketing'
+import type { ContentItem } from './marketing'
 import type { Run } from '../runs/types'
 
 function run(over: Partial<Run> = {}): Run {
@@ -153,5 +154,43 @@ describe('monthGrid', () => {
     const cells = monthGrid(2026, 7, items)
 
     expect(cells.every((c) => c.items.length === 0)).toBe(true)
+  })
+})
+
+function item(over: Partial<ContentItem> = {}): ContentItem {
+  return {
+    runId: 'a', graph: 'community-management-agency', title: 't', platform: 'p',
+    date: null, status: 'brouillon', text: 'x', ...over,
+  }
+}
+
+describe('mergeItems', () => {
+  it('keeps a live item over a persisted one with the same runId', () => {
+    const live = [item({ runId: 'a', title: 'live version' })]
+    const persisted = [item({ runId: 'a', title: 'stale persisted version' })]
+
+    const merged = mergeItems(live, persisted)
+
+    expect(merged).toHaveLength(1)
+    expect(merged[0].title).toBe('live version')
+  })
+
+  it('keeps a persisted item whose run is no longer known live (e.g. after a kern-ui restart)', () => {
+    const live: ContentItem[] = []
+    const persisted = [item({ runId: 'b', title: 'survived a restart' })]
+
+    const merged = mergeItems(live, persisted)
+
+    expect(merged).toHaveLength(1)
+    expect(merged[0].title).toBe('survived a restart')
+  })
+
+  it('combines items from both sources with no overlap', () => {
+    const live = [item({ runId: 'a' })]
+    const persisted = [item({ runId: 'b' })]
+
+    const merged = mergeItems(live, persisted)
+
+    expect(merged.map((i) => i.runId).sort()).toEqual(['a', 'b'])
   })
 })

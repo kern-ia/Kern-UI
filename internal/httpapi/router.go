@@ -159,6 +159,8 @@ func NewRouterWithDeps(cfg *Config) http.Handler {
 	mux.HandleFunc("GET /api/v1/documents/{id}", s.requireSession(s.handleGetDocument))
 	mux.HandleFunc("POST /api/v1/documents/{id}/suggestions/{sid}/accept", s.requireSession(s.handleResolveSuggestion(true)))
 	mux.HandleFunc("POST /api/v1/documents/{id}/suggestions/{sid}/ignore", s.requireSession(s.handleResolveSuggestion(false)))
+	mux.HandleFunc("POST /api/v1/marketing/items", s.requireSession(s.handleUpsertMarketingItem))
+	mux.HandleFunc("GET /api/v1/marketing/items", s.requireSession(s.handleListMarketingItems))
 
 	if cfg.WebDir != "" {
 		mux.Handle("GET /", http.FileServer(http.Dir(cfg.WebDir)))

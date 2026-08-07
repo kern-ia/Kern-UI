@@ -102,6 +102,18 @@ export function contentItemOf(run: Run): ContentItem | null {
   }
 }
 
+/**
+ * Combines items derived live from currently-known runs with items persisted to
+ * kern-memory (survive a kern-ui restart, since internal/projection — the source `runs`
+ * come from — is in-memory only). A live item wins over a persisted one with the same
+ * runId (fresher); a persisted item with no live counterpart (an older run kern-ui no
+ * longer holds, e.g. after a restart) is kept rather than dropped.
+ */
+export function mergeItems(live: ContentItem[], persisted: ContentItem[]): ContentItem[] {
+  const liveIds = new Set(live.map((i) => i.runId))
+  return [...live, ...persisted.filter((i) => !liveIds.has(i.runId))]
+}
+
 export interface CalendarCell {
   date: Date
   inMonth: boolean
