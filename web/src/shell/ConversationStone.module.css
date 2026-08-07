@@ -116,3 +116,62 @@
     font-size: 10px;
   }
 }
+
+.autoConfirmOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 7, 4, 0.6);
+}
+
+.autoConfirmPanel {
+  width: min(420px, calc(100vw - var(--space-6)));
+  padding: var(--space-5);
+  background: var(--surface-base);
+  border: 1px solid var(--state-error);
+  border-radius: var(--radius);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+}
+
+.autoConfirmTitle {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-display);
+  font-size: 16px;
+  color: var(--state-error);
+}
+
+.autoConfirmBody {
+  margin: 0 0 var(--space-4);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.autoConfirmActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+.autoConfirmActions button {
+  padding: var(--space-2) var(--space-4);
+  font-family: var(--font-body);
+  font-size: 12px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+
+.autoConfirmActions button:first-child {
+  color: var(--text-dim);
+  background: none;
+  border: 1px solid var(--border-soft);
+}
+
+.autoConfirmActions button:last-child {
+  color: var(--surface-base);
+  background: var(--state-error);
+  border: 1px solid var(--state-error);
+}
