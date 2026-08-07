@@ -1,70 +1,78 @@
 # CONVENTIONS.md — kern-ui
 
-Autorité locale pour ce repo, comme annoncé par le [CONTRIBUTING.md](https://github.com/kern-ia/.github/blob/main/CONTRIBUTING.md)
-de l'organisation. Les règles communes à tous les repos `kern-ia` sont reprises ci-dessous ;
-la section « Spécificités » couvre ce qui n'appartient qu'à `kern-ui`.
+Local authority for this repo, as announced by the org-wide
+[CONTRIBUTING.md](https://github.com/kern-ia/.github/blob/main/CONTRIBUTING.md). The rules
+shared by all `kern-ia` repos are restated below; the "Specifics" sections cover what belongs
+only to `kern-ui`.
+
+## Language
+
+Code, identifiers, and comments are written in English — no exceptions. This applies to
+source files, docstrings, commit diffs, and test names. It does not apply to
+product-facing UI copy (a deliberate, separate decision — see `CLAUDE.md`) or to
+internal documentation such as this file, `README.md`, or `CLAUDE.md`, which stay in
+whatever language the team works in day to day.
 
 ## Branches
 
-- `main` : branche par défaut, toujours déployable. Protégée — aucun push direct.
-- `dev` : branche d'intégration. Protégée — aucun push direct.
-- Branches de travail : `feature/<slug>`, `fix/<slug>`, `chore/<slug>`, `docs/<slug>`, `test/<slug>`.
-- Toute modification de `main` ou `dev` passe par une Pull Request, jamais par un push direct
-  ni un `git merge` local suivi d'un push.
-- Merge vers `dev` : merge commit `--no-ff` (préserve l'historique). Squash toléré pour une PR
-  triviale à un seul commit.
+- `main`: default branch, always deployable. Protected — no direct pushes.
+- `dev`: integration branch. Protected — no direct pushes.
+- Working branches: `feature/<slug>`, `fix/<slug>`, `chore/<slug>`, `docs/<slug>`, `test/<slug>`.
+- Any change to `main` or `dev` goes through a Pull Request, never a direct push or a local
+  `git merge` followed by a push.
+- Merging into `dev`: `--no-ff` merge commit (preserves history). Squash is acceptable for a
+  trivial single-commit PR.
 
 ## Commits
 
-Conventional Commits : `type(scope): résumé court`.
+Conventional Commits: `type(scope): short summary`.
 
-Types utilisés dans ce repo : `feat`, `fix`, `docs`, `test`, `chore`, `refactor`, `perf`,
-`build`, `ci`, `release`, `merge`.
+Types used in this repo: `feat`, `fix`, `docs`, `test`, `chore`, `refactor`, `perf`, `build`,
+`ci`, `release`, `merge`.
 
-Le corps explique le *pourquoi*, pas le *quoi*. Aucune signature d'outil (trailer
-`Co-Authored-By`, `Claude-Session` ou équivalent) dans les messages de commit — l'auteur du
-commit git suffit.
+The body explains the *why*, not the *what*. No tool signature (`Co-Authored-By`,
+`Claude-Session`, or equivalent trailer) in commit messages — the git author is enough.
 
 ## Pull Requests
 
-- Un seul sujet par PR, liée à l'issue ou la RFC qu'elle résout.
-- Utilise le template PR hérité de `kern-ia/.github`.
-- Déclare l'impact semver (patch / minor / major / none) — le module `web` et le module Go
-  sont versionnés ensemble tant que `kern-ui` reste un livrable unique.
-- Aucune donnée personnelle réelle (code, fixtures, captures, texte de la PR) — uniquement
-  du synthétique.
+- One subject per PR, linked to the issue or RFC it resolves.
+- Uses the PR template inherited from `kern-ia/.github`.
+- States the semver impact (patch / minor / major / none) — the `web` module and the Go
+  module are versioned together as long as `kern-ui` remains a single deliverable.
+- No real personal data (code, fixtures, screenshots, PR text) — synthetic only.
 
-## Style et lint
+## Style and lint
 
-- Go : `gofmt` + `go vet ./...` obligatoires. Pas de `.golangci.yml` dans ce repo aujourd'hui —
-  à ajouter (voir rapport de conformité) en s'alignant sur la base `linters.default: standard`
-  utilisée par `kern-anon` et `kern-link`.
-- Web (`web/`) : `npm run lint` (ESLint) doit passer, `npm test` et `npm run build` vérifiés en CI.
-- Aucun `cgo` : la cross-compilation `GOOS`/`GOARCH` doit rester une seule commande
-  (contrainte produit, voir `CLAUDE.md`).
+- Go: `gofmt` + `go vet ./...` are mandatory. No `.golangci.yml` in this repo yet — add one
+  (see the compliance report), aligned with the `linters.default: standard` base used by
+  `kern-anon` and `kern-link`.
+- Web (`web/`): `npm run lint` (ESLint) must pass; `npm test` and `npm run build` are checked
+  in CI.
+- No `cgo`: cross-compilation over `GOOS`/`GOARCH` must stay a single command (product
+  constraint, see `CLAUDE.md`).
 
 ## Tests
 
-- `go test -race ./...` pour le module Go.
-- `npm test` pour le module `web`.
-- CI (`.github/workflows/ci.yml`) exécute les deux jobs (`go`, `web`) sur push vers `main`/`dev`
-  et sur chaque PR — c'est déjà le cas ici, à garder comme référence pour les autres repos.
+- `go test -race ./...` for the Go module.
+- `npm test` for the `web` module.
+- CI (`.github/workflows/ci.yml`) runs both jobs (`go`, `web`) on push to `main`/`dev` and on
+  every PR — already the case here, keep it as the reference for the other repos.
 
-## Module Go
+## Go module
 
-- Chemin actuel : `github.com/yoann/kern-ui`. Ne correspond pas à l'organisation GitHub
-  (`kern-ia`) qui héberge le dépôt — décision à trancher au niveau de l'org (voir rapport),
-  pas à corriger unilatéralement ici tant que les autres modules ne sont pas alignés.
+- Current path: `github.com/yoann/kern-ui`. Does not match the GitHub organization
+  (`kern-ia`) hosting the repo — a decision to make at the org level (see the report), not to
+  fix unilaterally here while the other modules stay unaligned.
 
 ## Documentation
 
-- `README.md` à la racine, à jour.
-- `CLAUDE.md` — contexte agent, conserver synchronisé avec les décisions produit réelles.
-- `docs/` pour la conception (maquettes, brainstormings datés).
-- Pas de `CHANGELOG.md` : les notes de version vivent dans le message de tag annoté
-  (convention org, voir `CONTRIBUTING.md`).
+- `README.md` at the root, kept up to date.
+- `CLAUDE.md` — agent context, keep it synchronized with actual product decisions.
+- `docs/` for design (mockups, dated brainstorms).
+- No `CHANGELOG.md`: release notes live in the annotated tag message (org convention, see
+  `CONTRIBUTING.md`).
 
-## Sécurité / confidentialité
+## Security / privacy
 
-Voir `SECURITY.md` hérité de l'org : signalement via GitHub private vulnerability reporting,
-jamais d'issue publique. Aucune PII réelle dans le code, les fixtures ou les logs.
+See the org-inherited `SECURITY.md`: report via GitHub private vulnerability reporting, never
+a public issue. No real PII in code, fixtures, or logs.
