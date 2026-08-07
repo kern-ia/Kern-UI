@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -199,6 +201,63 @@ func TestDispatchMapsAnUnknownSkillToUnknownSkillError(t *testing.T) {
 	}
 	if len(unknown.Known) != 2 || unknown.Known[0] != "heartbeat" {
 		t.Errorf("Known = %v", unknown.Known)
+	}
+}
+
+func TestUploadPostsMultipartAndReturnsThePath(t *testing.T) {
+	var gotPath, gotAuth, gotContentType string
+	var gotFilename string
+	var gotContent []byte
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		gotAuth = r.Header.Get("Authorization")
+		gotContentType = r.Header.Get("Content-Type")
+		if err := r.ParseMultipartForm(1 << 20); err != nil {
+			t.Fatalf("server ParseMultipartForm: %v", err)
+		}
+		file, header, err := r.FormFile("file")
+		if err != nil {
+			t.Fatalf("server FormFile: %v", err)
+		}
+		defer file.Close()
+		gotFilename = header.Filename
+		gotContent, _ = io.ReadAll(file)
+		_ = json.NewEncoder(w).Encode(map[string]string{"path": "/inbox/1_dossier.pdf"})
+	}))
+	defer srv.Close()
+
+	c := &Client{BaseURL: srv.URL, Token: "un-jeton"}
+	path, err := c.Upload(context.Background(), "dossier.pdf", strings.NewReader("contenu réel"))
+	if err != nil {
+		t.Fatalf("Upload: %v", err)
+	}
+
+	if gotPath != "/api/v1/uploads" {
+		t.Errorf("path = %q", gotPath)
+	}
+	if gotAuth != "Bearer un-jeton" {
+		t.Errorf("Authorization = %q", gotAuth)
+	}
+	if !strings.HasPrefix(gotContentType, "multipart/form-data") {
+		t.Errorf("Content-Type = %q", gotContentType)
+	}
+	if gotFilename != "dossier.pdf" || string(gotContent) != "contenu réel" {
+		t.Errorf("filename=%q content=%q", gotFilename, gotContent)
+	}
+	if path != "/inbox/1_dossier.pdf" {
+		t.Errorf("path = %q", path)
+	}
+}
+
+func TestUploadSurfacesAnUpstreamFailure(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer srv.Close()
+
+	c := &Client{BaseURL: srv.URL}
+	if _, err := c.Upload(context.Background(), "x.pdf", strings.NewReader("x")); err == nil {
+		t.Fatal("Upload succeeded against a 500")
 	}
 }
 

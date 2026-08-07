@@ -1,4 +1,4 @@
-import { decide, dispatch, nudge, stopRun } from './api'
+import { decide, dispatch, nudge, stopRun, uploadFile } from './api'
 
 function answer(status: number, body?: unknown) {
   return vi.fn().mockResolvedValue({
@@ -69,4 +69,26 @@ it('carries the known skill names on an unknown-skill dispatch failure', async (
   await expect(dispatch('jamais', '')).rejects.toMatchObject({
     known: ['heartbeat', 'planner'],
   })
+})
+
+it('uploadFile posts the file as multipart form data and returns the path', async () => {
+  const fetchMock = answer(200, { path: '/inbox/1_dossier.pdf' })
+  vi.stubGlobal('fetch', fetchMock)
+  const file = new File(['contenu'], 'dossier.pdf', { type: 'application/pdf' })
+
+  const path = await uploadFile(file)
+
+  const [url, init] = fetchMock.mock.calls[0]
+  expect(url).toBe('/api/v1/uploads')
+  expect(init.method).toBe('POST')
+  expect(init.body).toBeInstanceOf(FormData)
+  expect((init.body as FormData).get('file')).toBe(file)
+  expect(path).toBe('/inbox/1_dossier.pdf')
+})
+
+it('uploadFile throws a SteerError on failure', async () => {
+  vi.stubGlobal('fetch', answer(502, { error: 'kern-orch injoignable' }))
+  const file = new File(['x'], 'x.pdf')
+
+  await expect(uploadFile(file)).rejects.toMatchObject({ status: 502 })
 })

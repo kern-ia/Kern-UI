@@ -10,6 +10,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 )
@@ -110,6 +112,48 @@ func (c *Client) Dispatch(ctx context.Context, skill, text, actor string) (Dispa
 		return DispatchResult{}, fmt.Errorf("steer: decode dispatch result: %w", err)
 	}
 	return result, nil
+}
+
+// Upload streams content to kern-orch's real upload endpoint and returns the local path
+// it was saved under — the same "text IS the document path" convention Dispatch already
+// sends, just fed by a picked file instead of typed text.
+func (c *Client) Upload(ctx context.Context, filename string, content io.Reader) (string, error) {
+	var buf bytes.Buffer
+	w := multipart.NewWriter(&buf)
+	part, err := w.CreateFormFile("file", filename)
+	if err != nil {
+		return "", fmt.Errorf("steer: build upload form: %w", err)
+	}
+	if _, err := io.Copy(part, content); err != nil {
+		return "", fmt.Errorf("steer: read upload content: %w", err)
+	}
+	if err := w.Close(); err != nil {
+		return "", fmt.Errorf("steer: close upload form: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.BaseURL+"/api/v1/uploads", &buf)
+	if err != nil {
+		return "", fmt.Errorf("steer: build upload request: %w", err)
+	}
+	req.Header.Set("Content-Type", w.FormDataContentType())
+	c.authenticate(req)
+
+	resp, err := c.client().Do(req)
+	if err != nil {
+		return "", fmt.Errorf("steer: upload: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("steer: upload: kern-orch answered %s", resp.Status)
+	}
+	var out struct {
+		Path string `json:"path"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
+		return "", fmt.Errorf("steer: decode upload result: %w", err)
+	}
+	return out.Path, nil
 }
 
 // post sends body to kern-orch and returns the raw response body on success, translating

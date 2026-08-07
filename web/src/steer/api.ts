@@ -63,3 +63,18 @@ export function nudge(runId: string, key: string, value: unknown): Promise<unkno
 export function dispatch(skill: string, text: string): Promise<DispatchResult> {
   return post<DispatchResult>('/api/v1/dispatch', { skill, text })
 }
+
+/** Uploads a picked file and returns the local path kern-orch saved it under — the same
+ * "text IS the document path" convention dispatch already sends, fed by a file instead of
+ * typed text (see courtage-extraction's reception node). */
+export async function uploadFile(file: File): Promise<string> {
+  const body = new FormData()
+  body.append('file', file)
+  const response = await fetch('/api/v1/uploads', { method: 'POST', body })
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => ({}))) as { error?: string }
+    throw new SteerError(payload.error ?? response.statusText, response.status)
+  }
+  const out = (await response.json()) as { path: string }
+  return out.path
+}

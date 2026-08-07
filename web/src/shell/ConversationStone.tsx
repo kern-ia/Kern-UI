@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import styles from './ConversationStone.module.css'
 import { fr } from '../i18n/fr'
-import { dispatch, nudge, SteerError } from '../steer/api'
+import { dispatch, nudge, SteerError, uploadFile } from '../steer/api'
 import type { Run } from '../runs/types'
 import {
   clampStone,
@@ -43,6 +43,11 @@ export function ConversationStone({
   // that naming convention) skips human validation downstream — this is the one explicit
   // confirmation step before it can dispatch at all, distinct from that per-node approval.
   const [pendingAuto, setPendingAuto] = useState<{ command: string; skillText: string } | null>(null)
+  // Only meaningful ahead of a `/skill-name` command: the uploaded path becomes the whole
+  // dispatch text (courtage-extraction's reception node reads the chat message as a
+  // document path — same convention as Telegram reception, just a third real source).
+  const [attachedFile, setAttachedFile] = useState<File | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const grabOffset = useRef({ x: 0, y: 0 })
 
   // Pointer handlers must read the live drag state, not the value captured when they were
@@ -192,8 +197,23 @@ export function ConversationStone({
 
     if (text.startsWith('/')) {
       const [command, ...rest] = text.slice(1).split(/\s+/)
-      const skillText = rest.join(' ')
+      let skillText = rest.join(' ')
+
+      if (attachedFile) {
+        setSending(true)
+        setFeedback(fr.chat.uploading)
+        try {
+          skillText = await uploadFile(attachedFile)
+        } catch {
+          setFeedback(fr.chat.uploadFailed)
+          setSending(false)
+          return
+        }
+        setAttachedFile(null)
+      }
+
       if (command.endsWith('-auto')) {
+        setSending(false)
         setPendingAuto({ command, skillText })
         return
       }
@@ -283,6 +303,37 @@ export function ConversationStone({
               }
             }}
           />
+          <button
+            type="button"
+            className={styles.attachButton}
+            aria-label={fr.chat.attach}
+            disabled={sending}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            📎
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            hidden
+            aria-label={fr.chat.attach}
+            onChange={(e) => setAttachedFile(e.target.files?.[0] ?? null)}
+          />
+          {attachedFile && (
+            <p className={styles.attachChip}>
+              {attachedFile.name}
+              <button
+                type="button"
+                aria-label={fr.chat.removeAttachment}
+                onClick={() => {
+                  setAttachedFile(null)
+                  if (fileInputRef.current) fileInputRef.current.value = ''
+                }}
+              >
+                ×
+              </button>
+            </p>
+          )}
           {feedback && (
             <p className={styles.note} id="chat-note" role="status">
               {feedback}

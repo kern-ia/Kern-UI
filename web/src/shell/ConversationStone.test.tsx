@@ -253,6 +253,92 @@ it('dispatches a non--auto command immediately, with no confirmation step', asyn
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 })
 
+it('uploads an attached file before dispatching, then dispatches with the returned path', async () => {
+  const fetchMock = vi.fn().mockImplementation((url: string) => {
+    if (url === '/api/v1/uploads') {
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        statusText: 'ok',
+        json: async () => ({ path: '/inbox/1_dossier.pdf' }),
+      } as Response)
+    }
+    return Promise.resolve({
+      ok: true,
+      status: 200,
+      statusText: 'ok',
+      json: async () => ({ kind: 'run', run_id: 'abc123' }),
+    } as Response)
+  })
+  vi.stubGlobal('fetch', fetchMock)
+
+  render(<ConversationStone stateColour="var(--state-idle)" />)
+  const attachInput = screen.getByLabelText(fr.chat.attach, { selector: 'input' })
+  const file = new File(['contenu'], 'dossier.pdf', { type: 'application/pdf' })
+  fireEvent.change(attachInput, { target: { files: [file] } })
+
+  const input = screen.getByPlaceholderText(fr.chat.placeholder)
+  fireEvent.change(input, { target: { value: '/courtage-extraction' } })
+  fireEvent.keyDown(input, { key: 'Enter' })
+
+  await waitFor(() =>
+    expect(screen.getByText(fr.chat.launched('courtage-extraction'))).toBeInTheDocument(),
+  )
+
+  const uploadCall = fetchMock.mock.calls.find(([url]) => url === '/api/v1/uploads')
+  expect(uploadCall).toBeTruthy()
+  const dispatchCall = fetchMock.mock.calls.find(([url]) => url === '/api/v1/dispatch')
+  expect(JSON.parse((dispatchCall![1] as RequestInit).body as string)).toEqual({
+    skill: 'courtage-extraction',
+    text: '/inbox/1_dossier.pdf',
+  })
+})
+
+it('shows an error and does not dispatch when the upload fails', async () => {
+  const fetchMock = vi.fn().mockResolvedValue({
+    ok: false,
+    status: 502,
+    statusText: 'error',
+    json: async () => ({ error: 'kern-orch injoignable' }),
+  } as Response)
+  vi.stubGlobal('fetch', fetchMock)
+
+  render(<ConversationStone stateColour="var(--state-idle)" />)
+  const attachInput = screen.getByLabelText(fr.chat.attach, { selector: 'input' })
+  fireEvent.change(attachInput, { target: { files: [new File(['x'], 'x.pdf')] } })
+
+  const input = screen.getByPlaceholderText(fr.chat.placeholder)
+  fireEvent.change(input, { target: { value: '/courtage-extraction' } })
+  fireEvent.keyDown(input, { key: 'Enter' })
+
+  await waitFor(() => expect(screen.getByText(fr.chat.uploadFailed)).toBeInTheDocument())
+  expect(fetchMock.mock.calls.some(([url]) => url === '/api/v1/dispatch')).toBe(false)
+})
+
+it('removing the attachment falls back to plain typed text', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      statusText: 'ok',
+      json: async () => ({ kind: 'run', run_id: 'abc123' }),
+    } as Response),
+  )
+
+  render(<ConversationStone stateColour="var(--state-idle)" />)
+  const attachInput = screen.getByLabelText(fr.chat.attach, { selector: 'input' })
+  fireEvent.change(attachInput, { target: { files: [new File(['x'], 'x.pdf')] } })
+
+  fireEvent.click(screen.getByRole('button', { name: fr.chat.removeAttachment }))
+
+  const input = screen.getByPlaceholderText(fr.chat.placeholder)
+  fireEvent.change(input, { target: { value: '/planner analyse ceci' } })
+  fireEvent.keyDown(input, { key: 'Enter' })
+
+  await waitFor(() => expect(screen.getByText(fr.chat.launched('planner'))).toBeInTheDocument())
+})
+
 it('lists the known skills when a command names one that does not exist', async () => {
   vi.stubGlobal('fetch', answer(404, { error: 'unknown skill', known: ['heartbeat', 'planner'] }))
 
