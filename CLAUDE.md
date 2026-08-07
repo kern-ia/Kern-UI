@@ -1,5 +1,8 @@
 # CLAUDE.md — Conventions du repo Kern-UI
 
+> Conventions de développement (branches, commits, PR, lint, CI) : voir [`CONVENTIONS.md`](CONVENTIONS.md).
+> Ce fichier ne couvre que le contexte produit et les décisions techniques propres à ce repo.
+
 ## Contexte
 `kern-ui` est la **brique interface** de l'écosystème Kern (voir la cartographie dans
 `../Kern-Orch/docs/ROADMAP.md`, où elle figure comme brique externe au CORE). Le travail
