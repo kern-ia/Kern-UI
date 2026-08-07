@@ -154,6 +154,90 @@ func (c *Client) Resolve(ctx context.Context, docID, suggestionID string, accept
 	return fmt.Errorf("memory: resolve: kern-memory answered %s", resp.Status)
 }
 
+// Memory mirrors kern-memory's EPIC-13 wire shape (POST /api/v1/memory/write, /query) —
+// distinct from Document/Suggestion above, which are the older C8 v1 slice of the same
+// daemon (see kern-memory/CLAUDE.md for the split).
+type Memory struct {
+	ID       string            `json:"id"`
+	Kind     string            `json:"kind"`
+	Text     string            `json:"text"`
+	Tags     []string          `json:"tags,omitempty"`
+	Metadata map[string]string `json:"metadata,omitempty"`
+}
+
+// MemoryQuery mirrors kern-memory's query request body.
+type MemoryQuery struct {
+	Text  string   `json:"text,omitempty"`
+	Kind  string   `json:"kind,omitempty"`
+	Tags  []string `json:"tags,omitempty"`
+	Limit int      `json:"limit,omitempty"`
+}
+
+// Recall mirrors kern-memory's query response entry.
+type Recall struct {
+	Memory     Memory  `json:"memory"`
+	Similarity float32 `json:"similarity"`
+}
+
+// WriteMemory upserts m — kern-memory's .okf layer overwrites on a repeated ID rather
+// than erroring (see kern-memory/internal/memory/okf, "Write upserts").
+func (c *Client) WriteMemory(ctx context.Context, m Memory) (Memory, error) {
+	body, err := json.Marshal(m)
+	if err != nil {
+		return Memory{}, fmt.Errorf("memory: marshal write: %w", err)
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.BaseURL+"/api/v1/memory/write", bytes.NewReader(body))
+	if err != nil {
+		return Memory{}, fmt.Errorf("memory: build write request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	c.authenticate(req)
+
+	resp, err := c.client().Do(req)
+	if err != nil {
+		return Memory{}, fmt.Errorf("memory: write: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return Memory{}, fmt.Errorf("memory: write: kern-memory answered %s", resp.Status)
+	}
+	var out Memory
+	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
+		return Memory{}, fmt.Errorf("memory: decode write: %w", err)
+	}
+	return out, nil
+}
+
+// QueryMemory recalls memories matching q.
+func (c *Client) QueryMemory(ctx context.Context, q MemoryQuery) ([]Recall, error) {
+	body, err := json.Marshal(q)
+	if err != nil {
+		return nil, fmt.Errorf("memory: marshal query: %w", err)
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.BaseURL+"/api/v1/memory/query", bytes.NewReader(body))
+	if err != nil {
+		return nil, fmt.Errorf("memory: build query request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	c.authenticate(req)
+
+	resp, err := c.client().Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("memory: query: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("memory: query: kern-memory answered %s", resp.Status)
+	}
+	var out []Recall
+	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
+		return nil, fmt.Errorf("memory: decode query: %w", err)
+	}
+	return out, nil
+}
+
 func (c *Client) authenticate(req *http.Request) {
 	if c.Token != "" {
 		req.Header.Set("Authorization", "Bearer "+c.Token)

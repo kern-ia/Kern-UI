@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { fr } from '../i18n/fr'
-import { contentItemOf, monthGrid, type ContentItem, type ContentStatus } from './marketing'
+import { contentItemOf, mergeItems, monthGrid, type ContentItem, type ContentStatus } from './marketing'
+import { fetchMarketingItems, upsertMarketingItem } from './marketingApi'
 import styles from './MarketingView.module.css'
 import type { Run } from '../runs/types'
 
@@ -18,10 +19,35 @@ const statusColour: Record<ContentStatus, string> = {
  * being silently dropped from a grid it cannot be placed on.
  */
 export function MarketingView({ runs }: { runs: Run[] }) {
-  const items = useMemo(
+  const liveItems = useMemo(
     () => runs.map(contentItemOf).filter((i): i is ContentItem => i !== null),
     [runs],
   )
+
+  // Persisted items survive a kern-ui restart (internal/projection, the source `runs`
+  // come from, is in-memory only — see marketing.ts, mergeItems). Both directions are
+  // best-effort: a kern-memory hiccup must never break the calendar the user is looking
+  // at, only silently skip the sync for this render.
+  const [persisted, setPersisted] = useState<ContentItem[]>([])
+  useEffect(() => {
+    let cancelled = false
+    fetchMarketingItems()
+      .then((fetched) => {
+        if (!cancelled) setPersisted(fetched)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    liveItems.forEach((item) => {
+      upsertMarketingItem(item).catch(() => {})
+    })
+  }, [liveItems])
+
+  const items = useMemo(() => mergeItems(liveItems, persisted), [liveItems, persisted])
   const [selected, setSelected] = useState<ContentItem | null>(null)
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())

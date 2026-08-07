@@ -132,6 +132,90 @@ func TestResolveDistinguishesUnknownDocumentFromUnknownSuggestion(t *testing.T) 
 	}
 }
 
+func TestWriteMemoryPostsToTheMemoryWriteEndpoint(t *testing.T) {
+	var gotPath, gotAuth string
+	var gotBody map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		gotAuth = r.Header.Get("Authorization")
+		_ = json.NewDecoder(r.Body).Decode(&gotBody)
+		_ = json.NewEncoder(w).Encode(Memory{ID: "item-1", Kind: "okf", Text: "contenu"})
+	}))
+	defer srv.Close()
+
+	c := &Client{BaseURL: srv.URL, Token: "tok"}
+	out, err := c.WriteMemory(context.Background(), Memory{
+		ID: "item-1", Kind: "okf", Text: "contenu", Tags: []string{"marketing"},
+	})
+	if err != nil {
+		t.Fatalf("WriteMemory: %v", err)
+	}
+	if gotPath != "/api/v1/memory/write" {
+		t.Errorf("path = %q", gotPath)
+	}
+	if gotAuth != "Bearer tok" {
+		t.Errorf("Authorization = %q", gotAuth)
+	}
+	if gotBody["id"] != "item-1" || gotBody["kind"] != "okf" {
+		t.Errorf("body = %+v", gotBody)
+	}
+	if out.ID != "item-1" {
+		t.Errorf("got %+v", out)
+	}
+}
+
+func TestWriteMemorySurfacesAnUpstreamFailure(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer srv.Close()
+
+	c := &Client{BaseURL: srv.URL}
+	if _, err := c.WriteMemory(context.Background(), Memory{Text: "x"}); err == nil {
+		t.Fatal("WriteMemory succeeded against a 500")
+	}
+}
+
+func TestQueryMemoryPostsTheQueryAndDecodesRecalls(t *testing.T) {
+	var gotPath string
+	var gotBody map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		_ = json.NewDecoder(r.Body).Decode(&gotBody)
+		_ = json.NewEncoder(w).Encode([]Recall{
+			{Memory: Memory{ID: "item-1", Text: "contenu"}, Similarity: 1},
+		})
+	}))
+	defer srv.Close()
+
+	c := &Client{BaseURL: srv.URL}
+	got, err := c.QueryMemory(context.Background(), MemoryQuery{Kind: "okf", Tags: []string{"marketing"}})
+	if err != nil {
+		t.Fatalf("QueryMemory: %v", err)
+	}
+	if gotPath != "/api/v1/memory/query" {
+		t.Errorf("path = %q", gotPath)
+	}
+	if gotBody["kind"] != "okf" {
+		t.Errorf("body = %+v", gotBody)
+	}
+	if len(got) != 1 || got[0].Memory.ID != "item-1" {
+		t.Errorf("got %+v", got)
+	}
+}
+
+func TestQueryMemorySurfacesAnUpstreamFailure(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer srv.Close()
+
+	c := &Client{BaseURL: srv.URL}
+	if _, err := c.QueryMemory(context.Background(), MemoryQuery{}); err == nil {
+		t.Fatal("QueryMemory succeeded against a 500")
+	}
+}
+
 func TestEnabledReflectsWhetherABaseURLIsConfigured(t *testing.T) {
 	if (&Client{}).Enabled() {
 		t.Error("Enabled() true with no BaseURL")
