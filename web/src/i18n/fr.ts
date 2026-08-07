@@ -82,6 +82,13 @@ export const fr = {
       `« ${name} » peut publier sans validation humaine sur les canaux ayant un vrai connecteur (ex. Telegram, X). Continuer ?`,
     autoConfirmConfirm: 'Activer quand même',
     autoConfirmCancel: 'Annuler',
+    // File-attach affordance — only meaningful ahead of a `/skill-name` command: the
+    // uploaded path becomes the whole dispatch text (see courtage-extraction's reception
+    // node, which reads the chat message as a document path).
+    attach: 'Joindre un document',
+    removeAttachment: 'Retirer le document joint',
+    uploading: 'Envoi du document…',
+    uploadFailed: "Le document n'a pas pu être envoyé.",
   },
 
   missing: {
