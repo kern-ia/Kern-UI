@@ -74,6 +74,14 @@ export const fr = {
         : 'Compétence inconnue.',
     sendFailed: 'Le message n\'a pas pu être envoyé.',
     sentToRun: (graph: string) => `Message transmis à la mission « ${graph} ».`,
+    // A "-auto" skill skips human validation on any canal with a real send connector —
+    // this modal is the one explicit confirmation step before it can run, matching the
+    // warning already documented in that skill's own SKILL.md.
+    autoConfirmTitle: 'Mode automatique',
+    autoConfirmBody: (name: string) =>
+      `« ${name} » peut publier sans validation humaine sur les canaux ayant un vrai connecteur (ex. Telegram, X). Continuer ?`,
+    autoConfirmConfirm: 'Activer quand même',
+    autoConfirmCancel: 'Annuler',
   },
 
   missing: {

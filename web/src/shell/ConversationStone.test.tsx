@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach } from 'vitest'
 import { ConversationStone } from './ConversationStone'
 import { fr } from '../i18n/fr'
@@ -176,6 +176,81 @@ it('explains that a plain message needs an open mission', async () => {
   fireEvent.keyDown(input, { key: 'Enter' })
 
   await waitFor(() => expect(screen.getByText(fr.chat.needsATarget)).toBeInTheDocument())
+})
+
+it('asks for confirmation before dispatching a -auto command, without dispatching yet', async () => {
+  const fetchMock = answer(200, { kind: 'run', run_id: 'abc123' })
+  vi.stubGlobal('fetch', fetchMock)
+
+  render(<ConversationStone stateColour="var(--state-idle)" />)
+  const input = screen.getByPlaceholderText(fr.chat.placeholder)
+
+  fireEvent.change(input, { target: { value: '/community-management-agency-auto publie ceci' } })
+  fireEvent.keyDown(input, { key: 'Enter' })
+
+  await waitFor(() =>
+    expect(screen.getByRole('dialog', { name: fr.chat.autoConfirmTitle })).toBeInTheDocument(),
+  )
+  expect(fetchMock).not.toHaveBeenCalled()
+})
+
+it('dispatches the -auto command only after explicit confirmation', async () => {
+  const fetchMock = answer(200, { kind: 'run', run_id: 'abc123' })
+  vi.stubGlobal('fetch', fetchMock)
+
+  render(<ConversationStone stateColour="var(--state-idle)" />)
+  const input = screen.getByPlaceholderText(fr.chat.placeholder)
+
+  fireEvent.change(input, { target: { value: '/community-management-agency-auto publie ceci' } })
+  fireEvent.keyDown(input, { key: 'Enter' })
+  const dialog = await screen.findByRole('dialog', { name: fr.chat.autoConfirmTitle })
+
+  fireEvent.click(within(dialog).getByRole('button', { name: fr.chat.autoConfirmConfirm }))
+
+  await waitFor(() =>
+    expect(screen.getByText(fr.chat.launched('community-management-agency-auto'))).toBeInTheDocument(),
+  )
+  expect(fetchMock).toHaveBeenCalled()
+  const [url, init] = fetchMock.mock.calls[0]
+  expect(url).toBe('/api/v1/dispatch')
+  expect(JSON.parse(init.body as string)).toEqual({
+    skill: 'community-management-agency-auto',
+    text: 'publie ceci',
+  })
+})
+
+it('cancels a -auto command without dispatching, keeping the message for editing', async () => {
+  const fetchMock = answer(200, { kind: 'run', run_id: 'abc123' })
+  vi.stubGlobal('fetch', fetchMock)
+
+  render(<ConversationStone stateColour="var(--state-idle)" />)
+  const input = screen.getByPlaceholderText(fr.chat.placeholder)
+
+  fireEvent.change(input, { target: { value: '/community-management-agency-auto publie ceci' } })
+  fireEvent.keyDown(input, { key: 'Enter' })
+  const dialog = await screen.findByRole('dialog', { name: fr.chat.autoConfirmTitle })
+
+  fireEvent.click(within(dialog).getByRole('button', { name: fr.chat.autoConfirmCancel }))
+
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  expect(fetchMock).not.toHaveBeenCalled()
+  expect(input).toHaveValue('/community-management-agency-auto publie ceci')
+})
+
+it('dispatches a non--auto command immediately, with no confirmation step', async () => {
+  const fetchMock = answer(200, { kind: 'run', run_id: 'abc123' })
+  vi.stubGlobal('fetch', fetchMock)
+
+  render(<ConversationStone stateColour="var(--state-idle)" />)
+  const input = screen.getByPlaceholderText(fr.chat.placeholder)
+
+  fireEvent.change(input, { target: { value: '/community-management-agency publie ceci' } })
+  fireEvent.keyDown(input, { key: 'Enter' })
+
+  await waitFor(() =>
+    expect(screen.getByText(fr.chat.launched('community-management-agency'))).toBeInTheDocument(),
+  )
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 })
 
 it('lists the known skills when a command names one that does not exist', async () => {

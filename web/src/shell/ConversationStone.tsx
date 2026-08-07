@@ -39,6 +39,10 @@ export function ConversationStone({
   const [message, setMessage] = useState('')
   const [sending, setSending] = useState(false)
   const [feedback, setFeedback] = useState<string | null>(null)
+  // A "-auto" skill (community-management-agency-auto, and any future skill following
+  // that naming convention) skips human validation downstream — this is the one explicit
+  // confirmation step before it can dispatch at all, distinct from that per-node approval.
+  const [pendingAuto, setPendingAuto] = useState<{ command: string; skillText: string } | null>(null)
   const grabOffset = useRef({ x: 0, y: 0 })
 
   // Pointer handlers must read the live drag state, not the value captured when they were
@@ -156,32 +160,17 @@ export function ConversationStone({
   const docked = position?.docked ?? null
   const label = docked ? fr.chat.stoneShow : fr.chat.stoneHide
 
-  // `/skill-name texte…` dispatches a compétence — no mission needed. Anything else nudges
-  // the mission currently open; with none open, there is nothing honest to do with it.
-  const submit = async () => {
-    const text = message.trim()
-    if (text === '' || sending) return
-
+  const dispatchCommand = async (command: string, skillText: string) => {
     setSending(true)
     setFeedback(null)
     try {
-      if (text.startsWith('/')) {
-        const [command, ...rest] = text.slice(1).split(/\s+/)
-        const skillText = rest.join(' ')
-        setFeedback(fr.chat.launching)
-        const result = await dispatch(command, skillText)
-        setFeedback(
-          result.kind === 'tool' && result.result
-            ? `${result.result.label} : ${result.result.value}`
-            : fr.chat.launched(command),
-        )
-      } else if (selectedRun) {
-        await nudge(selectedRun.id, 'message', text)
-        setFeedback(fr.chat.sentToRun(selectedRun.graph))
-      } else {
-        setFeedback(fr.chat.needsATarget)
-        return
-      }
+      setFeedback(fr.chat.launching)
+      const result = await dispatch(command, skillText)
+      setFeedback(
+        result.kind === 'tool' && result.result
+          ? `${result.result.label} : ${result.result.value}`
+          : fr.chat.launched(command),
+      )
       setMessage('')
     } catch (err) {
       if (err instanceof SteerError && err.known) {
@@ -193,6 +182,50 @@ export function ConversationStone({
       setSending(false)
     }
   }
+
+  // `/skill-name texte…` dispatches a compétence — no mission needed. Anything else nudges
+  // the mission currently open; with none open, there is nothing honest to do with it. A
+  // "-auto" command pauses here for confirmDialog instead of dispatching straight away.
+  const submit = async () => {
+    const text = message.trim()
+    if (text === '' || sending) return
+
+    if (text.startsWith('/')) {
+      const [command, ...rest] = text.slice(1).split(/\s+/)
+      const skillText = rest.join(' ')
+      if (command.endsWith('-auto')) {
+        setPendingAuto({ command, skillText })
+        return
+      }
+      await dispatchCommand(command, skillText)
+      return
+    }
+
+    if (!selectedRun) {
+      setFeedback(fr.chat.needsATarget)
+      return
+    }
+    setSending(true)
+    setFeedback(null)
+    try {
+      await nudge(selectedRun.id, 'message', text)
+      setFeedback(fr.chat.sentToRun(selectedRun.graph))
+      setMessage('')
+    } catch {
+      setFeedback(fr.chat.sendFailed)
+    } finally {
+      setSending(false)
+    }
+  }
+
+  const confirmAuto = async () => {
+    if (!pendingAuto) return
+    const { command, skillText } = pendingAuto
+    setPendingAuto(null)
+    await dispatchCommand(command, skillText)
+  }
+
+  const cancelAuto = () => setPendingAuto(null)
 
   return (
     <div
@@ -255,6 +288,31 @@ export function ConversationStone({
               {feedback}
             </p>
           )}
+        </div>
+      )}
+
+      {pendingAuto && (
+        <div
+          className={styles.autoConfirmOverlay}
+          role="dialog"
+          aria-modal="true"
+          aria-label={fr.chat.autoConfirmTitle}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') cancelAuto()
+          }}
+        >
+          <div className={styles.autoConfirmPanel}>
+            <p className={styles.autoConfirmTitle}>{fr.chat.autoConfirmTitle}</p>
+            <p className={styles.autoConfirmBody}>{fr.chat.autoConfirmBody(pendingAuto.command)}</p>
+            <div className={styles.autoConfirmActions}>
+              <button type="button" onClick={cancelAuto}>
+                {fr.chat.autoConfirmCancel}
+              </button>
+              <button type="button" onClick={() => void confirmAuto()}>
+                {fr.chat.autoConfirmConfirm}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
