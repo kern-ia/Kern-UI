@@ -289,6 +289,60 @@ display cache. **Losing kern-ui's data must cost nothing but a reload.**
 
 ---
 
+## Theming — one codebase, several client brands
+
+`kern-ui` is meant to sit in front of more than one client, each with its own visual
+identity — the internal "Grimoire Ambré" look (dark ground, gold accent, Cinzel + Space
+Grotesk) is Kern's own, not every client's. The first real case is
+[Avel Finances](https://avelfinances.fr): its client and advisor mockups
+(`design/mockups/avel-client.dc.html`, `design/mockups/avel-admin.dc.html`) use a
+completely different navy/blue identity and vocabulary, deliberately — the mockup art
+direction stays authoritative *per brand*, not as one fixed palette for every deployment.
+
+**The mechanism is a per-brand build, not a runtime switch.** Concretely:
+
+- **Colours, fonts, spacing** — already centralised in
+  [`web/src/styles/tokens.css`](web/src/styles/tokens.css): one `:root` block of custom
+  properties, consumed via `var(--token)` almost everywhere (verified: only 6 stray
+  hard-coded hex values exist across the whole frontend, in
+  `ConversationStone.module.css` and `RedactionView.module.css` — everything else,
+  including JS-side state-colour maps, already goes through a token). A second brand
+  means a second token set — either a sibling `:root[data-theme="avel"]` block or a
+  separate `tokens.css` swapped at build time — plus fixing those 6 stray lines so
+  nothing hides outside the token layer. This part is cheap: a palette swap, not a
+  redesign.
+- **Copy and vocabulary** — `web/src/i18n/fr.ts` is a single flat object imported
+  directly (`import { fr } from '../i18n/fr'`) in 24 files. It is **not** swappable
+  today: a second brand's copy (Kern's internal "agent", "run", "node" vocabulary vs.
+  Avel's client-facing "dossier", "conseiller", "agent") needs either a full duplicate
+  object kept in sync by hand, or refactoring those 24 imports behind an indirection
+  (a `useCopy()`-style lookup). Real work, not a side effect of the token swap above —
+  scope it as its own piece before promising a second brand's wording, not after.
+- **Bespoke components** — `ConversationStone` (the "stone" chat control: gold glow,
+  Cinzel numerals, a specific gradient texture) is Kern's own visual metaphor, not a
+  generic shape with swappable colours. A brand whose mockup uses a structurally
+  different control (Avel's admin mockup replaces it with a plain command bar) needs its
+  own component variant, not a retheme of this one — check the target brand's mockup
+  before assuming the existing component just needs new tokens.
+- **Serving it** — the Go backend needs **no changes** for this: `KERN_UI_WEB_DIR`
+  (`cmd/kern-ui/main.go`) already points at one static bundle per running instance. One
+  `npm run build` per brand (each with its own token set baked in) produces one `dist/`
+  per brand; each gets its own `kern-ui` deployment (own `KERN_UI_ADDR`, own
+  `KERN_UI_ACCOUNTS`, pointed at its own `KERN_UI_WEB_DIR`). This is the same "one binary,
+  one config, one data dir per deployment" shape `kern-launcher` already uses for
+  `kern-memory`/`kern-orch`/`kern-ui` — a themed brand is just another instance of that
+  same pattern, not a new one.
+
+**What this deliberately does not attempt**: one binary serving several brands at once,
+chosen per account or per domain at request time. Nothing today carries a "which brand"
+concept anywhere — not in `internal/httpapi`'s config, not in the accounts file, not in
+the frontend. Building that would mean a real selection mechanism end-to-end (backend
+config → account model → frontend context) instead of "build twice, deploy twice." Worth
+it once there are enough brands that separate builds/deployments become the actual
+bottleneck — not assumed necessary before that's true.
+
+---
+
 ## Development
 
 ```sh
