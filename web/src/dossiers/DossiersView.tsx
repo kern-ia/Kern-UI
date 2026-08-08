@@ -1,6 +1,7 @@
 import { fr } from '../i18n/fr'
 import styles from './DossiersView.module.css'
 import { groupByDossier, type Dossier } from '../runs/dossiers'
+import { relativeUpdate } from '../redaction/relativeTime'
 import type { Run } from '../runs/types'
 
 /** Status colours, same source as RunList's own — the mockup's stateMap, via tokens.css. */
@@ -36,36 +37,54 @@ export function DossiersView({
   return (
     <section>
       <h2 className={styles.heading}>{fr.dossiers.label}</h2>
-      <ul className={styles.list}>
-        {dossiers.map((dossier) => (
-          <DossierCard key={dossier.id} dossier={dossier} onSelect={onSelect} />
-        ))}
-      </ul>
+      <div className={styles.tableWrap}>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              <th scope="col">{fr.dossiers.columns.id}</th>
+              <th scope="col">{fr.dossiers.columns.graph}</th>
+              <th scope="col">{fr.dossiers.columns.status}</th>
+              <th scope="col">{fr.dossiers.columns.updated}</th>
+              <th scope="col">
+                <span className={styles.srOnly}>{fr.dossiers.label}</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {dossiers.map((dossier) => (
+              <DossierRow key={dossier.id} dossier={dossier} onSelect={onSelect} />
+            ))}
+          </tbody>
+        </table>
+      </div>
     </section>
   )
 }
 
-function DossierCard({ dossier, onSelect }: { dossier: Dossier; onSelect?: (id: string) => void }) {
+function DossierRow({ dossier, onSelect }: { dossier: Dossier; onSelect?: (id: string) => void }) {
   const run = latestRun(dossier)
-  const label = fr.runs.status[run.status]
 
   return (
-    <li className={styles.card}>
-      <button
-        type="button"
-        className={styles.pick}
-        aria-label={fr.dossiers.open(dossier.id)}
-        onClick={() => onSelect?.(dossier.id)}
-      >
-        <h3 className={styles.id}>{dossier.id}</h3>
-        <p className={styles.status}>
+    <tr>
+      <th scope="row" className={styles.id}>
+        {dossier.id}
+      </th>
+      <td className={styles.graph}>{run.graph}</td>
+      <td>
+        <span className={styles.status}>
           <span
             className={styles.dot}
             style={{ '--dot-colour': statusColour[run.status] } as React.CSSProperties}
           />
-          {label} — {run.graph}
-        </p>
-      </button>
-    </li>
+          {fr.runs.status[run.status]}
+        </span>
+      </td>
+      <td className={styles.since}>{fr.dossiers.updated(relativeUpdate(run.updated_at))}</td>
+      <td>
+        <button type="button" className={styles.open} onClick={() => onSelect?.(dossier.id)}>
+          {fr.dossiers.open(dossier.id)}
+        </button>
+      </td>
+    </tr>
   )
 }

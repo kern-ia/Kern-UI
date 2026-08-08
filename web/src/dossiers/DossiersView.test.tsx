@@ -30,11 +30,30 @@ it('shows nothing for runs carrying no dossier', () => {
   expect(screen.getByText(fr.dossiers.empty)).toBeInTheDocument()
 })
 
-it('shows one card per dossier, with its most recent run status', () => {
+it('shows one row per dossier, with its most recent run status', () => {
   render(<DossiersView runs={[run('r1', { dossier: 'AF-2288' })]} />)
 
+  expect(screen.getByRole('table')).toBeInTheDocument()
+  expect(screen.getAllByRole('row')).toHaveLength(2) // header + one dossier
   expect(screen.getByText('AF-2288')).toBeInTheDocument()
   expect(screen.getByText(fr.runs.status.running, { exact: false })).toBeInTheDocument()
+})
+
+it('gives every dossier its own row, most recently updated first', () => {
+  render(
+    <DossiersView
+      runs={[
+        run('old', { dossier: 'AF-2270', updated_at: '2026-07-28T10:00:00Z' }),
+        run('new', { dossier: 'AF-2288', updated_at: '2026-07-28T14:00:00Z' }),
+      ]}
+    />,
+  )
+
+  const rows = screen.getAllByRole('row').slice(1) // drop the header row
+  expect(rows.map((r) => r.textContent)).toEqual([
+    expect.stringContaining('AF-2288'),
+    expect.stringContaining('AF-2270'),
+  ])
 })
 
 it('calls onSelect with the dossier id when its card is picked', () => {

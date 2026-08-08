@@ -39,12 +39,8 @@ export const avel = {
     emptyHint: 'Confiez un dossier à un agent : il apparaîtra ici en direct.',
   },
 
-  dossiers: {
-    label: 'Dossiers',
-    empty: 'Aucun dossier en cours.',
-    emptyHint: 'Confiez un dossier à un agent : il apparaîtra ici en direct.',
-    open: (id: string) => `Ouvrir le dossier ${id}`,
-  },
+  // dossiers: identical to kern's wording already — inherited via the top-level spread,
+  // not re-listed here, so there is only one place it can drift from.
 
   dossierDetail: {
     notFound: 'Ce dossier est introuvable.',

@@ -73,7 +73,7 @@ export function AppShell({
 
   return (
     <div className={styles.shell}>
-      <header className={styles.header}>
+      <header className={styles.topbar}>
         <div className={styles.brand}>
           <span
             className={styles.beacon}
@@ -81,18 +81,11 @@ export function AppShell({
             aria-hidden="true"
           />
           <span className={styles.brandName}>{fr.appName}</span>
+          <span className={styles.brandSep} aria-hidden="true">
+            /
+          </span>
+          <span className={styles.brandContext}>{fr.views[view]}</span>
         </div>
-
-        <nav className={styles.nav} aria-label={fr.nav.primary}>
-          {activeViews().map((v) => (
-            <Tab key={v.id} view={v} current={view} onSelect={setView} className={styles.tab}>
-              <span className={styles.tabGlyph} aria-hidden="true">
-                {v.glyph}
-              </span>
-              {fr.views[v.id]}
-            </Tab>
-          ))}
-        </nav>
 
         <div className={styles.status}>
           <p className={styles.statePill} data-testid="system-state">
@@ -119,21 +112,36 @@ export function AppShell({
         </div>
       </header>
 
-      <main className={styles.main}>
-        <ViewBody
-          view={view}
-          runs={runs}
-          user={user}
-          selectedId={selectedRun?.id ?? null}
-          onSelect={setPickedRunId}
-          dossierId={pickedDossierId}
-          onSelectDossier={openDossier}
-        />
-      </main>
+      <div className={styles.body}>
+        <nav className={styles.sidebar} aria-label={fr.nav.primary}>
+          {activeViews().map((v) => (
+            <Tab key={v.id} view={v} current={view} onSelect={setView} className={styles.navItem}>
+              <span className={styles.navGlyph} aria-hidden="true">
+                {v.glyph}
+              </span>
+              {fr.views[v.id]}
+            </Tab>
+          ))}
+        </nav>
 
-      {/* Floats over the content and can be tidied against either edge — the mockup's
-          rune stone is the handle. */}
-      <ConversationStone stateColour={stateColour[state]} selectedRun={selectedRun} />
+        <main className={styles.main}>
+          <ViewBody
+            view={view}
+            runs={runs}
+            user={user}
+            selectedId={selectedRun?.id ?? null}
+            onSelect={setPickedRunId}
+            dossierId={pickedDossierId}
+            onSelectDossier={openDossier}
+          />
+
+          {/* Floats over the content and can be tidied against either edge — the
+              mockup's rune stone is the handle. Mounted inside .main (not the whole
+              shell) so "dock left" means the edge of the content pane, not past the
+              sidebar. */}
+          <ConversationStone stateColour={stateColour[state]} selectedRun={selectedRun} />
+        </main>
+      </div>
 
       <nav className={styles.mobileNav} aria-label={fr.nav.compact}>
         {mobileViews().map((v) => (
