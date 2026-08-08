@@ -23,7 +23,7 @@
   flex: none;
   padding: 0;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #a4703a, #6b4423 65%, #4a2e18 100%);
+  background: var(--stone-gradient);
   border: 1.5px solid var(--state-idle);
   box-shadow:
     0 0 18px rgba(255, 179, 71, 0.6),
@@ -48,7 +48,7 @@
 
 .rune {
   font: 22px var(--font-display);
-  color: #fff3dc;
+  color: var(--stone-rune-color);
   text-shadow: 0 0 6px var(--state-idle);
   pointer-events: none;
 }
