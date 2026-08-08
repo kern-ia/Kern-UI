@@ -44,6 +44,12 @@ export const kern = {
     redaction: 'Rédaction',
     grimoire: 'Grimoire',
     vigie: 'Vigie',
+    // Avel Finances' own view set (see shell/views.ts, AVEL_VIEWS) — never shown under
+    // this brand (VIEWS does not list these ids), kept here only so fr.views[id] stays
+    // total across the whole ViewId union without a brand-specific type split.
+    dossiers: 'Dossiers',
+    suivi: 'Suivi',
+    automatisations: 'Automatisations',
   },
 
   systemState: {
@@ -434,5 +440,21 @@ export const kern = {
     copy: 'Copier',
     copied: 'Copié !',
     copyFailed: 'La copie a échoué.',
+  },
+
+  // Avel Finances' own view set (see avel.ts) — never rendered under this brand (the
+  // Dossiers/Suivi/Automatisations views are not in VIEWS), kept here only so fr's type
+  // stays total across both brands without a brand-specific type split.
+  dossiers: {
+    label: 'Dossiers',
+    empty: 'Aucun dossier en cours.',
+    emptyHint: 'Confiez un dossier à un agent : il apparaîtra ici en direct.',
+    open: (id: string) => `Ouvrir le dossier ${id}`,
+  },
+
+  dossierDetail: {
+    notFound: 'Ce dossier est introuvable.',
+    notFoundHint: 'Il a peut-être été refermé — revenez à la liste des dossiers.',
+    backToList: 'Retour aux dossiers',
   },
 } as const
