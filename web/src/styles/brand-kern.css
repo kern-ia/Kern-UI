@@ -1,0 +1,54 @@
+/* Brand tokens — Kern's own "Grimoire Ambré" identity: dark ground, gold accent.
+   This is the default brand (applies whenever [data-brand] is unset or "kern") — every
+   value here is unchanged from tokens.css before the brand split, so this brand renders
+   pixel-identical to before. Values are lifted from design/mockups/Agentic OS.dc.html. */
+
+:root {
+  /* Surfaces, darkest to lightest */
+  --surface-void: #070504;
+  --surface-base: #0d0a07;
+  --surface-raised: #241c14;
+  --surface-veil: rgba(255, 255, 255, 0.03);
+  --surface-veil-strong: rgba(232, 201, 138, 0.06);
+  --backdrop: radial-gradient(140% 100% at 50% -10%, #241c14 0%, #0d0a07 45%, #070504 100%);
+
+  /* Gold — the brand axis. Token names stay colour-flavoured even though a future brand's
+     accent may not be gold: renaming would touch every consumer for a cosmetic gain. */
+  --gold: #e8c98a;
+  --gold-bright: #ffe0a8;
+  --gold-muted: #c9b48f;
+  --gold-dim: #9c8a6a;
+  --gold-faint: #6a5a44;
+
+  /* Text */
+  --text: #f3e3c4;
+  --text-muted: #c9b48f;
+  --text-dim: #8a7355;
+
+  /* Borders */
+  --border: rgba(232, 201, 138, 0.15);
+  --border-soft: rgba(232, 201, 138, 0.1);
+  --border-strong: rgba(232, 201, 138, 0.25);
+
+  /* Agent states, from the mockup's stateMap */
+  --state-idle: #ffb347;
+  --state-thinking: #a674ff;
+  --state-action: #4ee3ff;
+  --state-error: #ff4d5e;
+
+  /* The conversation stone's own texture — Kern's specific visual metaphor, not a
+     generic shape. A brand whose mockup uses a structurally different control (e.g.
+     Avel's advisor command bar) needs its own component variant, not new values here. */
+  --stone-gradient: radial-gradient(circle at 35% 30%, #a4703a, #6b4423 65%, #4a2e18 100%);
+  --stone-rune-color: #fff3dc;
+
+  /* Rédaction suggestion callout */
+  --suggestion-accent: #c9b0ff;
+  --suggestion-text: #e6ddff;
+
+  /* Type */
+  --font-display: 'Cinzel', Georgia, serif;
+  --font-body: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  --tracking-display: 0.16em;
+  --tracking-label: 0.04em;
+}

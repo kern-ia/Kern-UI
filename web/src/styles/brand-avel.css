@@ -1,0 +1,66 @@
+/* Brand tokens — Avel Finances: navy ground, royal-blue accent, lifted from
+   design/mockups/avel-client.dc.html and avel-admin.dc.html (in turn lifted from the
+   real avelfinances.fr charter). Applies when the root element carries
+   data-brand="avel" (set at build time — see README.md, "Theming").
+
+   Scope note: this file proves the token-swap mechanism with Avel's real colours, on
+   kern-ui's existing dark-shell components (AppShell, RunsView, etc. all assume one
+   overall dark surface today). It does NOT reproduce the light, two-tone rhythm of the
+   avel-*.dc.html mockups (dark hero, light body sections) — that needs per-view layout
+   work, not just new token values, and is out of scope for this pass. See
+   docs/index/theming-convention.md. */
+
+:root[data-brand='avel'] {
+  /* Surfaces, darkest to lightest — same monochrome-scale shape as Kern's, filled with
+     Avel's navy instead of Kern's near-black. */
+  --surface-void: #070a1c;
+  --surface-base: #0b1128;
+  --surface-raised: #161d4a;
+  --surface-veil: rgba(255, 255, 255, 0.04);
+  --surface-veil-strong: rgba(61, 94, 235, 0.1);
+  --backdrop: radial-gradient(140% 100% at 50% -10%, #161d4a 0%, #0b1128 45%, #070a1c 100%);
+
+  /* Blue — Avel's brand axis, in the slot Kern's "gold" tokens occupy. */
+  --gold: #5b78f2;
+  --gold-bright: #a9b8f8;
+  --gold-muted: #8d9de0;
+  --gold-dim: #6672a8;
+  --gold-faint: #454d78;
+
+  /* Text */
+  --text: #f2f3fb;
+  --text-muted: #b7bcd9;
+  --text-dim: #868ba8;
+
+  /* Borders */
+  --border: rgba(169, 184, 248, 0.18);
+  --border-soft: rgba(169, 184, 248, 0.1);
+  --border-strong: rgba(169, 184, 248, 0.3);
+
+  /* Agent states — kept distinct hues from the accent, matching the client mockup's
+     semantic set (progress blue, pending amber, done green, blocked red) rather than
+     reusing Kern's repos/réflexion/action/erreur vocabulary. */
+  --state-idle: #c9791f;
+  --state-thinking: #5b78f2;
+  --state-action: #3d5eeb;
+  --state-error: #d1435a;
+
+  /* No bespoke "stone" for this brand — avel-admin.dc.html replaces it with a plain
+     command bar (ConversationStone needs its own component variant to match, not a
+     retheme; see docs/index/theming-convention.md). Values kept only so nothing
+     references an undefined token if this brand ships before that variant exists. */
+  --stone-gradient: radial-gradient(circle at 35% 30%, #3d5eeb, #232b5c 65%, #161d4a 100%);
+  --stone-rune-color: #f2f3fb;
+
+  /* Rédaction suggestion callout */
+  --suggestion-accent: #a9b8f8;
+  --suggestion-text: #e3e8fd;
+
+  /* Type — Avel's own site uses a bold rounded geometric sans throughout; Space Grotesk
+     (already self-hosted for Kern) is the closest match available without sourcing and
+     licensing a new webfont, so it is reused for both display and body here. */
+  --font-display: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  --font-body: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  --tracking-display: 0.02em;
+  --tracking-label: 0.04em;
+}
