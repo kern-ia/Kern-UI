@@ -69,8 +69,9 @@ func (s *server) handleDispatch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var body struct {
-		Skill string `json:"skill"`
-		Text  string `json:"text"`
+		Skill   string `json:"skill"`
+		Text    string `json:"text"`
+		Dossier string `json:"dossier"`
 	}
 	if err := decodeSteerBody(r, &body); err != nil {
 		writeError(w, http.StatusBadRequest, "malformed body: want {\"skill\":\"...\",\"text\":\"...\"}")
@@ -82,7 +83,7 @@ func (s *server) handleDispatch(w http.ResponseWriter, r *http.Request) {
 	}
 	actor, _ := s.currentUser(r)
 
-	result, err := s.cfg.Steer.Dispatch(r.Context(), body.Skill, body.Text, actor)
+	result, err := s.cfg.Steer.Dispatch(r.Context(), body.Skill, body.Text, actor, body.Dossier)
 	var unknown *steer.UnknownSkillError
 	switch {
 	case errors.As(err, &unknown):

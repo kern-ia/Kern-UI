@@ -150,6 +150,11 @@ type StepEvent struct {
 	// Requester names who asked for this run (C6); empty means open. Rides on the first
 	// event only, like Topology.
 	Requester string `json:"requester,omitempty"`
+
+	// Dossier is a caller-supplied business label (e.g. a client case) grouping several
+	// runs together; empty means none. Rides on the first event only, like Requester and
+	// Topology.
+	Dossier string `json:"dossier,omitempty"`
 }
 
 // Validate checks the event against the ingestion contract.
@@ -219,6 +224,10 @@ type Run struct {
 	// Requester names who asked for this run (C6); empty means open — steerable by anyone.
 	Requester string `json:"requester,omitempty"`
 
+	// Dossier is a caller-supplied business label (e.g. a client case) grouping several
+	// runs together; empty means this run belongs to none.
+	Dossier string `json:"dossier,omitempty"`
+
 	// Generating lists the nodes whose model is producing output right now, sorted. Fed by
 	// ActivityEvent, emptied when the run ends. It is what lets the beacon tell a run that
 	// is thinking from one that is merely in flight.
@@ -284,10 +293,13 @@ func (p *Projection) Apply(ev StepEvent) (Run, bool, error) {
 		// run began by executing it.
 		run.Visited = mergeVisited(run.Visited, []string{ev.Topology.Entry})
 	}
-	// Same reasoning as Topology: the requester rides the first event only and never
-	// changes over a run's life.
+	// Same reasoning as Topology: the requester and dossier ride the first event only and
+	// never change over a run's life.
 	if ev.Requester != "" {
 		run.Requester = ev.Requester
+	}
+	if ev.Dossier != "" {
+		run.Dossier = ev.Dossier
 	}
 
 	switch {

@@ -95,9 +95,13 @@ func (c *Client) Decide(ctx context.Context, runID, nodeID, actor, decision stri
 	return err
 }
 
-// Dispatch resolves an explicit `/skill text…` chat command.
-func (c *Client) Dispatch(ctx context.Context, skill, text, actor string) (DispatchResult, error) {
-	body, err := json.Marshal(map[string]string{"skill": skill, "text": text, "requester": actor})
+// Dispatch resolves an explicit `/skill text…` chat command. dossier is a caller-supplied
+// business label (e.g. a client case), distinct from actor (an identity) — empty means
+// the run belongs to no dossier.
+func (c *Client) Dispatch(ctx context.Context, skill, text, actor, dossier string) (DispatchResult, error) {
+	body, err := json.Marshal(map[string]string{
+		"skill": skill, "text": text, "requester": actor, "dossier": dossier,
+	})
 	if err != nil {
 		return DispatchResult{}, fmt.Errorf("steer: marshal dispatch: %w", err)
 	}
