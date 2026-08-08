@@ -10,7 +10,17 @@
  * firewall — the mockup was updated alongside this file rather than left to drift, since
  * it is this file's own stated source of truth for the view count.
  */
-export type ViewId = 'cerveau' | 'agents' | 'espace' | 'navigateur' | 'redaction' | 'grimoire' | 'vigie'
+export type ViewId =
+  | 'cerveau'
+  | 'agents'
+  | 'espace'
+  | 'navigateur'
+  | 'redaction'
+  | 'grimoire'
+  | 'vigie'
+  | 'dossiers'
+  | 'suivi'
+  | 'automatisations'
 
 export type ViewSource =
   /** A brick feeds this view today. */
@@ -62,15 +72,35 @@ export const VIEWS: ViewDef[] = [
   { id: 'vigie', glyph: '◉', source: { kind: 'live' }, onMobile: false },
 ]
 
-export const DEFAULT_VIEW: ViewId = 'agents'
+/**
+ * Avel Finances' advisor console: a Dossiers list, a Suivi (per-dossier timeline) view,
+ * and an Automatisations catalogue — a different information architecture from Kern's
+ * seven tabs, not a relabelling of them. See README.md, "Theming — one codebase, several
+ * client brands", and docs/index/theming-convention.md for why brand selection is
+ * build-time (VITE_BRAND), not a runtime data-brand check.
+ */
+export const AVEL_VIEWS: ViewDef[] = [
+  { id: 'dossiers', glyph: '▤', source: { kind: 'live' }, onMobile: true },
+  { id: 'suivi', glyph: '⬡', source: { kind: 'live' }, onMobile: true },
+  { id: 'automatisations', glyph: 'ᛝ', source: { kind: 'live' }, onMobile: true },
+]
+
+/** The active brand's view set, decided at build time. */
+export function activeViews(): ViewDef[] {
+  return import.meta.env.VITE_BRAND === 'avel' ? AVEL_VIEWS : VIEWS
+}
+
+export function defaultView(): ViewId {
+  return import.meta.env.VITE_BRAND === 'avel' ? 'dossiers' : 'agents'
+}
 
 export function viewById(id: ViewId): ViewDef {
-  const view = VIEWS.find((v) => v.id === id)
+  const view = activeViews().find((v) => v.id === id)
   if (!view) throw new Error(`unknown view: ${id}`)
   return view
 }
 
 /** The navigation the mockup keeps on a phone: three entries, not six. */
 export function mobileViews(): ViewDef[] {
-  return VIEWS.filter((v) => v.onMobile)
+  return activeViews().filter((v) => v.onMobile)
 }

@@ -141,8 +141,9 @@ func TestDecideMapsA404ToErrNotFound(t *testing.T) {
 func TestDispatchInvokingAToolDecodesTheResult(t *testing.T) {
 	var gotPath string
 	var gotBody struct {
-		Skill string `json:"skill"`
-		Text  string `json:"text"`
+		Skill   string `json:"skill"`
+		Text    string `json:"text"`
+		Dossier string `json:"dossier"`
 	}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotPath = r.URL.Path
@@ -152,7 +153,7 @@ func TestDispatchInvokingAToolDecodesTheResult(t *testing.T) {
 	defer srv.Close()
 
 	c := &Client{BaseURL: srv.URL}
-	res, err := c.Dispatch(context.Background(), "heartbeat", "", "yoann")
+	res, err := c.Dispatch(context.Background(), "heartbeat", "", "yoann", "AF-2288")
 	if err != nil {
 		t.Fatalf("Dispatch: %v", err)
 	}
@@ -161,6 +162,9 @@ func TestDispatchInvokingAToolDecodesTheResult(t *testing.T) {
 	}
 	if gotBody.Skill != "heartbeat" {
 		t.Errorf("body = %+v", gotBody)
+	}
+	if gotBody.Dossier != "AF-2288" {
+		t.Errorf("dossier = %q, want AF-2288", gotBody.Dossier)
 	}
 	if res.Kind != "tool" || res.Result == nil || res.Result.Value != "17:09" {
 		t.Errorf("got %+v", res)
@@ -174,7 +178,7 @@ func TestDispatchLaunchingARunDecodesTheRunID(t *testing.T) {
 	defer srv.Close()
 
 	c := &Client{BaseURL: srv.URL}
-	res, err := c.Dispatch(context.Background(), "planner", "analyse ceci", "yoann")
+	res, err := c.Dispatch(context.Background(), "planner", "analyse ceci", "yoann", "")
 	if err != nil {
 		t.Fatalf("Dispatch: %v", err)
 	}
@@ -194,7 +198,7 @@ func TestDispatchMapsAnUnknownSkillToUnknownSkillError(t *testing.T) {
 	defer srv.Close()
 
 	c := &Client{BaseURL: srv.URL}
-	_, err := c.Dispatch(context.Background(), "jamais", "", "")
+	_, err := c.Dispatch(context.Background(), "jamais", "", "", "")
 	var unknown *UnknownSkillError
 	if !errors.As(err, &unknown) {
 		t.Fatalf("err = %v, want *UnknownSkillError", err)

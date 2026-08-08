@@ -59,9 +59,14 @@ export function nudge(runId: string, key: string, value: unknown): Promise<unkno
   return post(`/api/v1/runs/${encodeURIComponent(runId)}/nudge`, { key, value })
 }
 
-/** Resolves an explicit `/skill text…` chat command. */
-export function dispatch(skill: string, text: string): Promise<DispatchResult> {
-  return post<DispatchResult>('/api/v1/dispatch', { skill, text })
+/**
+ * Resolves an explicit `/skill text…` chat command. dossier is a caller-supplied
+ * business label (e.g. a client case) grouping the launched run under a case —
+ * distinct from a session identity, and omitted from the body entirely when absent
+ * rather than sent as an empty string.
+ */
+export function dispatch(skill: string, text: string, dossier?: string): Promise<DispatchResult> {
+  return post<DispatchResult>('/api/v1/dispatch', dossier ? { skill, text, dossier } : { skill, text })
 }
 
 /** Uploads a picked file and returns the local path kern-orch saved it under — the same

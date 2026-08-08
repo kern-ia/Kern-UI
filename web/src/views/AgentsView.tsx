@@ -98,7 +98,7 @@ function StopButton({ run, user }: { run: Run; user: string }) {
  * beside the hive rather than inside the SVG: the mockup never drew an input on a node, and
  * a panel says the same thing without guessing at where buttons would fit on the graph.
  */
-function ApprovalPanel({ run }: { run: Run }) {
+export function ApprovalPanel({ run }: { run: Run }) {
   const [deciding, setDeciding] = useState(false)
   const [failed, setFailed] = useState(false)
 

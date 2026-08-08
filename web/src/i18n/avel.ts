@@ -6,12 +6,12 @@
  * codebase, several client brands", and docs/index/theming-convention.md.
  *
  * Only keys with real, mockup-grounded wording are overridden below
- * (design/mockups/avel-client.dc.html, avel-admin.dc.html). `views` and `systemState` are
- * deliberately NOT overridden yet: Kern's seven tabs (Cerveau/Agents/Espace/…) and its
- * four-state lifecycle (repos/réflexion/action/erreur) don't have a confirmed 1:1 Avel
- * wording — the admin mockup sketches a different information architecture (a dossier
- * list, not these seven tabs) that would need a real product decision, not a guessed
- * translation. Guessing here would look finished while being wrong.
+ * (design/mockups/avel-client.dc.html, avel-admin.dc.html). `views` covers only the three
+ * ids Avel's own view set actually uses (dossiers/suivi/automatisations, see
+ * shell/views.ts's AVEL_VIEWS) — Kern's seven tabs stay inherited, unused under this
+ * brand. `systemState` is deliberately NOT overridden: its four-state lifecycle
+ * (repos/réflexion/action/erreur) doesn't have a confirmed 1:1 Avel wording yet, and
+ * guessing here would look finished while being wrong.
  */
 import { kern } from './kern'
 
@@ -25,11 +25,31 @@ export const avel = {
     subtitle: 'Connectez-vous pour suivre vos dossiers.',
   },
 
+  views: {
+    ...kern.views,
+    dossiers: 'Dossiers',
+    suivi: 'Suivi agent',
+    automatisations: 'Automatisations',
+  },
+
   runs: {
     ...kern.runs,
     heading: 'Suivi de vos dossiers',
     empty: 'Aucun dossier en cours.',
     emptyHint: 'Confiez un dossier à un agent : il apparaîtra ici en direct.',
+  },
+
+  dossiers: {
+    label: 'Dossiers',
+    empty: 'Aucun dossier en cours.',
+    emptyHint: 'Confiez un dossier à un agent : il apparaîtra ici en direct.',
+    open: (id: string) => `Ouvrir le dossier ${id}`,
+  },
+
+  dossierDetail: {
+    notFound: 'Ce dossier est introuvable.',
+    notFoundHint: 'Il a peut-être été refermé — revenez à la liste des dossiers.',
+    backToList: 'Retour aux dossiers',
   },
 
   grimoire: {

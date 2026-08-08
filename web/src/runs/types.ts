@@ -67,6 +67,12 @@ export interface Run {
   parent?: ParentRef
   /** Who asked for this run (C6). Empty means open — steerable by anyone. */
   requester?: string
+  /**
+   * A caller-supplied business label (e.g. a client case) grouping several runs
+   * together. Distinct from requester — an identity, not a grouping key. Absent means
+   * this run belongs to no dossier.
+   */
+  dossier?: string
 }
 
 /** State of the browser's link to the server. */

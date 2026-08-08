@@ -18,7 +18,9 @@ import { MarketingView } from '../redaction/MarketingView'
 import { useRunStream } from '../runs/useRunStream'
 import { topLevelRuns } from '../runs/nested'
 import { systemState, type SystemState } from './systemState'
-import { DEFAULT_VIEW, VIEWS, mobileViews, viewById, type ViewDef, type ViewId } from './views'
+import { activeViews, defaultView, mobileViews, viewById, type ViewDef, type ViewId } from './views'
+import { DossiersView } from '../dossiers/DossiersView'
+import { DossierDetailView } from '../dossiers/DossierDetailView'
 import type { Connection, Run } from '../runs/types'
 
 const STREAM_URL = '/api/v1/stream'
@@ -51,7 +53,7 @@ export function AppShell({
   /** Absent when there is no session to end. */
   onSignOut?: () => void
 } = {}) {
-  const [view, setView] = useState<ViewId>(DEFAULT_VIEW)
+  const [view, setView] = useState<ViewId>(defaultView())
   const { runs, connection } = useRunStream(STREAM_URL)
   const state = systemState(runs)
 
@@ -60,6 +62,14 @@ export function AppShell({
   const [pickedRunId, setPickedRunId] = useState<string | null>(null)
   const listedRuns = topLevelRuns(runs)
   const selectedRun = listedRuns.find((r) => r.id === pickedRunId) ?? listedRuns[0] ?? null
+
+  // Avel's Dossiers -> Suivi navigation: picking a dossier switches the tab, the same way
+  // clicking a mission elsewhere never needs its own routing.
+  const [pickedDossierId, setPickedDossierId] = useState<string | null>(null)
+  const openDossier = (id: string) => {
+    setPickedDossierId(id)
+    setView('suivi')
+  }
 
   return (
     <div className={styles.shell}>
@@ -74,7 +84,7 @@ export function AppShell({
         </div>
 
         <nav className={styles.nav} aria-label={fr.nav.primary}>
-          {VIEWS.map((v) => (
+          {activeViews().map((v) => (
             <Tab key={v.id} view={v} current={view} onSelect={setView} className={styles.tab}>
               <span className={styles.tabGlyph} aria-hidden="true">
                 {v.glyph}
@@ -116,6 +126,8 @@ export function AppShell({
           user={user}
           selectedId={selectedRun?.id ?? null}
           onSelect={setPickedRunId}
+          dossierId={pickedDossierId}
+          onSelectDossier={openDossier}
         />
       </main>
 
@@ -169,17 +181,30 @@ function ViewBody({
   user,
   selectedId,
   onSelect,
+  dossierId,
+  onSelectDossier,
 }: {
   view: ViewId
   runs: Run[]
   user: string
   selectedId: string | null
   onSelect: (id: string) => void
+  dossierId: string | null
+  onSelectDossier: (id: string) => void
 }) {
   const def = viewById(view)
 
   if (def.source.kind !== 'live') {
     return <MissingSource view={view} source={def.source} />
+  }
+  if (view === 'dossiers') {
+    return <DossiersView runs={runs} onSelect={onSelectDossier} />
+  }
+  if (view === 'suivi') {
+    return <DossierDetailView runs={runs} dossierId={dossierId} />
+  }
+  if (view === 'automatisations') {
+    return <GrimoireBody runs={runs} />
   }
   if (view === 'grimoire') {
     return <GrimoireBody runs={runs} />
