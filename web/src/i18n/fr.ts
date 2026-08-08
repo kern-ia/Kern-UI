@@ -145,6 +145,85 @@ export const fr = {
     // community-management-agency); anything not listed falls back to a title-cased id and
     // a generic line rather than breaking the view.
     nodes: {
+      // courtage-extraction (Kern-Orch/examples/courtage-extraction.yaml)
+      reception: {
+        name: 'Réception du document',
+        description: 'Vérifie que le document fourni existe et peut être lu.',
+      },
+      extraction: {
+        name: 'Lecture du document',
+        description: 'Découpe le document page par page et en extrait le texte (OCR si besoin).',
+      },
+      masquage_pii: {
+        name: 'Anonymisation',
+        description: "Masque les données personnelles avant que l'analyse ne commence.",
+      },
+      interpretation: {
+        name: 'Analyse du dossier',
+        description: 'Calcule revenus, crédits en cours et reste à vivre à partir du texte masqué.',
+      },
+      demasquage_pii: {
+        name: 'Levée du masquage',
+        description: 'Redonne les données réelles, uniquement pour la validation qui suit.',
+      },
+      confirm_extraction: {
+        name: "Validation de l'extraction",
+        description: 'Attend votre accord sur les données extraites avant de continuer.',
+      },
+      extraction_validee: {
+        name: 'Extraction validée',
+        description: 'Les données du dossier sont confirmées.',
+      },
+      extraction_a_corriger: {
+        name: 'Extraction à corriger',
+        description: "Les données extraites ont été refusées : rien n'est retenu tel quel.",
+      },
+      memo_prep: {
+        name: 'Préparation du mémorandum',
+        description: "Rassemble le dossier extrait et les notes d'entretien avant rédaction.",
+      },
+      masquage_memo: {
+        name: 'Anonymisation du mémorandum',
+        description: 'Masque les données personnelles avant que la rédaction ne commence.',
+      },
+      redaction_memo: {
+        name: 'Rédaction du mémorandum',
+        description: 'Écrit le projet de mémorandum de financement.',
+      },
+      demasquage_memo: {
+        name: 'Levée du masquage',
+        description: 'Redonne les données réelles pour votre relecture.',
+      },
+      confirm_memo: {
+        name: 'Validation du mémorandum',
+        description: 'Attend votre accord sur le mémorandum avant de le considérer final.',
+      },
+      memo_valide: {
+        name: 'Mémorandum validé',
+        description: 'Le mémorandum de financement est confirmé.',
+      },
+      memo_a_corriger: {
+        name: 'Mémorandum à corriger',
+        description: 'Le projet de mémorandum a été refusé.',
+      },
+      relance_prep: {
+        name: 'Préparation de la relance',
+        description: 'Prépare un message interne sur les pièces manquantes du dossier.',
+      },
+      relance_notify: {
+        name: 'Relance envoyée',
+        description: "Le message de relance a été transmis à l'équipe.",
+      },
+      relance_non_necessaire: {
+        name: 'Aucune relance nécessaire',
+        description: "Le dossier ne manque d'aucune pièce.",
+      },
+      // courtage-banques (Kern-Orch/examples/courtage-banques.yaml) — un seul nœud, pas de
+      // dossier ni de validation : lecture seule sur les critères banques en mémoire.
+      reponse: {
+        name: 'Réponse sur les critères banques',
+        description: 'Interroge la mémoire des critères bancaires et répond avec ses sources.',
+      },
       // prospection (Kern-Orch/skills/prospection/agent_cli.py)
       secretaire: {
         name: 'Secrétaire',
