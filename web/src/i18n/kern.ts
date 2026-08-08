@@ -450,6 +450,17 @@ export const kern = {
     empty: 'Aucun dossier en cours.',
     emptyHint: 'Confiez un dossier à un agent : il apparaîtra ici en direct.',
     open: (id: string) => `Ouvrir le dossier ${id}`,
+    columns: {
+      id: 'Dossier',
+      graph: 'Mission',
+      status: 'Étape',
+      updated: 'Depuis',
+    },
+    updated: (r: { unit: 'now' } | { unit: 'minutes' | 'hours' | 'days'; count: number }) => {
+      if (r.unit === 'now') return "à l'instant"
+      const label = { minutes: 'min', hours: 'h', days: 'j' } as const
+      return `il y a ${r.count} ${label[r.unit]}`
+    },
   },
 
   dossierDetail: {
