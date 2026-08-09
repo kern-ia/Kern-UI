@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 	"sync"
 )
@@ -98,6 +99,17 @@ func (a *Accounts) Authenticate(name, password string) bool {
 
 // Len returns how many accounts exist.
 func (a *Accounts) Len() int { return len(a.byName) }
+
+// Names lists every account, sorted — never a hash, never anything Authenticate needs.
+// For a roster view (who is on the team), not for anything security-sensitive.
+func (a *Accounts) Names() []string {
+	names := make([]string, 0, len(a.byName))
+	for name := range a.byName {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
+}
 
 // LoadAccountsFromLines parses accounts already in memory. Same rules as LoadAccounts,
 // which delegates to it — a file is just where the lines usually come from.

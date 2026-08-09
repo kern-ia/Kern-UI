@@ -120,6 +120,40 @@ func TestAcceptingASuggestionProxiesTheAcceptEndpoint(t *testing.T) {
 	}
 }
 
+func TestListingCriteriaWithNoSourceConfiguredIs404(t *testing.T) {
+	h := NewRouter(Config{})
+	rec := getDocuments(t, h, "/api/v1/criteria")
+	if rec.Code != http.StatusNotFound {
+		t.Errorf("status = %d, want 404", rec.Code)
+	}
+}
+
+func TestListingCriteriaProxiesTheOKFLayerOnly(t *testing.T) {
+	var gotBody map[string]any
+	km := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewDecoder(r.Body).Decode(&gotBody)
+		_ = json.NewEncoder(w).Encode([]memory.Recall{
+			{Memory: memory.Memory{ID: "c1", Kind: "okf", Text: "Taux d'usure T3 2026 : 5,92%"}, Similarity: 1},
+		})
+	}))
+	defer km.Close()
+
+	h := NewRouter(Config{Memory: &memory.Client{BaseURL: km.URL}})
+	rec := getDocuments(t, h, "/api/v1/criteria")
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200: %s", rec.Code, rec.Body)
+	}
+	if gotBody["kind"] != "okf" {
+		t.Errorf("query kind = %v, want okf — the vector layer has no lookup key to list by", gotBody["kind"])
+	}
+	var out []memory.Recall
+	_ = json.NewDecoder(rec.Body).Decode(&out)
+	if len(out) != 1 || out[0].Memory.ID != "c1" {
+		t.Errorf("got %v", out)
+	}
+}
+
 func TestIgnoringAnUnknownSuggestionIs404(t *testing.T) {
 	km := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusNotFound)

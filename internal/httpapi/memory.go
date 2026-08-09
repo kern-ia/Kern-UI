@@ -39,6 +39,23 @@ func (s *server) handleGetDocument(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// handleListCriteria proxies kern-memory's declarative (.okf) layer for Critères
+// banques: every fact with a natural lookup key — the taux d'usure, a partner bank's
+// acceptance rules — never the semantic/vector layer, which has no such key to list by.
+// Unconfigured reads as 404, same reasoning as the document endpoints above.
+func (s *server) handleListCriteria(w http.ResponseWriter, r *http.Request) {
+	if !s.cfg.Memory.Enabled() {
+		writeError(w, http.StatusNotFound, "no memory source configured")
+		return
+	}
+	recalls, err := s.cfg.Memory.QueryMemory(r.Context(), memory.MemoryQuery{Kind: "okf"})
+	if err != nil {
+		writeError(w, http.StatusBadGateway, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, recalls)
+}
+
 // handleResolveSuggestion proxies accept/ignore for one suggestion.
 func (s *server) handleResolveSuggestion(accept bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
