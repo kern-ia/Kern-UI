@@ -22,6 +22,11 @@ import { activeViews, defaultView, mobileViews, viewById, type ViewDef, type Vie
 import { DossiersView } from '../dossiers/DossiersView'
 import { DossierDetailView } from '../dossiers/DossierDetailView'
 import { dossierStatus, groupByDossier } from '../runs/dossiers'
+import { initials } from './initials'
+import { CriteriaView } from '../criteres/CriteriaView'
+import { useCriteria } from '../criteres/useCriteria'
+import { TeamView } from '../equipe/TeamView'
+import { useTeam } from '../equipe/useTeam'
 import type { Connection, Run } from '../runs/types'
 
 const STREAM_URL = '/api/v1/stream'
@@ -30,6 +35,8 @@ const TOOLS_URL = '/api/v1/tools'
 const DOCUMENTS_URL = '/api/v1/documents'
 const VIGIE_BUDGET_URL = '/api/v1/vigie/budget'
 const VIGIE_DECISIONS_URL = '/api/v1/vigie/decisions'
+const CRITERIA_URL = '/api/v1/criteria'
+const ACCOUNTS_URL = '/api/v1/accounts'
 
 /** Colours come from the mockup's stateMap; tokens.css holds the values. */
 const stateColour: Record<SystemState, string> = {
@@ -212,13 +219,6 @@ function summariseDossiers(runs: Run[]): { active: number; waiting: number } {
   return { active, waiting }
 }
 
-/** Two letters, never a raw account name spelled out where the mockup draws an avatar. */
-function initials(name: string): string {
-  const trimmed = name.trim()
-  if (trimmed === '') return '?'
-  return trimmed.slice(0, 2).toUpperCase()
-}
-
 function Tab({
   view,
   current,
@@ -276,6 +276,12 @@ function ViewBody({
   if (view === 'automatisations') {
     return <GrimoireBody runs={runs} />
   }
+  if (view === 'criteres') {
+    return <CriteriaBody />
+  }
+  if (view === 'equipe') {
+    return <TeamBody />
+  }
   if (view === 'grimoire') {
     return <GrimoireBody runs={runs} />
   }
@@ -299,6 +305,16 @@ function ViewBody({
  */
 function GrimoireBody({ runs }: { runs: Run[] }) {
   return <GrimoireView registry={useRegistry(REGISTRY_URL)} runs={runs} />
+}
+
+/** Same reasoning as GrimoireBody: fetched only while Critères banques is open. */
+function CriteriaBody() {
+  return <CriteriaView criteria={useCriteria(CRITERIA_URL)} />
+}
+
+/** Same reasoning as GrimoireBody: fetched only while Équipe is open. */
+function TeamBody() {
+  return <TeamView team={useTeam(ACCOUNTS_URL)} />
 }
 
 /** Same reasoning as GrimoireBody: the catalogue is fetched only while the Espace is open. */

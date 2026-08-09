@@ -40,6 +40,7 @@ export const kern = {
     sections: {
       operations: 'Opérations',
       configuration: 'Configuration',
+      compte: 'Compte',
     },
   },
 
@@ -57,6 +58,8 @@ export const kern = {
     dossiers: 'Dossiers',
     suivi: 'Suivi',
     automatisations: 'Automatisations',
+    criteres: 'Critères banques',
+    equipe: 'Équipe',
   },
 
   systemState: {
@@ -485,5 +488,23 @@ export const kern = {
     notFound: 'Ce dossier est introuvable.',
     notFoundHint: 'Il a peut-être été refermé — revenez à la liste des dossiers.',
     backToList: 'Retour aux dossiers',
+  },
+
+  criteria: {
+    label: 'Critères banques',
+    loading: 'Chargement des critères…',
+    // No memory source configured on kern-ui — distinct from a genuinely empty layer.
+    unconfigured: "Aucune source de critères n'est connectée pour le moment.",
+    unconfiguredHint: 'Les critères apparaîtront ici dès qu\'une mémoire sera branchée.',
+    empty: 'Aucun critère enregistré pour le moment.',
+    emptyHint: "Un critère apparaîtra ici dès qu'un agent en enregistrera un.",
+    error: "Les critères n'ont pas pu être chargés.",
+  },
+
+  team: {
+    label: 'Équipe',
+    loading: "Chargement de l'équipe…",
+    empty: 'Aucun compte pour le moment.',
+    error: "L'équipe n'a pas pu être chargée.",
   },
 } as const

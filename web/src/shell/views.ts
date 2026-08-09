@@ -21,6 +21,8 @@ export type ViewId =
   | 'dossiers'
   | 'suivi'
   | 'automatisations'
+  | 'criteres'
+  | 'equipe'
 
 export type ViewSource =
   /** A brick feeds this view today. */
@@ -51,7 +53,7 @@ export interface ViewDef {
    * rather than a guessed taxonomy — only brands whose mockup actually groups its nav
    * (Avel's "Opérations"/"Configuration") set this.
    */
-  section?: 'operations' | 'configuration'
+  section?: 'operations' | 'configuration' | 'compte'
 }
 
 export const VIEWS: ViewDef[] = [
@@ -97,6 +99,14 @@ export const AVEL_VIEWS: ViewDef[] = [
     onMobile: true,
     section: 'configuration',
   },
+  {
+    id: 'criteres',
+    glyph: '◆',
+    source: { kind: 'live' },
+    onMobile: false,
+    section: 'configuration',
+  },
+  { id: 'equipe', glyph: '☺', source: { kind: 'live' }, onMobile: false, section: 'compte' },
 ]
 
 /** The active brand's view set, decided at build time. */
