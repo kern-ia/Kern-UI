@@ -1,7 +1,16 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { DossiersView } from './DossiersView'
 import { fr } from '../i18n/fr'
-import type { Run } from '../runs/types'
+import type { Run, Topology } from '../runs/types'
+
+const approvalTopology: Topology = {
+  entry: 'reception',
+  nodes: [
+    { id: 'reception', kind: 'agent' },
+    { id: 'confirm_extraction', kind: 'approval' },
+  ],
+  edges: [],
+}
 
 function run(id: string, overrides: Partial<Run> = {}): Run {
   return {
@@ -30,13 +39,15 @@ it('shows nothing for runs carrying no dossier', () => {
   expect(screen.getByText(fr.dossiers.empty)).toBeInTheDocument()
 })
 
-it('shows one row per dossier, with its most recent run status', () => {
+it('shows one row per dossier, with the plain-language name of its current step', () => {
   render(<DossiersView runs={[run('r1', { dossier: 'AF-2288' })]} />)
 
   expect(screen.getByRole('table')).toBeInTheDocument()
   expect(screen.getAllByRole('row')).toHaveLength(2) // header + one dossier
   expect(screen.getByText('AF-2288')).toBeInTheDocument()
-  expect(screen.getByText(fr.runs.status.running, { exact: false })).toBeInTheDocument()
+  // frontier: ['extraction'] -> fr.hive.nodes.extraction.name, never the raw node id.
+  expect(screen.getByText(fr.hive.nodes.extraction.name)).toBeInTheDocument()
+  expect(screen.getByText(fr.dossiers.status.active)).toBeInTheDocument()
 })
 
 it('gives every dossier its own row, most recently updated first', () => {
@@ -56,11 +67,33 @@ it('gives every dossier its own row, most recently updated first', () => {
   ])
 })
 
-it('calls onSelect with the dossier id when its card is picked', () => {
+it('calls onSelect with the dossier id when an ordinary dossier is opened', () => {
   const onSelect = vi.fn()
   render(<DossiersView runs={[run('r1', { dossier: 'AF-2288' })]} onSelect={onSelect} />)
 
   fireEvent.click(screen.getByRole('button', { name: fr.dossiers.open('AF-2288') }))
 
+  expect(onSelect).toHaveBeenCalledWith('AF-2288')
+})
+
+// A dossier parked on an approval gets the attention-getting "Traiter" action instead of
+// the quiet "Ouvrir" one — matches the mockup's own Traiter/Ouvrir distinction.
+it('offers to treat, not just open, a dossier waiting on a decision', () => {
+  const onSelect = vi.fn()
+  render(
+    <DossiersView
+      runs={[
+        run('r1', {
+          dossier: 'AF-2288',
+          topology: approvalTopology,
+          frontier: ['confirm_extraction'],
+        }),
+      ]}
+      onSelect={onSelect}
+    />,
+  )
+
+  expect(screen.getByText(fr.dossiers.status.waiting)).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: fr.dossiers.treat('AF-2288') }))
   expect(onSelect).toHaveBeenCalledWith('AF-2288')
 })

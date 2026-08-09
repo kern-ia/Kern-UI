@@ -1,5 +1,5 @@
-import { groupByDossier } from './dossiers'
-import type { Run } from './types'
+import { currentNodeId, dossierStatus, groupByDossier } from './dossiers'
+import type { Run, Topology } from './types'
 
 function run(id: string, over: Partial<Run> = {}): Run {
   return {
@@ -53,5 +53,54 @@ describe('grouping runs by dossier', () => {
     ]
 
     expect(groupByDossier(runs).map((d) => d.id)).toEqual(['AF-2288', 'AF-2270'])
+  })
+})
+
+const approvalTopology: Topology = {
+  entry: 'reception',
+  nodes: [
+    { id: 'reception', kind: 'agent' },
+    { id: 'confirm_extraction', kind: 'approval' },
+  ],
+  edges: [],
+}
+
+describe('a dossier status, in business terms', () => {
+  it('is "active" for a running run with nothing waiting on a person', () => {
+    expect(dossierStatus(run('a', { status: 'running' }))).toBe('active')
+  })
+
+  it('is "waiting" once an approval node is the one currently active', () => {
+    const waiting = run('a', {
+      status: 'running',
+      topology: approvalTopology,
+      frontier: ['confirm_extraction'],
+    })
+
+    expect(dossierStatus(waiting)).toBe('waiting')
+  })
+
+  it('is "done" for a finished run, even if it once carried an approval', () => {
+    const finished = run('a', {
+      status: 'finished',
+      topology: approvalTopology,
+      frontier: [],
+    })
+
+    expect(dossierStatus(finished)).toBe('done')
+  })
+
+  it('is "failed" for a failed run', () => {
+    expect(dossierStatus(run('a', { status: 'failed' }))).toBe('failed')
+  })
+})
+
+describe('the node currently doing the work', () => {
+  it('is the first of the frontier', () => {
+    expect(currentNodeId(run('a', { frontier: ['extraction', 'other'] }))).toBe('extraction')
+  })
+
+  it('is null once the frontier is empty', () => {
+    expect(currentNodeId(run('a', { frontier: [] }))).toBeNull()
   })
 })

@@ -1,13 +1,15 @@
 import { fr } from '../i18n/fr'
 import styles from './DossiersView.module.css'
-import { groupByDossier, type Dossier } from '../runs/dossiers'
+import { currentNodeId, dossierStatus, groupByDossier, type Dossier, type DossierStatus } from '../runs/dossiers'
 import { relativeUpdate } from '../redaction/relativeTime'
 import type { Run } from '../runs/types'
 
-/** Status colours, same source as RunList's own — the mockup's stateMap, via tokens.css. */
-const statusColour: Record<Run['status'], string> = {
-  running: 'var(--state-action)',
-  finished: 'var(--state-idle)',
+/** Business-status colours — matches the mockup's own four-word vocabulary, not the
+ * technical repos/réflexion/action/erreur state set used elsewhere in the shell. */
+const statusColour: Record<DossierStatus, string> = {
+  waiting: 'var(--state-idle)',
+  active: 'var(--state-action)',
+  done: 'var(--state-done)',
   failed: 'var(--state-error)',
 }
 
@@ -42,7 +44,7 @@ export function DossiersView({
           <thead>
             <tr>
               <th scope="col">{fr.dossiers.columns.id}</th>
-              <th scope="col">{fr.dossiers.columns.graph}</th>
+              <th scope="col">{fr.dossiers.columns.step}</th>
               <th scope="col">{fr.dossiers.columns.status}</th>
               <th scope="col">{fr.dossiers.columns.updated}</th>
               <th scope="col">
@@ -63,27 +65,36 @@ export function DossiersView({
 
 function DossierRow({ dossier, onSelect }: { dossier: Dossier; onSelect?: (id: string) => void }) {
   const run = latestRun(dossier)
+  const status = dossierStatus(run)
+  const nodeId = currentNodeId(run)
+  const step = nodeId ? fr.hive.nodeInfo(nodeId).name : run.graph
 
   return (
     <tr>
       <th scope="row" className={styles.id}>
         {dossier.id}
       </th>
-      <td className={styles.graph}>{run.graph}</td>
+      <td className={styles.step}>{step}</td>
       <td>
         <span className={styles.status}>
           <span
             className={styles.dot}
-            style={{ '--dot-colour': statusColour[run.status] } as React.CSSProperties}
+            style={{ '--dot-colour': statusColour[status] } as React.CSSProperties}
           />
-          {fr.runs.status[run.status]}
+          {fr.dossiers.status[status]}
         </span>
       </td>
       <td className={styles.since}>{fr.dossiers.updated(relativeUpdate(run.updated_at))}</td>
       <td>
-        <button type="button" className={styles.open} onClick={() => onSelect?.(dossier.id)}>
-          {fr.dossiers.open(dossier.id)}
-        </button>
+        {status === 'waiting' ? (
+          <button type="button" className={styles.treat} onClick={() => onSelect?.(dossier.id)}>
+            {fr.dossiers.treat(dossier.id)}
+          </button>
+        ) : (
+          <button type="button" className={styles.open} onClick={() => onSelect?.(dossier.id)}>
+            {fr.dossiers.open(dossier.id)}
+          </button>
+        )}
       </td>
     </tr>
   )

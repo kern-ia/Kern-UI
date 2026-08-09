@@ -2,8 +2,15 @@ import { fr } from '../i18n/fr'
 import styles from './DossierDetailView.module.css'
 import { HiveGraph } from '../runs/HiveGraph'
 import { ApprovalPanel } from '../views/AgentsView'
-import { groupByDossier } from '../runs/dossiers'
+import { dossierStatus, groupByDossier, type DossierStatus } from '../runs/dossiers'
 import type { Run } from '../runs/types'
+
+const statusColour: Record<DossierStatus, string> = {
+  waiting: 'var(--state-idle)',
+  active: 'var(--state-action)',
+  done: 'var(--state-done)',
+  failed: 'var(--state-error)',
+}
 
 /**
  * One dossier's current run, drawn with the same Hive timeline and approval action the
@@ -32,6 +39,13 @@ export function DossierDetailView({ runs, dossierId }: { runs: Run[]; dossierId:
       <div className={styles.banner}>
         <h2 className={styles.id}>{dossier.id}</h2>
         <span className={styles.graph}>{run.graph}</span>
+        <span className={styles.status}>
+          <span
+            className={styles.dot}
+            style={{ '--dot-colour': statusColour[dossierStatus(run)] } as React.CSSProperties}
+          />
+          {fr.dossiers.status[dossierStatus(run)]}
+        </span>
       </div>
 
       {run.topology ? (

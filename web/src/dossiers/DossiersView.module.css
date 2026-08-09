@@ -48,7 +48,7 @@
   text-align: left;
 }
 
-.graph {
+.step {
   color: var(--text-muted);
 }
 
@@ -88,6 +88,25 @@
 
 .open:hover {
   background: var(--surface-veil-strong);
+}
+
+/* The one dossier waiting on a person gets a filled, attention-getting action —
+ * everything else stays quiet, matching the mockup's Traiter/Ouvrir distinction. */
+.treat {
+  padding: 6px var(--space-3);
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--surface-base);
+  background: var(--state-idle);
+  border: 0;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.treat:hover {
+  filter: brightness(1.08);
 }
 
 .srOnly {
