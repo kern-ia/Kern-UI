@@ -35,6 +35,10 @@
   --state-thinking: #a674ff;
   --state-action: #4ee3ff;
   --state-error: #ff4d5e;
+  /* Not part of the technical repos/réflexion/action/erreur cycle — a business "this is
+     finished, no action needed" signal (used by e.g. the dossiers list). Gold, not a new
+     hue: this palette already uses gold to mean "the good outcome." */
+  --state-done: #e8c98a;
 
   /* The conversation stone's own texture — Kern's specific visual metaphor, not a
      generic shape. A brand whose mockup uses a structurally different control (e.g.

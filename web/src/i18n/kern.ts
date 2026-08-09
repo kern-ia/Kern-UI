@@ -34,6 +34,13 @@ export const kern = {
   nav: {
     primary: 'Navigation',
     compact: 'Navigation compacte',
+    // Sidebar section headings — only rendered for a view whose ViewDef sets `section`
+    // (see shell/views.ts). Kern's own seven views have no validated grouping to draw
+    // from, so these stay unused under this brand.
+    sections: {
+      operations: 'Opérations',
+      configuration: 'Configuration',
+    },
   },
 
   views: {
@@ -450,10 +457,11 @@ export const kern = {
     empty: 'Aucun dossier en cours.',
     emptyHint: 'Confiez un dossier à un agent : il apparaîtra ici en direct.',
     open: (id: string) => `Ouvrir le dossier ${id}`,
+    treat: (id: string) => `Traiter le dossier ${id}`,
     columns: {
       id: 'Dossier',
-      graph: 'Mission',
-      status: 'Étape',
+      step: 'Étape',
+      status: 'Statut',
       updated: 'Depuis',
     },
     updated: (r: { unit: 'now' } | { unit: 'minutes' | 'hours' | 'days'; count: number }) => {
@@ -461,6 +469,16 @@ export const kern = {
       const label = { minutes: 'min', hours: 'h', days: 'j' } as const
       return `il y a ${r.count} ${label[r.unit]}`
     },
+    // Business status, not a raw run status — same four words the mockup uses.
+    status: {
+      waiting: 'En attente de vous',
+      active: 'Agent en cours',
+      done: 'Terminé',
+      failed: 'Bloqué',
+    },
+    activeCount: (n: number) => (n === 1 ? '1 dossier actif' : `${n} dossiers actifs`),
+    waitingCount: (n: number) =>
+      n === 1 ? '1 validation en attente' : `${n} validations en attente`,
   },
 
   dossierDetail: {

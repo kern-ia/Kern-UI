@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import styles from './AppShell.module.css'
 import { fr } from '../i18n/fr'
 import { ConversationStone } from './ConversationStone'
@@ -21,6 +21,7 @@ import { systemState, type SystemState } from './systemState'
 import { activeViews, defaultView, mobileViews, viewById, type ViewDef, type ViewId } from './views'
 import { DossiersView } from '../dossiers/DossiersView'
 import { DossierDetailView } from '../dossiers/DossierDetailView'
+import { dossierStatus, groupByDossier } from '../runs/dossiers'
 import type { Connection, Run } from '../runs/types'
 
 const STREAM_URL = '/api/v1/stream'
@@ -71,6 +72,14 @@ export function AppShell({
     setView('suivi')
   }
 
+  // Real counts for the top bar's status pills, not decoration — derived from the same
+  // run data the Dossiers table itself reads, never a separate field. Only meaningful
+  // for a brand whose view set actually has a dossiers concept.
+  const dossierSummary =
+    import.meta.env.VITE_BRAND === 'avel'
+      ? summariseDossiers(runs)
+      : null
+
   return (
     <div className={styles.shell}>
       <header className={styles.topbar}>
@@ -88,6 +97,28 @@ export function AppShell({
         </div>
 
         <div className={styles.status}>
+          {dossierSummary && (
+            <>
+              <p className={styles.statusPill}>
+                <span
+                  className={styles.dot}
+                  style={{ '--dot-colour': 'var(--state-action)' } as React.CSSProperties}
+                  aria-hidden="true"
+                />
+                {fr.dossiers.activeCount(dossierSummary.active)}
+              </p>
+              {dossierSummary.waiting > 0 && (
+                <p className={styles.statusPill}>
+                  <span
+                    className={styles.dot}
+                    style={{ '--dot-colour': 'var(--state-idle)' } as React.CSSProperties}
+                    aria-hidden="true"
+                  />
+                  {fr.dossiers.waitingCount(dossierSummary.waiting)}
+                </p>
+              )}
+            </>
+          )}
           <p className={styles.statePill} data-testid="system-state">
             <span
               className={styles.dot}
@@ -96,11 +127,6 @@ export function AppShell({
             />
             {fr.systemState[state]}
           </p>
-          {onSignOut && (
-            <button type="button" className={styles.signOut} onClick={onSignOut}>
-              {user !== '' ? fr.login.signedInAs(user) : fr.login.signOut}
-            </button>
-          )}
           <p className={styles.connection} role="status">
             <span
               className={styles.dot}
@@ -109,18 +135,33 @@ export function AppShell({
             />
             {fr.connection[connection]}
           </p>
+          {user !== '' && (
+            <span className={styles.avatar} title={user} aria-hidden="true">
+              {initials(user)}
+            </span>
+          )}
+          {onSignOut && (
+            <button type="button" className={styles.signOut} onClick={onSignOut}>
+              {user !== '' ? fr.login.signedInAs(user) : fr.login.signOut}
+            </button>
+          )}
         </div>
       </header>
 
       <div className={styles.body}>
         <nav className={styles.sidebar} aria-label={fr.nav.primary}>
-          {activeViews().map((v) => (
-            <Tab key={v.id} view={v} current={view} onSelect={setView} className={styles.navItem}>
-              <span className={styles.navGlyph} aria-hidden="true">
-                {v.glyph}
-              </span>
-              {fr.views[v.id]}
-            </Tab>
+          {activeViews().map((v, i, all) => (
+            <Fragment key={v.id}>
+              {v.section && v.section !== all[i - 1]?.section && (
+                <p className={styles.sidebarSection}>{fr.nav.sections[v.section]}</p>
+              )}
+              <Tab view={v} current={view} onSelect={setView} className={styles.navItem}>
+                <span className={styles.navGlyph} aria-hidden="true">
+                  {v.glyph}
+                </span>
+                {fr.views[v.id]}
+              </Tab>
+            </Fragment>
           ))}
         </nav>
 
@@ -155,6 +196,27 @@ export function AppShell({
       </nav>
     </div>
   )
+}
+
+/** Counts for the top bar's status pills — real data, not decoration. */
+function summariseDossiers(runs: Run[]): { active: number; waiting: number } {
+  const dossiers = groupByDossier(runs)
+  let active = 0
+  let waiting = 0
+  for (const dossier of dossiers) {
+    const run = dossier.runs.reduce((latest, r) => (r.updated_at > latest.updated_at ? r : latest))
+    const status = dossierStatus(run)
+    if (status === 'waiting') waiting += 1
+    if (status === 'active' || status === 'waiting') active += 1
+  }
+  return { active, waiting }
+}
+
+/** Two letters, never a raw account name spelled out where the mockup draws an avatar. */
+function initials(name: string): string {
+  const trimmed = name.trim()
+  if (trimmed === '') return '?'
+  return trimmed.slice(0, 2).toUpperCase()
 }
 
 function Tab({

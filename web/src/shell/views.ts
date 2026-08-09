@@ -44,6 +44,14 @@ export interface ViewDef {
   source: ViewSource
   /** Shown on mobile, where the mockup keeps a reduced navigation. */
   onMobile: boolean
+  /**
+   * A sidebar section label, grouping consecutive views under one heading (a copy key
+   * under `fr.shell.sections`). Optional: Kern's own seven views have no validated
+   * grouping to draw from (no mockup groups them), so they render as one flat list
+   * rather than a guessed taxonomy — only brands whose mockup actually groups its nav
+   * (Avel's "Opérations"/"Configuration") set this.
+   */
+  section?: 'operations' | 'configuration'
 }
 
 export const VIEWS: ViewDef[] = [
@@ -80,9 +88,15 @@ export const VIEWS: ViewDef[] = [
  * build-time (VITE_BRAND), not a runtime data-brand check.
  */
 export const AVEL_VIEWS: ViewDef[] = [
-  { id: 'dossiers', glyph: '▤', source: { kind: 'live' }, onMobile: true },
-  { id: 'suivi', glyph: '⬡', source: { kind: 'live' }, onMobile: true },
-  { id: 'automatisations', glyph: 'ᛝ', source: { kind: 'live' }, onMobile: true },
+  { id: 'dossiers', glyph: '▤', source: { kind: 'live' }, onMobile: true, section: 'operations' },
+  { id: 'suivi', glyph: '⬡', source: { kind: 'live' }, onMobile: true, section: 'operations' },
+  {
+    id: 'automatisations',
+    glyph: 'ᛝ',
+    source: { kind: 'live' },
+    onMobile: true,
+    section: 'configuration',
+  },
 ]
 
 /** The active brand's view set, decided at build time. */

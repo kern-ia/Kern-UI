@@ -32,6 +32,14 @@ are statements of need. The one contract that exists is specified in [README.md]
 | C10 | `kern.activity/v1` — live activity signal | kern-orch ✅ | `Réflexion` beacon | **in use** |
 | C11 | Skill & sub-agent authoring | undecided | `Nouveau sous-agent`, `+` compétence | **deferred; may become graph authoring** |
 | C12 | Messaging channel — notify and be commanded | kern-pilot ⬜ + an external platform 🔌 | Phone reacting; a second command surface | **scope confirmed 2026-07-28** |
+| C13 | Structured approval content | kern-orch ⬜ (skill convention) | Dossiers/Suivi's approval panel showing real options, not a single text field | missing |
+| C14 | Narrative activity log | kern-orch ⬜ (extends `kern.activity/v1`) | Dossiers/Suivi's action log — what an agent actually did, in words | missing |
+
+**Note found 2026-08-10, not corrected here**: this table lists **C6 as "missing"**, but
+`kern-ui`'s own code (`internal/httpapi/steer.go`, `internal/steer/client.go`) has a real,
+tested `dispatch`/`decide`/`nudge`/`stop` implementation in use throughout the Avel advisor
+console built this session — this row looks stale relative to the actual codebase, not
+audited/fixed here since it's outside what this pass touched.
 
 **C11 was added on 2026-07-27**, from building C4: it is the first entry on this list that
 is a decision before it is a schema, and it is stated so nobody has to rediscover it.
@@ -390,6 +398,55 @@ a critical approval may be given by chat at all, or only in the interface. And w
 goes: routing a company's work through Meta's or Telegram's servers is a data-processing
 question, most likely a GDPR one before an AI Act one. Neither is something this repo can
 answer on its own.
+
+---
+
+## C13 — Structured approval content · missing
+
+**Producer** kern-orch, as a skill-writing convention — no daemon change, a `state` key
+convention any skill can populate.
+
+**Why** `avel-admin.dc.html`'s Suivi agent approval panel shows real business content:
+three named bank options, each with a rate, next to Valider/Refuser — not a generic
+"here is a plan, approve or refuse" message. `web/src/views/AgentsView.tsx`'s
+`ApprovalPanel` (reused by `DossierDetailView`) reads exactly one field today,
+`state.plan_propose` (a single string, see its `planProposed` helper) — there is nowhere
+in the state contract for a skill like `courtage-banques` to hand the interface a real
+shortlist to render as a comparison, only free text.
+
+**Needed** A convention for what a skill writes into `state` ahead of an approval node,
+shaped enough that `ApprovalPanel` can render it as a real table instead of a paragraph —
+e.g. a list of `{label, detail, value}` rows, generic enough to cover a bank shortlist
+today and a different kind of structured choice later, without inventing a payload
+specific to courtage. **Whether this lives in `state` (today's mechanism, simplest) or
+becomes a new field on `StepEvent` itself (more structure, another contract to keep in
+sync between repos) is the actual decision** — not attempted here, since it changes a
+canonical, cross-repo contract block.
+
+---
+
+## C14 — Narrative activity log · missing
+
+**Producer** kern-orch, extending `kern.activity/v1` (`kern.activity/v1` → `v2`, or a
+sibling contract).
+
+**Why** `avel-admin.dc.html`'s Suivi agent has a right-hand action log: a chronological
+list of what the agent actually did, in plain language — "Interroge les critères de 14
+banques partenaires", each with a timestamp. `kern.activity/v1` (`README.md`,
+`internal/report/http.go`'s `ActivityEvent`) only carries `{run_id, graph, node_id,
+generating, at}` — a boolean start/stop signal per node, no narrative text at all. There
+is no way to build this panel with real data today; it would have to be invented, which
+this pass deliberately did not do (see `docs/index/avel-advisor-console.md`'s "Left
+open" section from the prior pass, and this session's own instruction not to fabricate
+content without a real source).
+
+**Needed** Either an optional narrative `message` field on `ActivityEvent` a skill can
+set when it wants to say something human-readable about what it is doing (most agent
+steps would still send none — this is opt-in, not mandatory instrumentation of every
+skill), or a wholly separate log contract if activity's own "off the run's thread,
+overtake-safe" semantics (see C10's own section above) turn out to be the wrong fit for
+an ordered log. **Which of the two is worth deciding before writing any code**, same as
+C13.
 
 ---
 

@@ -44,6 +44,9 @@
   --state-thinking: #5b78f2;
   --state-action: #3d5eeb;
   --state-error: #d1435a;
+  /* Not part of the technical repos/réflexion/action/erreur cycle — a business "this is
+     finished, no action needed" signal, matching avel-admin.dc.html's own green. */
+  --state-done: #1f9d6b;
 
   /* No bespoke "stone" for this brand — avel-admin.dc.html replaces it with a plain
      command bar (ConversationStone needs its own component variant to match, not a

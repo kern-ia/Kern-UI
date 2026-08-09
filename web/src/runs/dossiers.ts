@@ -1,9 +1,32 @@
+import { nodeStatus } from './hive'
 import type { Run } from './types'
 
 /** One dossier's runs, most recently updated first. */
 export interface Dossier {
   id: string
   runs: Run[]
+}
+
+/**
+ * A dossier's status in business terms, not a raw run status — matching
+ * avel-admin.dc.html's own vocabulary (attente-de-vous / agent-en-cours / terminé /
+ * bloqué), derived from real run + topology data, never a separate field the backend
+ * would need to add.
+ */
+export type DossierStatus = 'waiting' | 'active' | 'done' | 'failed'
+
+export function dossierStatus(run: Run): DossierStatus {
+  if (run.status === 'failed') return 'failed'
+  if (run.status === 'finished') return 'done'
+  const waitingOnYou = run.topology?.nodes.some(
+    (n) => n.kind === 'approval' && nodeStatus(run, n.id) === 'active',
+  )
+  return waitingOnYou ? 'waiting' : 'active'
+}
+
+/** The node currently doing the work, if the run has declared its shape yet. */
+export function currentNodeId(run: Run): string | null {
+  return run.frontier[0] ?? null
 }
 
 /**
