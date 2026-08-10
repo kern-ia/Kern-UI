@@ -49,6 +49,50 @@ Base URL defaults to `http://127.0.0.1:7777` (`KERN_UI_ADDR`).
 A producer should target `POST /api/v1/steps`: the run id travels in the body, so the
 producer needs one configured URL and stays unaware of our route shape.
 
+### Authentication
+
+Two credentials, because there are two kinds of caller wanting opposite things.
+
+| Caller | Presents | May |
+|---|---|---|
+| A producer (kern-orch) | `Authorization: Bearer <KERN_UI_TOKEN>` | **post** events only |
+| A person (browser) | a session cookie, from `POST /api/v1/login` | **read** only |
+
+Neither opens the other's doors: a producer token cannot enumerate runs, and a session
+cannot inject events. Collapsing them into one credential would mean the secret configured
+on every machine also reads everything.
+
+`GET /healthz`, the login endpoints and the SPA itself stay open — a probe carries no
+credential, and the login page has to be reachable before anyone has a session.
+
+**With nothing configured, everything is open.** That is the local development case, and it
+is safe only because the binary **refuses to start** on a public address without both
+`KERN_UI_TOKEN` and at least one account. An empty host counts as public: `:7777` looks
+innocent and binds every interface.
+
+Accounts live in `KERN_UI_ACCOUNTS` (default `./data/accounts`), one `name:hash` per line,
+written by `kern-ui useradd <name>` — the password is read from standard input, never given
+as an argument where the shell history and the process list would keep it. Hashes are
+PBKDF2-HMAC-SHA256 at 600 000 iterations, from the standard library: argon2id resists
+purpose-built cracking hardware better, and costs this binary its only dependency-free
+property. Revisit that trade the day a hash database could leak.
+
+### TLS
+
+A public address is served encrypted or not at all. Authenticating over plain http protects
+against a bystander and not against a network, which is the more dangerous of the two
+illusions — so this is a refusal to start, not a warning.
+
+| Deployment | Set |
+|---|---|
+| kern-ui serves TLS | `KERN_UI_TLS_CERT` and `KERN_UI_TLS_KEY` (TLS 1.2 floor) |
+| A reverse proxy terminates it | `KERN_UI_TRUST_PROXY=1` |
+| Local development | nothing — loopback is exempt |
+
+`X-Forwarded-Proto` decides whether the session cookie is marked `Secure` and whether HSTS
+is sent, but **only when a proxy is declared**. Any client can set that header; believing it
+by default would let a caller declare their own connection safe.
+
 #### `StepEvent` — contract `kern.step-event/v2`
 
 <!-- CANONICAL BLOCK — mirrored verbatim in Kern-UI/README.md and Kern-Orch/README.md.
@@ -65,6 +109,8 @@ producer needs one configured URL and stays unaware of our route shape.
   "frontier": ["synthese", "critique"],
   "state": { "echo": "..." },
   "at": "2026-07-26T12:00:02Z",
+  "requester": "yoann",
+  "dossier": "AF-2288",
   "topology": {
     "entry": "greet",
     "nodes": [{ "id": "greet", "kind": "agent", "skill": "planner" }],
@@ -81,6 +127,8 @@ producer needs one configured URL and stays unaware of our route shape.
 | `frontier` | string[] | yes | The nodes to execute **next**. An empty list means the run is over. |
 | `state` | object | no | Flat business data. Never a producer's internal envelope. |
 | `at` | RFC 3339 | yes | When the level completed. |
+| `requester` | string | no | Who asked for this run (C6). Empty means open — steerable by anyone. Sent **once**, on the run's first event, like `topology`. |
+| `dossier` | string | no | A caller-supplied business label (e.g. a client case) grouping several runs together for a consumer like the dossiers list. Distinct from `requester` — an identity used for a steering-permission check, not a grouping key. Empty means the run belongs to no dossier. Sent **once**, on the run's first event. |
 | `topology` | object | no | The graph's shape. Sent **once**, on the run's first event. |
 | `topology.entry` | string | yes | Entry node id. Never appears in a frontier — it ran first. |
 | `topology.nodes[]` | object | yes | `id` and `kind` (`tool` / `agent` / `subgraph`), plus `skill` on an agent node. |
@@ -245,6 +293,60 @@ display cache. **Losing kern-ui's data must cost nothing but a reload.**
 
 ---
 
+## Theming — one codebase, several client brands
+
+`kern-ui` is meant to sit in front of more than one client, each with its own visual
+identity — the internal "Grimoire Ambré" look (dark ground, gold accent, Cinzel + Space
+Grotesk) is Kern's own, not every client's. The first real case is
+[Avel Finances](https://avelfinances.fr): its client and advisor mockups
+(`design/mockups/avel-client.dc.html`, `design/mockups/avel-admin.dc.html`) use a
+completely different navy/blue identity and vocabulary, deliberately — the mockup art
+direction stays authoritative *per brand*, not as one fixed palette for every deployment.
+
+**The mechanism is a per-brand build, not a runtime switch.** Concretely:
+
+- **Colours, fonts, spacing** — already centralised in
+  [`web/src/styles/tokens.css`](web/src/styles/tokens.css): one `:root` block of custom
+  properties, consumed via `var(--token)` almost everywhere (verified: only 6 stray
+  hard-coded hex values exist across the whole frontend, in
+  `ConversationStone.module.css` and `RedactionView.module.css` — everything else,
+  including JS-side state-colour maps, already goes through a token). A second brand
+  means a second token set — either a sibling `:root[data-theme="avel"]` block or a
+  separate `tokens.css` swapped at build time — plus fixing those 6 stray lines so
+  nothing hides outside the token layer. This part is cheap: a palette swap, not a
+  redesign.
+- **Copy and vocabulary** — `web/src/i18n/fr.ts` is a single flat object imported
+  directly (`import { fr } from '../i18n/fr'`) in 24 files. It is **not** swappable
+  today: a second brand's copy (Kern's internal "agent", "run", "node" vocabulary vs.
+  Avel's client-facing "dossier", "conseiller", "agent") needs either a full duplicate
+  object kept in sync by hand, or refactoring those 24 imports behind an indirection
+  (a `useCopy()`-style lookup). Real work, not a side effect of the token swap above —
+  scope it as its own piece before promising a second brand's wording, not after.
+- **Bespoke components** — `ConversationStone` (the "stone" chat control: gold glow,
+  Cinzel numerals, a specific gradient texture) is Kern's own visual metaphor, not a
+  generic shape with swappable colours. A brand whose mockup uses a structurally
+  different control (Avel's admin mockup replaces it with a plain command bar) needs its
+  own component variant, not a retheme of this one — check the target brand's mockup
+  before assuming the existing component just needs new tokens.
+- **Serving it** — the Go backend needs **no changes** for this: `KERN_UI_WEB_DIR`
+  (`cmd/kern-ui/main.go`) already points at one static bundle per running instance. One
+  `npm run build` per brand (each with its own token set baked in) produces one `dist/`
+  per brand; each gets its own `kern-ui` deployment (own `KERN_UI_ADDR`, own
+  `KERN_UI_ACCOUNTS`, pointed at its own `KERN_UI_WEB_DIR`). This is the same "one binary,
+  one config, one data dir per deployment" shape `kern-launcher` already uses for
+  `kern-memory`/`kern-orch`/`kern-ui` — a themed brand is just another instance of that
+  same pattern, not a new one.
+
+**What this deliberately does not attempt**: one binary serving several brands at once,
+chosen per account or per domain at request time. Nothing today carries a "which brand"
+concept anywhere — not in `internal/httpapi`'s config, not in the accounts file, not in
+the frontend. Building that would mean a real selection mechanism end-to-end (backend
+config → account model → frontend context) instead of "build twice, deploy twice." Worth
+it once there are enough brands that separate builds/deployments become the actual
+bottleneck — not assumed necessary before that's true.
+
+---
+
 ## Development
 
 ```sh
@@ -256,3 +358,7 @@ make dist     # cross-compile every target
 
 Conventions, method and house rules live in [CLAUDE.md](CLAUDE.md). Per-feature context is
 in [docs/index/](docs/index/) — read those instead of re-reading the code.
+
+## License
+
+MIT — see [LICENSE](LICENSE).

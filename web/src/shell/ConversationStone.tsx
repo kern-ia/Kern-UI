@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import styles from './ConversationStone.module.css'
 import { fr } from '../i18n/fr'
+import { dispatch, nudge, SteerError, uploadFile } from '../steer/api'
+import type { Run } from '../runs/types'
 import {
   clampStone,
   defaultStone,
@@ -23,10 +25,29 @@ const STORAGE_KEY = 'kern-ui.stone'
  * and a keyboard path, because a control you can only drag is a control some people simply
  * cannot use.
  */
-export function ConversationStone({ stateColour }: { stateColour: string }) {
+export function ConversationStone({
+  stateColour,
+  selectedRun = null,
+}: {
+  stateColour: string
+  /** The mission a plain message nudges. A `/skill-name` command needs none. */
+  selectedRun?: Run | null
+}) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [position, setPosition] = useState<StonePosition | null>(readStored)
   const [dragging, setDragging] = useState(false)
+  const [message, setMessage] = useState('')
+  const [sending, setSending] = useState(false)
+  const [feedback, setFeedback] = useState<string | null>(null)
+  // A "-auto" skill (community-management-agency-auto, and any future skill following
+  // that naming convention) skips human validation downstream — this is the one explicit
+  // confirmation step before it can dispatch at all, distinct from that per-node approval.
+  const [pendingAuto, setPendingAuto] = useState<{ command: string; skillText: string } | null>(null)
+  // Only meaningful ahead of a `/skill-name` command: the uploaded path becomes the whole
+  // dispatch text (courtage-extraction's reception node reads the chat message as a
+  // document path — same convention as Telegram reception, just a third real source).
+  const [attachedFile, setAttachedFile] = useState<File | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const grabOffset = useRef({ x: 0, y: 0 })
 
   // Pointer handlers must read the live drag state, not the value captured when they were
@@ -40,11 +61,19 @@ export function ConversationStone({ stateColour }: { stateColour: string }) {
     setPosition(next)
   }, [])
 
+  // The reserved band comes from CSS rather than from a breakpoint repeated here: the width
+  // at which the navigation moves to the bottom is decided once, beside the rule that moves
+  // it. Duplicating it in JS is how the two drift apart.
+  const bottomInset = () => {
+    const raw = getComputedStyle(document.documentElement).getPropertyValue('--stone-bottom-inset')
+    return Number.parseFloat(raw) || 0
+  }
+
   const bounds = useCallback((): Bounds | null => {
     const parent = containerRef.current?.parentElement
     if (!parent) return null
     const rect = parent.getBoundingClientRect()
-    return { width: rect.width, height: rect.height }
+    return { width: rect.width, height: rect.height, bottomInset: bottomInset() }
   }, [])
 
   const originOf = useCallback((): DOMRect | null => {
@@ -52,10 +81,23 @@ export function ConversationStone({ stateColour }: { stateColour: string }) {
   }, [])
 
   // The default position depends on the container, so it can only be computed once mounted.
+  //
+  // A restored position is clamped rather than trusted: it may have been stored on a wide
+  // screen and be impossible on this one — below the navigation, or past the right edge —
+  // and a stone nobody can see is a stone nobody can move back.
   useEffect(() => {
-    if (positionRef.current !== null) return
     const b = bounds()
-    if (b) place(defaultStone(b))
+    if (!b) return
+
+    const current = positionRef.current
+    if (current === null) {
+      place(defaultStone(b))
+      return
+    }
+    const inside = clampStone(current.x, current.y, b)
+    if (inside.x !== current.x || inside.y !== current.y) {
+      place({ ...current, ...inside })
+    }
   }, [bounds, place])
 
   useEffect(() => {
@@ -123,6 +165,88 @@ export function ConversationStone({ stateColour }: { stateColour: string }) {
   const docked = position?.docked ?? null
   const label = docked ? fr.chat.stoneShow : fr.chat.stoneHide
 
+  const dispatchCommand = async (command: string, skillText: string) => {
+    setSending(true)
+    setFeedback(null)
+    try {
+      setFeedback(fr.chat.launching)
+      const result = await dispatch(command, skillText)
+      setFeedback(
+        result.kind === 'tool' && result.result
+          ? `${result.result.label} : ${result.result.value}`
+          : fr.chat.launched(command),
+      )
+      setMessage('')
+    } catch (err) {
+      if (err instanceof SteerError && err.known) {
+        setFeedback(fr.chat.unknownSkill(err.known))
+      } else {
+        setFeedback(fr.chat.sendFailed)
+      }
+    } finally {
+      setSending(false)
+    }
+  }
+
+  // `/skill-name texte…` dispatches a compétence — no mission needed. Anything else nudges
+  // the mission currently open; with none open, there is nothing honest to do with it. A
+  // "-auto" command pauses here for confirmDialog instead of dispatching straight away.
+  const submit = async () => {
+    const text = message.trim()
+    if (text === '' || sending) return
+
+    if (text.startsWith('/')) {
+      const [command, ...rest] = text.slice(1).split(/\s+/)
+      let skillText = rest.join(' ')
+
+      if (attachedFile) {
+        setSending(true)
+        setFeedback(fr.chat.uploading)
+        try {
+          skillText = await uploadFile(attachedFile)
+        } catch {
+          setFeedback(fr.chat.uploadFailed)
+          setSending(false)
+          return
+        }
+        setAttachedFile(null)
+      }
+
+      if (command.endsWith('-auto')) {
+        setSending(false)
+        setPendingAuto({ command, skillText })
+        return
+      }
+      await dispatchCommand(command, skillText)
+      return
+    }
+
+    if (!selectedRun) {
+      setFeedback(fr.chat.needsATarget)
+      return
+    }
+    setSending(true)
+    setFeedback(null)
+    try {
+      await nudge(selectedRun.id, 'message', text)
+      setFeedback(fr.chat.sentToRun(selectedRun.graph))
+      setMessage('')
+    } catch {
+      setFeedback(fr.chat.sendFailed)
+    } finally {
+      setSending(false)
+    }
+  }
+
+  const confirmAuto = async () => {
+    if (!pendingAuto) return
+    const { command, skillText } = pendingAuto
+    setPendingAuto(null)
+    await dispatchCommand(command, skillText)
+  }
+
+  const cancelAuto = () => setPendingAuto(null)
+
   return (
     <div
       ref={containerRef}
@@ -168,12 +292,78 @@ export function ConversationStone({ stateColour }: { stateColour: string }) {
           <input
             className={styles.field}
             placeholder={fr.chat.placeholder}
-            disabled
-            aria-describedby="chat-note"
+            value={message}
+            disabled={sending}
+            aria-describedby={feedback ? 'chat-note' : undefined}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                void submit()
+              }
+            }}
           />
-          <p className={styles.note} id="chat-note">
-            {fr.chat.unavailable}
-          </p>
+          <button
+            type="button"
+            className={styles.attachButton}
+            aria-label={fr.chat.attach}
+            disabled={sending}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            📎
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            hidden
+            aria-label={fr.chat.attach}
+            onChange={(e) => setAttachedFile(e.target.files?.[0] ?? null)}
+          />
+          {attachedFile && (
+            <p className={styles.attachChip}>
+              {attachedFile.name}
+              <button
+                type="button"
+                aria-label={fr.chat.removeAttachment}
+                onClick={() => {
+                  setAttachedFile(null)
+                  if (fileInputRef.current) fileInputRef.current.value = ''
+                }}
+              >
+                ×
+              </button>
+            </p>
+          )}
+          {feedback && (
+            <p className={styles.note} id="chat-note" role="status">
+              {feedback}
+            </p>
+          )}
+        </div>
+      )}
+
+      {pendingAuto && (
+        <div
+          className={styles.autoConfirmOverlay}
+          role="dialog"
+          aria-modal="true"
+          aria-label={fr.chat.autoConfirmTitle}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') cancelAuto()
+          }}
+        >
+          <div className={styles.autoConfirmPanel}>
+            <p className={styles.autoConfirmTitle}>{fr.chat.autoConfirmTitle}</p>
+            <p className={styles.autoConfirmBody}>{fr.chat.autoConfirmBody(pendingAuto.command)}</p>
+            <div className={styles.autoConfirmActions}>
+              <button type="button" onClick={cancelAuto}>
+                {fr.chat.autoConfirmCancel}
+              </button>
+              <button type="button" onClick={() => void confirmAuto()}>
+                {fr.chat.autoConfirmConfirm}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -62,11 +62,14 @@ il dit pourquoi la question se posait, ce qui reste utile pour la mettre en œuv
 
 ## 1. Le confinement des agents
 
-> **✅ Réponse (2026-07-28) — bac à sable.** L'agent garde sa liberté d'action *dans son
-> périmètre* ; l'orchestrateur garde le contrôle à l'extérieur. C'est l'option « sérieux »
-> ci-dessous, pas le minimum : la brique `kern-exec`, avec `kern-guard` et `kern-policy`.
-> Reste à cadrer l'étendue du bac (système de fichiers, réseau, budgets) — c'est de la
-> conception, plus un arbitrage.
+> **✅ Réponse (2026-07-28), livrée le 2026-07-29, étendue le même jour.** `kern-exec`
+> confine réellement sur **macOS et Linux** (dossiers autorisés, réseau coupé par défaut —
+> par namespace vide sur Linux, pas par landlock seul, dont le contrôle réseau est plus
+> étroit —, délai d'exécution), vérifié dans une vraie VM pour Linux. Windows reste un refus
+> explicite tant que personne n'a de machine pour le vérifier. Câblé et prouvé sur un vrai
+> run kern-orch (macOS), via un script wrapper — `KERN_AGENT_CLI` ne porte pas d'arguments,
+> donc aucun changement de code kern-orch. Les budgets et l'escalade restent `kern-policy`,
+> non construit.
 
 
 **Ce dont il s'agit.** Quand un agent travaille, kern-orch lance le programme d'IA comme un
@@ -392,3 +395,18 @@ niveau de détail en dessous :
 
 Et deux apparaîtront au moment d'écrire plutôt qu'avant : l'étendue exacte du bac à sable, et
 la façon dont un compte de messagerie se lie à un compte Kern.
+
+Une quatrième est apparue en construisant C5 (2026-07-29), pas encore urgente mais à garder
+en tête :
+
+- **Faut-il un jour exposer les tools de kern-orch via un vrai serveur MCP** (le protocole,
+  pas juste une API HTTP) ? Pas un besoin aujourd'hui — kern-ui n'est pas un client agent,
+  un simple appel HTTP suffit à l'Espace. Ça deviendrait un besoin réel le jour où un client
+  agent externe (Claude Desktop, un autre LLM) voudrait appeler les mêmes tools que kern-ui
+  affiche. Point technique à retenir pour ce jour-là : la spec MCP vient de changer en
+  profondeur le 2026-07-28 (« Streamable HTTP » devient **stateless** — plus de handshake de
+  session, l'authentification OAuth 2.1 devient obligatoire pour un serveur distant). C'est
+  très récent (encore une release candidate au moment d'écrire), mais ça va dans le sens de
+  ce qui est déjà construit : l'endpoint tools de kern-orch est déjà sans session, une
+  requête porte tout ce qu'il faut. Construire du MCP par-dessus coûterait moins cher
+  maintenant qu'avant ce changement de spec.

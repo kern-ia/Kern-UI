@@ -1,45 +1,12 @@
 /* Design tokens — the single source of truth for the Kern-IA look.
-   Values are lifted from design/mockups/*.dc.html. No component may hard-code a colour,
-   a font or a radius: add a token here instead. */
+   No component may hard-code a colour, a font or a radius: add a token here instead.
+
+   Brand split: this file holds every token that does NOT vary by client brand (spacing,
+   radii, base element rules). Brand-specific tokens (colour, font family) live in
+   brand-kern.css / brand-avel.css — see README.md, "Theming — one codebase, several
+   client brands" for the whole convention and why a build-time swap, not a runtime one. */
 
 :root {
-  /* Surfaces, darkest to lightest */
-  --surface-void: #070504;
-  --surface-base: #0d0a07;
-  --surface-raised: #241c14;
-  --surface-veil: rgba(255, 255, 255, 0.03);
-  --surface-veil-strong: rgba(232, 201, 138, 0.06);
-  --backdrop: radial-gradient(140% 100% at 50% -10%, #241c14 0%, #0d0a07 45%, #070504 100%);
-
-  /* Gold — the brand axis */
-  --gold: #e8c98a;
-  --gold-bright: #ffe0a8;
-  --gold-muted: #c9b48f;
-  --gold-dim: #9c8a6a;
-  --gold-faint: #6a5a44;
-
-  /* Text */
-  --text: #f3e3c4;
-  --text-muted: #c9b48f;
-  --text-dim: #8a7355;
-
-  /* Borders */
-  --border: rgba(232, 201, 138, 0.15);
-  --border-soft: rgba(232, 201, 138, 0.1);
-  --border-strong: rgba(232, 201, 138, 0.25);
-
-  /* Agent states, from the mockup's stateMap */
-  --state-idle: #ffb347;
-  --state-thinking: #a674ff;
-  --state-action: #4ee3ff;
-  --state-error: #ff4d5e;
-
-  /* Type */
-  --font-display: 'Cinzel', Georgia, serif;
-  --font-body: 'Space Grotesk', system-ui, -apple-system, sans-serif;
-  --tracking-display: 0.16em;
-  --tracking-label: 0.04em;
-
   /* Spacing scale */
   --space-1: 4px;
   --space-2: 8px;
@@ -52,6 +19,9 @@
   --radius: 10px;
   --radius-pill: 999px;
   --header-height: 64px;
+  /* Height the conversation stone must stay clear of at the bottom. Zero on a wide screen;
+     the mobile navigation claims it below. Read from JS so the breakpoint lives here only. */
+  --stone-bottom-inset: 0px;
 }
 
 *,
@@ -84,6 +54,14 @@ body {
 *::-webkit-scrollbar-thumb {
   background: rgba(232, 201, 138, 0.2);
   border-radius: 3px;
+}
+
+/* Below the mobile breakpoint the navigation sits at the bottom of the shell and the stone
+   shares that container. Reserving the band is what keeps the tabs reachable. */
+@media (max-width: 899px) {
+  :root {
+    --stone-bottom-inset: 64px;
+  }
 }
 
 @keyframes pulse-glow {

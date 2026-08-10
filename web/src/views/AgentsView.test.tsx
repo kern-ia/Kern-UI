@@ -1,7 +1,20 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { AgentsView } from './AgentsView'
 import { fr } from '../i18n/fr'
 import type { Run } from '../runs/types'
+
+function answer(status: number, body?: unknown) {
+  return vi.fn().mockResolvedValue({
+    ok: status >= 200 && status < 300,
+    status,
+    statusText: 'error',
+    json: async () => body,
+  } as Response)
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
 
 function run(over: Partial<Run> = {}): Run {
   return {
@@ -43,4 +56,110 @@ it('draws the hive as soon as a topology is known', () => {
 
   expect(screen.queryByText(fr.hive.noTopology)).not.toBeInTheDocument()
   expect(screen.queryByText(fr.hive.topologyPending)).not.toBeInTheDocument()
+})
+
+it('offers to stop a live run with no requester', async () => {
+  const fetchMock = answer(202, { status: 'stopping' })
+  vi.stubGlobal('fetch', fetchMock)
+
+  render(<AgentsView runs={[run()]} />)
+  const button = screen.getByRole('button', { name: fr.runs.stop })
+  expect(button).not.toBeDisabled()
+
+  fireEvent.click(button)
+
+  await waitFor(() => expect(fetchMock).toHaveBeenCalled())
+  const [url] = fetchMock.mock.calls[0]
+  expect(url).toBe('/api/v1/runs/r1/stop')
+})
+
+it('disables stopping someone else\'s mission, and says why', () => {
+  render(<AgentsView runs={[run({ requester: 'yoann' })]} user="pas-yoann" />)
+
+  const button = screen.getByRole('button', { name: fr.runs.stop })
+  expect(button).toBeDisabled()
+  expect(button).toHaveAttribute('title', fr.runs.stopUnavailable)
+})
+
+it('lets the requester stop their own mission', () => {
+  render(<AgentsView runs={[run({ requester: 'yoann' })]} user="yoann" />)
+
+  expect(screen.getByRole('button', { name: fr.runs.stop })).not.toBeDisabled()
+})
+
+it('shows no stop control for a finished run', () => {
+  render(<AgentsView runs={[run({ status: 'finished', frontier: [] })]} />)
+
+  expect(screen.queryByRole('button', { name: fr.runs.stop })).not.toBeInTheDocument()
+})
+
+it('shows the approval panel for a run parked on an approval node', async () => {
+  const fetchMock = answer(200, { status: 'decided' })
+  vi.stubGlobal('fetch', fetchMock)
+
+  const parked = run({
+    frontier: ['confirm'],
+    topology: {
+      entry: 'confirm',
+      nodes: [{ id: 'confirm', kind: 'approval' }],
+    },
+  })
+  render(<AgentsView runs={[parked]} />)
+
+  expect(screen.getByText(fr.runs.awaitingDecision('confirm'))).toBeInTheDocument()
+
+  fireEvent.click(screen.getByRole('button', { name: fr.runs.approve }))
+
+  await waitFor(() => expect(fetchMock).toHaveBeenCalled())
+  const [url, init] = fetchMock.mock.calls[0]
+  expect(url).toBe('/api/v1/runs/r1/nodes/confirm/decide')
+  expect(JSON.parse(init.body as string)).toEqual({ decision: 'approve' })
+})
+
+// The plan itself, not just "a decision is pending" — a caller approving a mystery box
+// is not a real review. run.state on the wire is a FLAT map (report.flatten copies
+// every graph.State key straight across, no {step,frozen,data,zones} wrapper — that
+// shape is the checkpoint's, for persistence/resume, not the live step event's).
+// Corrected after finding it live in a real browser: the first version of this test
+// wrapped the fixture in {data: {...}}, matching the wrong shape.
+it('shows the proposed plan text next to Valider/Refuser', () => {
+  const parked = run({
+    frontier: ['confirm'],
+    topology: {
+      entry: 'confirm',
+      nodes: [{ id: 'confirm', kind: 'approval' }],
+    },
+    state: { plan_propose: 'Créer le contact Dupont.' },
+  })
+  render(<AgentsView runs={[parked]} />)
+
+  expect(screen.getByText('Créer le contact Dupont.')).toBeInTheDocument()
+})
+
+it('shows no plan text when the state carries none yet', () => {
+  const parked = run({
+    frontier: ['confirm'],
+    topology: {
+      entry: 'confirm',
+      nodes: [{ id: 'confirm', kind: 'approval' }],
+    },
+  })
+  render(<AgentsView runs={[parked]} />)
+
+  expect(screen.getByText(fr.runs.awaitingDecision('confirm'))).toBeInTheDocument()
+})
+
+it('shows no approval panel once the node is no longer active', () => {
+  const done = run({
+    status: 'finished',
+    frontier: [],
+    visited: ['confirm'],
+    topology: {
+      entry: 'confirm',
+      nodes: [{ id: 'confirm', kind: 'approval' }],
+    },
+  })
+  render(<AgentsView runs={[done]} />)
+
+  expect(screen.queryByText(fr.runs.awaitingDecision('confirm'))).not.toBeInTheDocument()
 })

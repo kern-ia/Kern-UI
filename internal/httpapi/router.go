@@ -8,9 +8,14 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/yoann/kern-ui/internal/auth"
+	"github.com/yoann/kern-ui/internal/firewall"
+	"github.com/yoann/kern-ui/internal/memory"
 	"github.com/yoann/kern-ui/internal/projection"
 	"github.com/yoann/kern-ui/internal/registry"
+	"github.com/yoann/kern-ui/internal/steer"
 	"github.com/yoann/kern-ui/internal/stream"
+	"github.com/yoann/kern-ui/internal/tools"
 )
 
 // defaultHeartbeat keeps idle SSE connections alive through proxies that would otherwise
@@ -21,6 +26,10 @@ const defaultHeartbeat = 25 * time.Second
 // dropping them for that connection. The snapshot sent on connect is what makes dropping
 // safe.
 const subscriberBuffer = 64
+
+// sessionLifetime is how long a browser stays logged in. A working day, so nobody is thrown
+// out mid-task, and nobody stays logged in over a weekend on a shared machine.
+const sessionLifetime = 12 * time.Hour
 
 // Config holds the router's dependencies. The zero value is usable: missing dependencies
 // are created on first use, and NewRouterWithDeps hands them back to the caller.
@@ -41,8 +50,49 @@ type Config struct {
 	// advances, and the browser fetches it when the Grimoire opens.
 	Registry *registry.Store
 
+	// Tools reads and invokes kern-orch's tool catalogue for the Espace's widgets (C5).
+	// A nil or unconfigured Client (Enabled() false) means no tool source is wired —
+	// distinct from kern-orch answering with an empty catalogue, same reasoning as
+	// Registry's 404-vs-empty split.
+	Tools *tools.Client
+
+	// Steer reaches kern-orch's C6 write path (stop/nudge/decide/dispatch) on behalf of
+	// the logged-in caller. Same unconfigured-means-404 reasoning as Tools.
+	Steer *steer.Client
+
+	// Memory reads and resolves kern-memory's documents for the Rédaction view (C8). Same
+	// unconfigured-means-404 reasoning as Tools and Steer.
+	Memory *memory.Client
+
+	// Firewall reads the AI firewall's consumption snapshot (C4) for Vigie. Same
+	// unconfigured-means-404 reasoning as Tools, Steer and Memory.
+	Firewall *firewall.Client
+
+	// DecisionsHub broadcasts every behavioural decision relayed from the AI firewall's
+	// own C3 stream (see internal/firewall.Relay) to the connected browsers. A separate
+	// hub from Hub: a decision is not a run change, and conflating the two streams would
+	// make a browser interested in one pay for buffering the other.
+	DecisionsHub *stream.Hub[firewall.Decision]
+
 	// Heartbeat is the interval between SSE keep-alive comments. Defaults to 25s.
 	Heartbeat time.Duration
+
+	// ProducerToken is the secret a producer presents to post events. **Empty leaves the
+	// ingestion endpoints open**, which is what local development wants and what a public
+	// address must never have — `cmd/kern-ui` refuses to listen on one without it.
+	ProducerToken string
+
+	// Accounts are the people who may read. **An empty store leaves the read endpoints
+	// open**, same reasoning and same refusal at startup.
+	Accounts *auth.Accounts
+
+	// Sessions holds the browser sessions. Created on first use.
+	Sessions *auth.Sessions
+
+	// TrustProxy says something in front terminates TLS, so `X-Forwarded-Proto` may be
+	// believed. It must be opt-in: any client can set that header, and believing it by
+	// default would let a caller decide their own connection is safe.
+	TrustProxy bool
 }
 
 func (c *Config) fillDefaults() {
@@ -52,8 +102,14 @@ func (c *Config) fillDefaults() {
 	if c.Hub == nil {
 		c.Hub = stream.NewHub[projection.Run](subscriberBuffer)
 	}
+	if c.DecisionsHub == nil {
+		c.DecisionsHub = stream.NewHub[firewall.Decision](subscriberBuffer)
+	}
 	if c.Registry == nil {
 		c.Registry = registry.New()
+	}
+	if c.Sessions == nil {
+		c.Sessions = auth.NewSessions(sessionLifetime)
 	}
 	if c.Heartbeat <= 0 {
 		c.Heartbeat = defaultHeartbeat
@@ -72,21 +128,48 @@ func NewRouterWithDeps(cfg *Config) http.Handler {
 	s := &server{cfg: cfg}
 
 	mux := http.NewServeMux()
+
+	// Open: a liveness probe carries no credential, and the login page has to be reachable
+	// before anyone has a session.
 	mux.HandleFunc("GET /healthz", handleHealthz)
-	mux.HandleFunc("POST /api/v1/steps", s.handleIngestStep)
-	mux.HandleFunc("POST /api/v1/runs/{id}/steps", s.handleIngestStep)
-	mux.HandleFunc("GET /api/v1/runs", s.handleListRuns)
-	mux.HandleFunc("GET /api/v1/runs/{id}", s.handleGetRun)
-	mux.HandleFunc("GET /api/v1/stream", s.handleStream)
-	mux.HandleFunc("POST /api/v1/activity", s.handleIngestActivity)
-	mux.HandleFunc("POST /api/v1/registry", s.handlePublishRegistry)
-	mux.HandleFunc("GET /api/v1/registry", s.handleGetRegistry)
+	mux.HandleFunc("POST /api/v1/login", s.handleLogin)
+	mux.HandleFunc("POST /api/v1/logout", s.handleLogout)
+	mux.HandleFunc("GET /api/v1/session", s.handleSession)
+
+	// Producers post; they never read.
+	mux.HandleFunc("POST /api/v1/steps", s.requireProducer(s.handleIngestStep))
+	mux.HandleFunc("POST /api/v1/runs/{id}/steps", s.requireProducer(s.handleIngestStep))
+	mux.HandleFunc("POST /api/v1/activity", s.requireProducer(s.handleIngestActivity))
+	mux.HandleFunc("POST /api/v1/registry", s.requireProducer(s.handlePublishRegistry))
+
+	// People read; they never post events.
+	mux.HandleFunc("GET /api/v1/runs", s.requireSession(s.handleListRuns))
+	mux.HandleFunc("GET /api/v1/runs/{id}", s.requireSession(s.handleGetRun))
+	mux.HandleFunc("GET /api/v1/stream", s.requireSession(s.handleStream))
+	mux.HandleFunc("GET /api/v1/registry", s.requireSession(s.handleGetRegistry))
+	mux.HandleFunc("GET /api/v1/tools", s.requireSession(s.handleListTools))
+	mux.HandleFunc("POST /api/v1/tools/{name}/invoke", s.requireSession(s.handleInvokeTool))
+	mux.HandleFunc("GET /api/v1/vigie/budget", s.requireSession(s.handleFirewallBudget))
+	mux.HandleFunc("GET /api/v1/vigie/decisions", s.requireSession(s.handleFirewallDecisions))
+	mux.HandleFunc("POST /api/v1/runs/{id}/stop", s.requireSession(s.handleStopRun))
+	mux.HandleFunc("POST /api/v1/runs/{id}/nudge", s.requireSession(s.handleNudge))
+	mux.HandleFunc("POST /api/v1/runs/{id}/nodes/{node}/decide", s.requireSession(s.handleDecide))
+	mux.HandleFunc("POST /api/v1/dispatch", s.requireSession(s.handleDispatch))
+	mux.HandleFunc("POST /api/v1/uploads", s.requireSession(s.handleUpload))
+	mux.HandleFunc("GET /api/v1/documents", s.requireSession(s.handleListDocuments))
+	mux.HandleFunc("GET /api/v1/documents/{id}", s.requireSession(s.handleGetDocument))
+	mux.HandleFunc("POST /api/v1/documents/{id}/suggestions/{sid}/accept", s.requireSession(s.handleResolveSuggestion(true)))
+	mux.HandleFunc("POST /api/v1/documents/{id}/suggestions/{sid}/ignore", s.requireSession(s.handleResolveSuggestion(false)))
+	mux.HandleFunc("POST /api/v1/marketing/items", s.requireSession(s.handleUpsertMarketingItem))
+	mux.HandleFunc("GET /api/v1/marketing/items", s.requireSession(s.handleListMarketingItems))
+	mux.HandleFunc("GET /api/v1/criteria", s.requireSession(s.handleListCriteria))
+	mux.HandleFunc("GET /api/v1/accounts", s.requireSession(s.handleListAccounts))
 
 	if cfg.WebDir != "" {
 		mux.Handle("GET /", http.FileServer(http.Dir(cfg.WebDir)))
 	}
 
-	return mux
+	return s.withTransportSecurity(mux)
 }
 
 type server struct {

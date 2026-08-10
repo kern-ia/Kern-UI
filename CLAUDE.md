@@ -1,5 +1,8 @@
 # CLAUDE.md — Conventions du repo Kern-UI
 
+> Conventions de développement (branches, commits, PR, lint, CI) : voir [`CONVENTIONS.md`](CONVENTIONS.md).
+> Ce fichier ne couvre que le contexte produit et les décisions techniques propres à ce repo.
+
 ## Contexte
 `kern-ui` est la **brique interface** de l'écosystème Kern (voir la cartographie dans
 `../Kern-Orch/docs/ROADMAP.md`, où elle figure comme brique externe au CORE). Le travail
@@ -57,6 +60,19 @@ proposition 02). Cette ligne disait l'inverse jusque-là — voir `docs/a-tranch
 - **`kern-orch` passe en mode démon** (tranché 2026-07-28) : un service qui tourne, plus une
   commande qu'on lance. C'est ce qui débloque la lecture des outils (C5), impossible tant que
   rien n'est vivant entre deux runs.
+- **Authentification livrée** (2026-07-28) : deux identités distinctes. Un **producteur**
+  présente `Authorization: Bearer` (`KERN_UI_TOKEN` ici, `KERN_SINK_TOKEN` côté kern-orch) et
+  ne peut qu'écrire ; une **personne** ouvre une session par cookie et ne peut que lire.
+  Aucune des deux n'ouvre les portes de l'autre. Mots de passe en PBKDF2-SHA256 (600 000
+  itérations, bibliothèque standard — kern-ui reste sans dépendance). Comptes créés par
+  `kern-ui useradd`, jamais à la main.
+- **Le binaire REFUSE de démarrer** sur une adresse publique sans jeton ni compte. Un
+  avertissement se rate ; un processus qui ne démarre pas, non.
+- **TLS livré** (2026-07-28). Soit `kern-ui` sert HTTPS lui-même (`KERN_UI_TLS_CERT` /
+  `KERN_UI_TLS_KEY`, TLS 1.2 minimum), soit un proxy inverse le termine et on le déclare
+  (`KERN_UI_TRUST_PROXY=1`). **Le binaire refuse de servir une adresse publique en clair** :
+  authentifier sans chiffrer protège d'un curieux, pas d'un réseau. `X-Forwarded-Proto` n'est
+  cru que si un proxy est déclaré — n'importe quel client peut poser cet en-tête.
 - Transport vers l'instance centralisée : _à décider_.
 
 ## Méthode obligatoire

@@ -141,6 +141,51 @@ html,body{margin:0;height:100%;background:#0d0a07;overflow:hidden;font-family:'S
       </div>
     </sc-if>
 
+    <sc-if value="{{ isVigie }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;inset:0;padding:32px 40px;overflow:auto;display:grid;grid-template-columns:minmax(260px,1fr) minmax(320px,2fr);gap:16px;align-items:start">
+        <div style="border:1px solid rgba(232,201,138,.15);border-top:2px solid #00add8;border-radius:12px;background:rgba(255,255,255,.02);padding:18px 20px">
+          <div style="font:500 12px 'Space Grotesk';letter-spacing:.14em;color:#8a7355;text-transform:uppercase;margin-bottom:16px">Consommation</div>
+          <div style="height:8px;border-radius:4px;background:rgba(255,255,255,.06);overflow:hidden;margin-bottom:8px">
+            <div style="height:100%;width:18%;background:#e8c98a"></div>
+          </div>
+          <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:16px;font:11px 'Space Grotesk';color:#8a7355">
+            <span>Dépensé</span>
+            <span style="font:600 20px 'Cinzel',serif;color:#f3e3c4">0,018 $</span>
+            <span style="margin-left:auto">Limite 1,00 $</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+            <div>
+              <div style="font:10px 'Space Grotesk';color:#8a7355">Appels non tarifés</div>
+              <div style="font:600 16px 'Cinzel',serif;color:#f3e3c4">0</div>
+            </div>
+            <div>
+              <div style="font:10px 'Space Grotesk';color:#8a7355">Appels non comptés</div>
+              <div style="font:600 16px 'Cinzel',serif;color:#f3e3c4">0</div>
+            </div>
+          </div>
+          <div style="font:11px 'Space Grotesk';color:#6a5a44">Se réinitialise dans 6 h</div>
+        </div>
+        <div style="border:1px solid rgba(232,201,138,.15);border-top:2px solid #00add8;border-radius:12px;background:rgba(255,255,255,.02);padding:18px 20px">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px">
+            <div style="font:500 12px 'Space Grotesk';letter-spacing:.14em;color:#8a7355;text-transform:uppercase">Comportement</div>
+            <div style="font:10px 'Space Grotesk';letter-spacing:.03em;color:#6a5a44;text-transform:uppercase">En direct</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="display:grid;grid-template-columns:1fr auto auto;gap:12px;padding:8px 12px;background:rgba(255,255,255,.04);border-radius:8px;font:12px 'Space Grotesk'">
+              <span style="color:#f3e3c4;font-weight:600">stuck-in-a-loop</span>
+              <span style="color:#6a5a44">mission-42</span>
+              <span style="color:#6a5a44">il y a 2 min</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr auto auto;gap:12px;padding:8px 12px;background:rgba(255,255,255,.04);border-radius:8px;font:12px 'Space Grotesk'">
+              <span style="color:#f3e3c4;font-weight:600">file-outside-scope</span>
+              <span style="color:#6a5a44">mission-40</span>
+              <span style="color:#6a5a44">il y a 9 min</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
     <sc-if value="{{ isBrowser }}" hint-placeholder-val="{{ false }}">
       <div style="position:absolute;inset:0;display:flex;flex-direction:column">
         <div style="height:52px;flex:none;display:flex;align-items:center;gap:12px;padding:0 20px;border-bottom:1px solid rgba(232,201,138,.1);background:rgba(255,255,255,.02)">
@@ -356,6 +401,7 @@ class Component extends DCLogic {
       { label: 'Navigateur', glyph: '◫' },
       { label: 'Rédaction', glyph: '✎' },
       { label: 'Grimoire', glyph: 'ᛝ' },
+      { label: 'Vigie', glyph: '◉' },
     ];
     const tabs = tabDefs.map((t, i) => {
       const active = i === this.state.view;
@@ -417,6 +463,7 @@ class Component extends DCLogic {
       isBrowser: this.state.view === 3,
       isWrite: this.state.view === 4,
       isSkills: this.state.view === 5,
+      isVigie: this.state.view === 6,
       stateColor: sys.color,
       stateLabel: sys.label,
       showRunes: this.props.showRunes ?? true,

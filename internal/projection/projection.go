@@ -28,8 +28,10 @@ const (
 	StatusFailed   Status = "failed"
 )
 
-// validKinds are the node kinds a producer may declare.
-var validKinds = map[string]bool{"tool": true, "agent": true, "subgraph": true}
+// validKinds are the node kinds a producer may declare. "approval" is C6's blocking node
+// (a run parked waiting for a human decision) — missing here made kern-orch's own step
+// event a 400 the moment a graph used one, found only by running the real thing end to end.
+var validKinds = map[string]bool{"tool": true, "agent": true, "subgraph": true, "approval": true}
 
 // Topology is the shape of a run's graph, sent once at its start.
 //
@@ -144,6 +146,15 @@ type StepEvent struct {
 
 	// Parent is set on a nested run and absent on a top-level one.
 	Parent *ParentRef `json:"parent,omitempty"`
+
+	// Requester names who asked for this run (C6); empty means open. Rides on the first
+	// event only, like Topology.
+	Requester string `json:"requester,omitempty"`
+
+	// Dossier is a caller-supplied business label (e.g. a client case) grouping several
+	// runs together; empty means none. Rides on the first event only, like Requester and
+	// Topology.
+	Dossier string `json:"dossier,omitempty"`
 }
 
 // Validate checks the event against the ingestion contract.
@@ -210,6 +221,13 @@ type Run struct {
 	// Parent is set when this run is the nested graph of a subgraph node in another run.
 	Parent *ParentRef `json:"parent,omitempty"`
 
+	// Requester names who asked for this run (C6); empty means open — steerable by anyone.
+	Requester string `json:"requester,omitempty"`
+
+	// Dossier is a caller-supplied business label (e.g. a client case) grouping several
+	// runs together; empty means this run belongs to none.
+	Dossier string `json:"dossier,omitempty"`
+
 	// Generating lists the nodes whose model is producing output right now, sorted. Fed by
 	// ActivityEvent, emptied when the run ends. It is what lets the beacon tell a run that
 	// is thinking from one that is merely in flight.
@@ -274,6 +292,14 @@ func (p *Projection) Apply(ev StepEvent) (Run, bool, error) {
 		// A frontier names what runs *next*, so the entry never appears in one — yet the
 		// run began by executing it.
 		run.Visited = mergeVisited(run.Visited, []string{ev.Topology.Entry})
+	}
+	// Same reasoning as Topology: the requester and dossier ride the first event only and
+	// never change over a run's life.
+	if ev.Requester != "" {
+		run.Requester = ev.Requester
+	}
+	if ev.Dossier != "" {
+		run.Dossier = ev.Dossier
 	}
 
 	switch {

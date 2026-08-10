@@ -24,14 +24,22 @@ are statements of need. The one contract that exists is specified in [README.md]
 | C2 | Run topology — nodes and edges | kern-orch ✅ | Agents as the mockup draws it | **in use** |
 | C3 | Run failure | kern-orch ✅ | Agents node colours, failed runs | **in use** |
 | C4 | `kern.registry/v1` — skills & tools registry | kern-orch ✅ | Grimoire | **in use** |
-| C5 | Tool invocation and readback | kern-tools 🟡 | Espace widget values | missing |
+| C5 | Tool invocation and readback | kern-orch ✅ | Espace widget values | **in use** |
 | C6 | Steering channel | kern-pilot ⬜ | Conversation, sub-agent creation, accept/ignore | missing |
 | C7 | Memory graph | kern-memory ⬜ | Cerveau | missing |
-| C8 | Documents and suggestions | kern-memory ⬜ + kern-pilot ⬜ | Rédaction | missing |
+| C8 | Documents and suggestions | kern-memory ✅ (storage slice) | Rédaction | **v1 shipped 2026-07-30; suggestion generation still missing** |
 | C9 | Browser session and approval queue | kern-exec ⬜ + kern-pilot ⬜ | Navigateur | missing |
 | C10 | `kern.activity/v1` — live activity signal | kern-orch ✅ | `Réflexion` beacon | **in use** |
 | C11 | Skill & sub-agent authoring | undecided | `Nouveau sous-agent`, `+` compétence | **deferred; may become graph authoring** |
 | C12 | Messaging channel — notify and be commanded | kern-pilot ⬜ + an external platform 🔌 | Phone reacting; a second command surface | **scope confirmed 2026-07-28** |
+| C13 | Structured approval content | kern-orch ⬜ (skill convention) | Dossiers/Suivi's approval panel showing real options, not a single text field | missing |
+| C14 | Narrative activity log | kern-orch ⬜ (extends `kern.activity/v1`) | Dossiers/Suivi's action log — what an agent actually did, in words | missing |
+
+**Note found 2026-08-10, not corrected here**: this table lists **C6 as "missing"**, but
+`kern-ui`'s own code (`internal/httpapi/steer.go`, `internal/steer/client.go`) has a real,
+tested `dispatch`/`decide`/`nudge`/`stop` implementation in use throughout the Avel advisor
+console built this session — this row looks stale relative to the actual codebase, not
+audited/fixed here since it's outside what this pass touched.
 
 **C11 was added on 2026-07-27**, from building C4: it is the first entry on this list that
 is a decision before it is a schema, and it is stated so nobody has to rediscover it.
@@ -39,8 +47,9 @@ is a decision before it is a schema, and it is stated so nobody has to rediscove
 **C2 and C3 shipped on 2026-07-26** as `kern.step-event/v2`: the Agents view draws the hive
 the mockup shows. **C4 shipped on 2026-07-27** as `kern.registry/v1`: the Grimoire is live.
 **C10 shipped on 2026-07-27** as `kern.activity/v1`: the beacon reaches all four of its
-colours. **C5** is the next one worth having — and it needs a process before it needs a
-schema, see below.
+colours. **C5 shipped on 2026-07-29**: the Espace draws a live widget per tool that needs
+no argument binding — see below for why that scope is narrower than the mockup's five
+cards.
 
 Two corrections from building them, both in the same direction — a contract stated from a
 mockup is wider than the one the code needs:
@@ -147,27 +156,41 @@ nothing — and the Grimoire draws a different screen for each.
 
 ---
 
-## C5 — Tool invocation and readback · missing
+## C5 — Tool invocation and readback · **in use**
 
-**Producer** kern-tools 🟡. **Now the only thing standing between the Espace and its
-widgets** — since C4, the interface knows which tools exist.
+**Producer** kern-orch, via `kern-orch serve`.
 
-**It needed a process before it needed a schema**, and that process was decided on
-2026-07-28: **kern-orch becomes a daemon**. A widget value refreshes on a clock, independently
-of runs, and until then nothing was alive between two graphs to push or be polled. The
-prerequisite is now work rather than a question — the daemon first (kern-orch EPIC-03), this
-contract on top.
+**Shipped 2026-07-29, and pulled rather than pushed** — the one contract on this list that
+is not a producer pushing to kern-ui. A widget's value is asked for when it opens, not
+emitted on kern-orch's own schedule, so kern-ui calls out: `GET /api/v1/tools` (catalogue)
+and `POST /api/v1/tools/{name}/invoke` (a label, a rendered string, and when it was asked —
+"how stale it may be"), both proxied through kern-ui's own session-protected endpoints of
+the same shape, never called directly from the browser.
 
-**Why** An Espace widget is not just a name: it shows a live measurement — *Pull requests
-ouvertes 4*, *Messages non lus 12*, *Prochain rendez-vous 14:30*. That value has to be read
-from the tool behind the widget.
+**The open question below is answered: kern-orch reads on its own behalf.** kern-ui holds
+one more outbound credential (`KERN_ORCH_URL` / `KERN_ORCH_TOKEN`, the reverse direction
+from `KERN_UI_TOKEN`) and talks to no second producer — consistent with every other
+contract shipped so far.
 
-**Needed** A way to ask a wired tool for a display value: a label and a rendered string, plus
-how stale it may be. kern-ui must never format domain data itself.
+**Narrower than the widgets need, on purpose.** Only a tool with no required param becomes
+a card. A required param has no binding to a value yet — which widget, which argument, whose
+job it is to supply one — and that gap is the same one C11 names for skill authoring. Rather
+than inventing a form the mockup never drew, such a tool is left out of the grid entirely.
 
-**Open question** Whether kern-ui reads tools directly or whether kern-orch reads on its
-behalf. Reading directly would give kern-ui a second producer to talk to — worth deciding
-deliberately rather than by accident.
+**Not MCP.** kern-orch's tool skills execute as a subprocess (a `command` declared in
+SKILL.md, `stdin`/`stdout` JSON — the same shape agents already use), and what crosses to
+kern-ui is a plain HTTP contract, not the Model Context Protocol. kern-ui is not an agent
+client; a `fetch()` is the whole cost this needs. Real MCP would earn its keep the day an
+external agent client, not a browser, needs to call these same tools — tracked as an open
+question in `a-trancher.md` rather than decided here.
+
+**Worth knowing for that day**: the MCP specification changed substantially on 2026-07-28
+(still a release candidate as of this writing) — Streamable HTTP dropped the
+`initialize`/`initialized` handshake and `Mcp-Session-Id` entirely, moving to a stateless
+request/response model where each call carries its own context. A remote server is now
+expected to be a full OAuth 2.1 resource server. The direction matters more than the date:
+`internal/tools`' own shape here — one call in, one call's worth of state, nothing kept
+between invocations — already matches where MCP is heading, not where it used to be.
 
 ---
 
@@ -206,16 +229,30 @@ interface can ask for a sub-graph.
 
 ---
 
-## C8 — Documents and suggestions · missing
+## C8 — Documents and suggestions · v1 shipped 2026-07-30, suggestion generation still missing
 
-**Producer** kern-memory ⬜ for documents, kern-pilot ⬜ for the accept/ignore path.
+**Producer** `kern-memory` ✅ — a new, minimal repo (sibling of kern-notify), not the
+EPIC-13 kern-memory in kern-orch's roadmap (RAG, embeddings, `.okf`). Storage only: a
+document's content, its suggestions, and their pending/accepted/ignored status. kern-ui
+proxies it session-protected, same shape as C5/C6.
 
 **Why** The Rédaction view holds notes (*Notes — Vision du produit*, *482 mots · sauvegardé à
 l'instant*), a `Journal des décisions`, and inline suggestions the user accepts or ignores.
 
-**Needed** Document content and save state, an append-only decision log, and a suggestion
-stream whose entries can be resolved. Whether a document lives in kern-memory or somewhere
-else is not settled.
+**Shipped in v1** Document content, word count, an "updated" label, and a suggestion stream
+whose entries can be accepted or ignored — read and decide only. A suggestion's own content
+is written directly via `kern-memory seed`; there is no HTTP write path for it yet, matching
+the "no editing, no generation" scope decided 2026-07-30.
+
+**Not the Rédaction endgame — noted 2026-07-30**: Rédaction is not meant to become a plain
+text editor. The direction is a sub-agent expert in writing (drafting, critiquing, proposing
+the suggestions themselves) that a person steers from this view — closer to a collaborator
+than a document store with a UI on top. What C8 v1 built (storage + accept/ignore) is the
+substrate that agent's output would flow through, not the feature itself. Scoping *that*
+agent — what it drafts unprompted vs. on request, how it differs from a generic skill
+dispatched via `/skill`, whether it needs its own contract beyond C8's storage shape — is
+undecided and deliberately deferred; this note exists so the next session does not mistake
+v1's narrow read/accept/ignore slice for the whole of what this view is meant to become.
 
 ---
 
@@ -361,6 +398,55 @@ a critical approval may be given by chat at all, or only in the interface. And w
 goes: routing a company's work through Meta's or Telegram's servers is a data-processing
 question, most likely a GDPR one before an AI Act one. Neither is something this repo can
 answer on its own.
+
+---
+
+## C13 — Structured approval content · missing
+
+**Producer** kern-orch, as a skill-writing convention — no daemon change, a `state` key
+convention any skill can populate.
+
+**Why** `avel-admin.dc.html`'s Suivi agent approval panel shows real business content:
+three named bank options, each with a rate, next to Valider/Refuser — not a generic
+"here is a plan, approve or refuse" message. `web/src/views/AgentsView.tsx`'s
+`ApprovalPanel` (reused by `DossierDetailView`) reads exactly one field today,
+`state.plan_propose` (a single string, see its `planProposed` helper) — there is nowhere
+in the state contract for a skill like `courtage-banques` to hand the interface a real
+shortlist to render as a comparison, only free text.
+
+**Needed** A convention for what a skill writes into `state` ahead of an approval node,
+shaped enough that `ApprovalPanel` can render it as a real table instead of a paragraph —
+e.g. a list of `{label, detail, value}` rows, generic enough to cover a bank shortlist
+today and a different kind of structured choice later, without inventing a payload
+specific to courtage. **Whether this lives in `state` (today's mechanism, simplest) or
+becomes a new field on `StepEvent` itself (more structure, another contract to keep in
+sync between repos) is the actual decision** — not attempted here, since it changes a
+canonical, cross-repo contract block.
+
+---
+
+## C14 — Narrative activity log · missing
+
+**Producer** kern-orch, extending `kern.activity/v1` (`kern.activity/v1` → `v2`, or a
+sibling contract).
+
+**Why** `avel-admin.dc.html`'s Suivi agent has a right-hand action log: a chronological
+list of what the agent actually did, in plain language — "Interroge les critères de 14
+banques partenaires", each with a timestamp. `kern.activity/v1` (`README.md`,
+`internal/report/http.go`'s `ActivityEvent`) only carries `{run_id, graph, node_id,
+generating, at}` — a boolean start/stop signal per node, no narrative text at all. There
+is no way to build this panel with real data today; it would have to be invented, which
+this pass deliberately did not do (see `docs/index/avel-advisor-console.md`'s "Left
+open" section from the prior pass, and this session's own instruction not to fabricate
+content without a real source).
+
+**Needed** Either an optional narrative `message` field on `ActivityEvent` a skill can
+set when it wants to say something human-readable about what it is doing (most agent
+steps would still send none — this is opt-in, not mandatory instrumentation of every
+skill), or a wholly separate log contract if activity's own "off the run's thread,
+overtake-safe" semantics (see C10's own section above) turn out to be the wrong fit for
+an ordered log. **Which of the two is worth deciding before writing any code**, same as
+C13.
 
 ---
 

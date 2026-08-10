@@ -6,7 +6,7 @@ export type NodeStatus = 'pending' | 'active' | 'done' | 'failed'
 
 export interface TopologyNode {
   id: string
-  kind: 'tool' | 'agent' | 'subgraph'
+  kind: 'tool' | 'agent' | 'subgraph' | 'approval'
   /**
    * The catalogue entry backing an agent node — the link between a run and the Grimoire.
    * Not the id: a node `greet` may run the skill `planner`. Tool nodes name a Go function
@@ -65,6 +65,14 @@ export interface Run {
   error?: Failure
   /** Set when this run is the nested graph of a subgraph node in another run. */
   parent?: ParentRef
+  /** Who asked for this run (C6). Empty means open — steerable by anyone. */
+  requester?: string
+  /**
+   * A caller-supplied business label (e.g. a client case) grouping several runs
+   * together. Distinct from requester — an identity, not a grouping key. Absent means
+   * this run belongs to no dossier.
+   */
+  dossier?: string
 }
 
 /** State of the browser's link to the server. */

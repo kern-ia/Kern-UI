@@ -115,6 +115,18 @@ func TestInvalidTopologyIsRejected(t *testing.T) {
 	}
 }
 
+// C6's blocking node — a run parked waiting for a human decision. Missing from validKinds
+// made kern-orch's own step event a 400 the instant a graph used one; caught only by
+// running the real thing end to end, not by a unit test that never touched the wire.
+func TestApprovalIsAValidNodeKind(t *testing.T) {
+	ev := withTopology("r1", 1, "done")
+	ev.Topology.Nodes[0].Kind = "approval"
+
+	if _, _, err := New().Apply(ev); err != nil {
+		t.Errorf("Apply: %v, want approval accepted as a node kind", err)
+	}
+}
+
 func TestEmptyFailureMessageIsRejected(t *testing.T) {
 	ev := event("r1", 1)
 	ev.Error = &Failure{Message: "  "}

@@ -1,7 +1,8 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach } from 'vitest'
 import { ConversationStone } from './ConversationStone'
 import { fr } from '../i18n/fr'
+import type { Run } from '../runs/types'
 
 // jsdom reports a zero-sized layout, so pointer dragging cannot be exercised meaningfully
 // here — the arithmetic it relies on is covered in stone.test.ts. What matters at this
@@ -98,4 +99,256 @@ it('survives a storage that refuses to answer', () => {
   expect(screen.getByPlaceholderText(fr.chat.placeholder)).toBeInTheDocument()
 
   vi.restoreAllMocks()
+})
+
+function answer(status: number, body?: unknown) {
+  return vi.fn().mockResolvedValue({
+    ok: status >= 200 && status < 300,
+    status,
+    statusText: 'error',
+    json: async () => body,
+  } as Response)
+}
+
+const sampleRun: Run = {
+  id: 'r1',
+  graph: 'review',
+  status: 'running',
+  step: 1,
+  frontier: ['a'],
+  started_at: '2026-07-30T12:00:00Z',
+  updated_at: '2026-07-30T12:00:00Z',
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
+
+it('dispatches a /skill-name command and shows the tool value', async () => {
+  vi.stubGlobal(
+    'fetch',
+    answer(200, { kind: 'tool', result: { label: 'Battement', value: '17:09', as_of: '' } }),
+  )
+
+  render(<ConversationStone stateColour="var(--state-idle)" />)
+  const input = screen.getByPlaceholderText(fr.chat.placeholder)
+
+  fireEvent.change(input, { target: { value: '/heartbeat' } })
+  fireEvent.keyDown(input, { key: 'Enter' })
+
+  await waitFor(() => expect(screen.getByText('Battement : 17:09')).toBeInTheDocument())
+  expect(input).toHaveValue('')
+})
+
+it('dispatches a /skill-name command that launches a run', async () => {
+  vi.stubGlobal('fetch', answer(200, { kind: 'run', run_id: 'abc123' }))
+
+  render(<ConversationStone stateColour="var(--state-idle)" />)
+  const input = screen.getByPlaceholderText(fr.chat.placeholder)
+
+  fireEvent.change(input, { target: { value: '/planner analyse ceci' } })
+  fireEvent.keyDown(input, { key: 'Enter' })
+
+  await waitFor(() => expect(screen.getByText(fr.chat.launched('planner'))).toBeInTheDocument())
+})
+
+it('nudges the open mission with a plain message', async () => {
+  const fetchMock = answer(202, { status: 'queued' })
+  vi.stubGlobal('fetch', fetchMock)
+
+  render(<ConversationStone stateColour="var(--state-idle)" selectedRun={sampleRun} />)
+  const input = screen.getByPlaceholderText(fr.chat.placeholder)
+
+  fireEvent.change(input, { target: { value: 'bonjour' } })
+  fireEvent.keyDown(input, { key: 'Enter' })
+
+  await waitFor(() => expect(screen.getByText(fr.chat.sentToRun('review'))).toBeInTheDocument())
+  const [url, init] = fetchMock.mock.calls[0]
+  expect(url).toBe('/api/v1/runs/r1/nudge')
+  expect(JSON.parse(init.body as string)).toEqual({ key: 'message', value: 'bonjour' })
+})
+
+it('explains that a plain message needs an open mission', async () => {
+  render(<ConversationStone stateColour="var(--state-idle)" />)
+  const input = screen.getByPlaceholderText(fr.chat.placeholder)
+
+  fireEvent.change(input, { target: { value: 'bonjour' } })
+  fireEvent.keyDown(input, { key: 'Enter' })
+
+  await waitFor(() => expect(screen.getByText(fr.chat.needsATarget)).toBeInTheDocument())
+})
+
+it('asks for confirmation before dispatching a -auto command, without dispatching yet', async () => {
+  const fetchMock = answer(200, { kind: 'run', run_id: 'abc123' })
+  vi.stubGlobal('fetch', fetchMock)
+
+  render(<ConversationStone stateColour="var(--state-idle)" />)
+  const input = screen.getByPlaceholderText(fr.chat.placeholder)
+
+  fireEvent.change(input, { target: { value: '/community-management-agency-auto publie ceci' } })
+  fireEvent.keyDown(input, { key: 'Enter' })
+
+  await waitFor(() =>
+    expect(screen.getByRole('dialog', { name: fr.chat.autoConfirmTitle })).toBeInTheDocument(),
+  )
+  expect(fetchMock).not.toHaveBeenCalled()
+})
+
+it('dispatches the -auto command only after explicit confirmation', async () => {
+  const fetchMock = answer(200, { kind: 'run', run_id: 'abc123' })
+  vi.stubGlobal('fetch', fetchMock)
+
+  render(<ConversationStone stateColour="var(--state-idle)" />)
+  const input = screen.getByPlaceholderText(fr.chat.placeholder)
+
+  fireEvent.change(input, { target: { value: '/community-management-agency-auto publie ceci' } })
+  fireEvent.keyDown(input, { key: 'Enter' })
+  const dialog = await screen.findByRole('dialog', { name: fr.chat.autoConfirmTitle })
+
+  fireEvent.click(within(dialog).getByRole('button', { name: fr.chat.autoConfirmConfirm }))
+
+  await waitFor(() =>
+    expect(screen.getByText(fr.chat.launched('community-management-agency-auto'))).toBeInTheDocument(),
+  )
+  expect(fetchMock).toHaveBeenCalled()
+  const [url, init] = fetchMock.mock.calls[0]
+  expect(url).toBe('/api/v1/dispatch')
+  expect(JSON.parse(init.body as string)).toEqual({
+    skill: 'community-management-agency-auto',
+    text: 'publie ceci',
+  })
+})
+
+it('cancels a -auto command without dispatching, keeping the message for editing', async () => {
+  const fetchMock = answer(200, { kind: 'run', run_id: 'abc123' })
+  vi.stubGlobal('fetch', fetchMock)
+
+  render(<ConversationStone stateColour="var(--state-idle)" />)
+  const input = screen.getByPlaceholderText(fr.chat.placeholder)
+
+  fireEvent.change(input, { target: { value: '/community-management-agency-auto publie ceci' } })
+  fireEvent.keyDown(input, { key: 'Enter' })
+  const dialog = await screen.findByRole('dialog', { name: fr.chat.autoConfirmTitle })
+
+  fireEvent.click(within(dialog).getByRole('button', { name: fr.chat.autoConfirmCancel }))
+
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  expect(fetchMock).not.toHaveBeenCalled()
+  expect(input).toHaveValue('/community-management-agency-auto publie ceci')
+})
+
+it('dispatches a non--auto command immediately, with no confirmation step', async () => {
+  const fetchMock = answer(200, { kind: 'run', run_id: 'abc123' })
+  vi.stubGlobal('fetch', fetchMock)
+
+  render(<ConversationStone stateColour="var(--state-idle)" />)
+  const input = screen.getByPlaceholderText(fr.chat.placeholder)
+
+  fireEvent.change(input, { target: { value: '/community-management-agency publie ceci' } })
+  fireEvent.keyDown(input, { key: 'Enter' })
+
+  await waitFor(() =>
+    expect(screen.getByText(fr.chat.launched('community-management-agency'))).toBeInTheDocument(),
+  )
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+})
+
+it('uploads an attached file before dispatching, then dispatches with the returned path', async () => {
+  const fetchMock = vi.fn().mockImplementation((url: string) => {
+    if (url === '/api/v1/uploads') {
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        statusText: 'ok',
+        json: async () => ({ path: '/inbox/1_dossier.pdf' }),
+      } as Response)
+    }
+    return Promise.resolve({
+      ok: true,
+      status: 200,
+      statusText: 'ok',
+      json: async () => ({ kind: 'run', run_id: 'abc123' }),
+    } as Response)
+  })
+  vi.stubGlobal('fetch', fetchMock)
+
+  render(<ConversationStone stateColour="var(--state-idle)" />)
+  const attachInput = screen.getByLabelText(fr.chat.attach, { selector: 'input' })
+  const file = new File(['contenu'], 'dossier.pdf', { type: 'application/pdf' })
+  fireEvent.change(attachInput, { target: { files: [file] } })
+
+  const input = screen.getByPlaceholderText(fr.chat.placeholder)
+  fireEvent.change(input, { target: { value: '/courtage-extraction' } })
+  fireEvent.keyDown(input, { key: 'Enter' })
+
+  await waitFor(() =>
+    expect(screen.getByText(fr.chat.launched('courtage-extraction'))).toBeInTheDocument(),
+  )
+
+  const uploadCall = fetchMock.mock.calls.find(([url]) => url === '/api/v1/uploads')
+  expect(uploadCall).toBeTruthy()
+  const dispatchCall = fetchMock.mock.calls.find(([url]) => url === '/api/v1/dispatch')
+  expect(JSON.parse((dispatchCall![1] as RequestInit).body as string)).toEqual({
+    skill: 'courtage-extraction',
+    text: '/inbox/1_dossier.pdf',
+  })
+})
+
+it('shows an error and does not dispatch when the upload fails', async () => {
+  const fetchMock = vi.fn().mockResolvedValue({
+    ok: false,
+    status: 502,
+    statusText: 'error',
+    json: async () => ({ error: 'kern-orch injoignable' }),
+  } as Response)
+  vi.stubGlobal('fetch', fetchMock)
+
+  render(<ConversationStone stateColour="var(--state-idle)" />)
+  const attachInput = screen.getByLabelText(fr.chat.attach, { selector: 'input' })
+  fireEvent.change(attachInput, { target: { files: [new File(['x'], 'x.pdf')] } })
+
+  const input = screen.getByPlaceholderText(fr.chat.placeholder)
+  fireEvent.change(input, { target: { value: '/courtage-extraction' } })
+  fireEvent.keyDown(input, { key: 'Enter' })
+
+  await waitFor(() => expect(screen.getByText(fr.chat.uploadFailed)).toBeInTheDocument())
+  expect(fetchMock.mock.calls.some(([url]) => url === '/api/v1/dispatch')).toBe(false)
+})
+
+it('removing the attachment falls back to plain typed text', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      statusText: 'ok',
+      json: async () => ({ kind: 'run', run_id: 'abc123' }),
+    } as Response),
+  )
+
+  render(<ConversationStone stateColour="var(--state-idle)" />)
+  const attachInput = screen.getByLabelText(fr.chat.attach, { selector: 'input' })
+  fireEvent.change(attachInput, { target: { files: [new File(['x'], 'x.pdf')] } })
+
+  fireEvent.click(screen.getByRole('button', { name: fr.chat.removeAttachment }))
+
+  const input = screen.getByPlaceholderText(fr.chat.placeholder)
+  fireEvent.change(input, { target: { value: '/planner analyse ceci' } })
+  fireEvent.keyDown(input, { key: 'Enter' })
+
+  await waitFor(() => expect(screen.getByText(fr.chat.launched('planner'))).toBeInTheDocument())
+})
+
+it('lists the known skills when a command names one that does not exist', async () => {
+  vi.stubGlobal('fetch', answer(404, { error: 'unknown skill', known: ['heartbeat', 'planner'] }))
+
+  render(<ConversationStone stateColour="var(--state-idle)" />)
+  const input = screen.getByPlaceholderText(fr.chat.placeholder)
+
+  fireEvent.change(input, { target: { value: '/jamais' } })
+  fireEvent.keyDown(input, { key: 'Enter' })
+
+  await waitFor(() =>
+    expect(screen.getByText(fr.chat.unknownSkill(['heartbeat', 'planner']))).toBeInTheDocument(),
+  )
 })

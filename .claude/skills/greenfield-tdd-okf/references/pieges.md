@@ -12,6 +12,11 @@ stack du projet en cours — inutile de charger le reste en contexte.
   pour que l'app tourne sans config ; le vrai transport s'active si la variable d'env est présente.
 - Rendre en headless une page protégée : jeton court (JWT) lié au chemin, autorisé dans le proxy.
 - Intl fr-FR : séparateurs = espaces insécables ; comparer via le formateur, pas une chaîne écrite.
+- Un DSL de sécurité (profil sandbox, règle firewall, policy…) dont un exemple public utilise
+  une syntaxe donnée ne prouve pas que cette syntaxe couvre le cas voulu — vérifier contre le
+  vrai moteur avant d'écrire une doc ou un plan dessus (2026-07-31, kern-exec : `(remote ip
+  "1.2.3.4:443")` de Seatbelt *parse*, mais `host` n'accepte que `*`/`localhost` en vrai —
+  aucun exemple trouvé en ligne ne le disait, seul `sandbox-exec` lui-même l'a montré).
 
 ## Next 16 / TypeScript (2026-07, projet CRM_TEAM)
 - npm workspaces + `exports` + `turbopack.root` pour un package TS partagé.
@@ -47,3 +52,7 @@ stack du projet en cours — inutile de charger le reste en contexte.
   suppression. Valable tant que la charge tient dans un paquet.
 - Vérifier un état « en cours » en E2E demande un vrai travail lent : un stub instantané
   montre l'état final et laisse croire que la dérivation marche.
+- **Struct Go sans tag `json:"..."` → sérialise en PascalCase sur le fil.** `go test`
+  ne le voit jamais (assertions sur la struct décodée, pas sur le JSON brut) ; seul un
+  vrai `curl` contre le serveur le révèle. Poser les tags dès l'écriture d'un type destiné
+  à un contrat, pas après coup.

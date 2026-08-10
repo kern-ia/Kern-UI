@@ -6,7 +6,10 @@
   background: var(--backdrop);
 }
 
-.header {
+/* Slim top bar: brand + current view, status on the right. Navigation lives in the
+   sidebar below (.sidebar), not here — one shell structure for every client, only
+   tokens (brand-*.css) and copy (i18n/*.ts) vary per brand. */
+.topbar {
   position: sticky;
   top: 0;
   z-index: 10;
@@ -14,6 +17,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
+  flex: none;
   min-height: var(--header-height);
   padding: var(--space-3) var(--space-4);
   background: rgba(10, 8, 6, 0.55);
@@ -22,16 +26,33 @@
 }
 
 @media (min-width: 900px) {
-  .header {
+  .topbar {
     padding: 0 var(--space-5);
   }
 }
 
 .brand {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: var(--space-2);
   flex: none;
+}
+
+.brandSep {
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.brandContext {
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+/* The whole shell below the top bar: sidebar + content, side by side on desktop. */
+.body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
 }
 
 .beacon {
@@ -53,44 +74,70 @@
   color: var(--gold);
 }
 
-/* Desktop navigation: the six tabs of the mockup, centred in the header. */
-.nav {
+/* Desktop navigation: a fixed sidebar, hidden below 900px in favour of .mobileNav —
+   same breakpoint the old centred tab row used to toggle on. */
+.sidebar {
   display: none;
-  gap: var(--space-1);
+  flex-direction: column;
+  gap: 3px;
+  flex: none;
+  width: 216px;
+  padding: var(--space-4) var(--space-3);
+  border-right: 1px solid var(--border-soft);
+  overflow-y: auto;
 }
 
 @media (min-width: 900px) {
-  .nav {
+  .sidebar {
     display: flex;
   }
 }
 
-.tab {
+.sidebarSection {
+  margin: var(--space-4) 0 var(--space-1);
+  padding: 0 var(--space-3);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.sidebarSection:first-child {
+  margin-top: 0;
+}
+
+.navItem {
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 8px 16px;
+  gap: 11px;
+  width: 100%;
+  padding: 9px var(--space-3);
   border: 0;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius);
   background: transparent;
   color: var(--text-muted);
   font-family: var(--font-body);
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 500;
+  text-align: left;
   cursor: pointer;
   transition: background 0.2s ease, color 0.2s ease;
 }
 
-.tab:hover {
+.navItem:hover {
   background: var(--surface-veil);
 }
 
-.tab[aria-selected='true'] {
-  background: var(--gold);
-  color: var(--surface-base);
+.navItem[aria-selected='true'] {
+  background: var(--surface-veil-strong);
+  color: var(--gold);
 }
 
-.tabGlyph {
+.navGlyph {
+  flex: none;
+  width: 18px;
+  text-align: center;
   font-size: 15px;
   line-height: 1;
 }
@@ -103,13 +150,45 @@
 }
 
 .statePill,
-.connection {
+.connection,
+.statusPill {
   display: flex;
   align-items: center;
   gap: 7px;
   font-size: 11px;
   letter-spacing: var(--tracking-label);
   color: var(--text-muted);
+}
+
+/* A count pill (e.g. dossiers actifs) — pill-shaped, quiet border, only shown by
+   brands with a dossiers concept. */
+.statusPill {
+  display: none;
+  padding: 6px 12px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-pill);
+}
+
+@media (min-width: 720px) {
+  .statusPill {
+    display: flex;
+  }
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  color: var(--gold);
+  font-family: var(--font-body);
+  font-size: 10.5px;
+  font-weight: 700;
 }
 
 .dot {
@@ -132,11 +211,13 @@
   }
 }
 
+/* Relative: ConversationStone positions itself against this element (see
+   shell/stone.ts) — mounting it here rather than at the shell's root means "dock left"
+   means the edge of the content pane, not the edge of the screen past the sidebar. */
 .main {
+  position: relative;
   flex: 1;
-  width: 100%;
-  max-width: 1180px;
-  margin: 0 auto;
+  min-width: 0;
   padding: var(--space-5) var(--space-4) var(--space-6);
 }
 
@@ -146,10 +227,13 @@
   }
 }
 
-/* Mobile navigation: the reduced set, docked under the conversation bar. */
+/* Mobile navigation: the reduced set, docked at the bottom.
+   Above the conversation stone on purpose — a stone parked over the tabs makes the whole
+   interface unreachable, and the stone is draggable where the navigation is not. */
 .mobileNav {
   position: sticky;
   bottom: 0;
+  z-index: 50;
   display: flex;
   justify-content: space-around;
   padding: var(--space-2) var(--space-1);
@@ -212,4 +296,56 @@
   font-size: 11.5px;
   letter-spacing: var(--tracking-label);
   color: var(--text-dim);
+}
+
+/* Who is logged in, and the way out. Quiet: it is not what anyone came to look at. */
+.signOut {
+  padding: var(--space-1) var(--space-3);
+  font-family: var(--font-body);
+  font-size: 11.5px;
+  letter-spacing: var(--tracking-label);
+  color: var(--text-dim);
+  background: none;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+
+.signOut:hover {
+  color: var(--gold);
+  border-color: var(--border);
+}
+
+.redactionBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.redactionTabs {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.redactionTab {
+  padding: var(--space-2) var(--space-4);
+  font-family: var(--font-body);
+  font-size: 12px;
+  letter-spacing: var(--tracking-label);
+  color: var(--text-dim);
+  background: none;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+
+.redactionTab:hover {
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.redactionTab[aria-selected='true'] {
+  color: var(--gold);
+  border-color: var(--border);
+  background: var(--surface-veil-strong);
 }

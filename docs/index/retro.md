@@ -295,3 +295,168 @@ l'attente avait seulement migré du moteur vers la sortie du processus.
 - L'honnêteté et la lisibilité ne s'opposaient pas : dire « la mémoire n'est pas branchée »
   est aussi vrai que « attend kern-memory », et compréhensible. Quand les deux semblent
   s'opposer, c'est souvent qu'on n'a pas cherché la bonne formulation.
+
+## 2026-07-28 — authentification de l'API
+
+**A fonctionné**
+- Chercher dans la bibliothèque standard avant d'ajouter une dépendance : `crypto/pbkdf2`
+  est entré en Go 1.24. kern-ui garde zéro dépendance, ce qui est la raison pour laquelle
+  cinq cibles se compilent en une commande.
+- Faire échouer le DÉMARRAGE plutôt qu'avertir. Un avertissement dans un journal se rate le
+  premier jour chargé ; une API ouverte ne s'annonce pas.
+- Écrire les tests de refus avant les tests d'acceptation : c'est en listant les endpoints à
+  protéger qu'apparaît celui qu'on allait oublier.
+
+**À surveiller**
+- Un jeton non configuré doit refuser TOUT, pas tout accepter. C'est le cas le plus probable
+  d'un mauvais déploiement, et le plus facile à écrire à l'envers.
+- Le temps de réponse d'une page de connexion est une information : sans haché leurre, un
+  compte inconnu répond plus vite et la page devient un annuaire du personnel.
+- L'authentification sans TLS ne protège que d'un curieux, pas d'un réseau. Livrer l'une en
+  laissant croire que l'autre est faite serait pire que de n'avoir rien livré.
+
+## 2026-07-28 — TLS
+
+**A fonctionné**
+- Reprendre le raisonnement de la veille plutôt qu'en inventer un autre : « un avertissement
+  se rate » valait pour les identifiants manquants, il vaut pour le clair. Cohérence obtenue
+  en réutilisant l'argument, pas en le redécouvrant.
+- Nommer les trois issues dans le message de refus. Un refus sans issue se contourne par la
+  première variable d'environnement trouvée sur un forum.
+
+**À surveiller**
+- **Un drapeau de sécurité qui dépend de la connexion locale est faux derrière un proxy.**
+  `r.TLS` est nul alors que le navigateur a bien utilisé https : le cookie partait sans
+  `Secure`. Le défaut datait de la veille et aucun test ne le voyait, parce que tous les
+  tests parlent directement au routeur — jamais à travers un intermédiaire.
+- Croire un en-tête `X-Forwarded-*` par défaut, c'est laisser l'appelant décider qu'il est
+  en sécurité. Toujours conditionner à une déclaration explicite d'exploitation.
+
+## 2026-07-28 — rendu mobile
+
+**Le constat qui compte**
+132 tests au vert et une interface **inutilisable sur téléphone** : la navigation était
+masquée par la pierre de conversation. Aucun test ne pouvait le voir — ils rendent des
+composants dans un DOM sans dimensions, où aucune media query ne s'applique et où rien ne se
+superpose. **Une suite verte ne dit rien de la mise en page.**
+
+**A fonctionné**
+- Contourner l'outil défaillant plutôt que de reporter encore : `resize_window` ne marche pas,
+  mais trois `<iframe>` aux largeurs d'appareils déclenchent les vraies media queries et
+  montrent trois tailles côte à côte.
+- Corriger un défaut en a révélé un autre : réserver la bande du bas a fait disparaître la
+  pierre, parce qu'une position mémorisée n'était pas recadrée. Regarder l'écran APRÈS chaque
+  correction, pas seulement après la dernière.
+
+**À surveiller**
+- Un point de rupture dupliqué entre CSS et JS finit toujours par diverger. Le mettre dans une
+  variable CSS et le lire depuis le JS garde une seule source.
+- Une contrainte écrite dans CLAUDE.md et jamais vérifiée reste fausse pendant des mois. Celle
+  du responsive datait du premier jour.
+
+## 2026-07-29/30 — C6 (proxy kern-ui : stop/nudge/decide/dispatch)
+
+**A fonctionné**
+- Même forme que C5 (`internal/tools` → `internal/steer`) : client typé, `Enabled()`,
+  erreurs typées (`InvalidInputError`, `UnknownSkillError`) plutôt que des chaînes à
+  parser. La deuxième fois qu'un patron se répète, l'écrire devient un copier-coller
+  informé plutôt qu'une nouvelle conception.
+- L'acteur ne vient JAMAIS du corps de la requête côté kern-ui : lu depuis la session
+  (`s.currentUser(r)`), jamais depuis ce que le navigateur prétend. kern-orch, lui, fait
+  confiance à l'acteur transmis — deux niveaux de confiance différents, documentés comme
+  tels plutôt que mélangés.
+
+**Le bug que seul le vrai kern-orch + le vrai kern-ui a montré**
+- `requester` sur un run dispatché n'atteignait jamais la projection de kern-ui : le champ
+  existait bien côté `report.StepEvent`… sauf qu'il n'avait en fait jamais été ajouté —
+  écart entre le plan et le code, découvert seulement en lisant les logs kern-orch
+  (« sink answered 400 Bad Request »).
+- Une fois corrigé, un DEUXIÈME bug est apparu derrière : kern-ui rejetait purement et
+  simplement l'événement `steer.yaml` avec `kind: approval` — `validKinds` côté
+  `projection.go` ne connaissait que `tool|agent|subgraph`. Le nouveau type de nœud du
+  moteur kern-orch (C6) n'avait jamais été répercuté sur la liste kern-ui qui valide la
+  topologie reçue. Aucun test unitaire des deux côtés ne pouvait le voir : chacun testait
+  contre sa propre idée du contrat, pas contre l'autre application réelle.
+
+**Règle à retenir**
+- Un nouveau `Kind`/type de nœud côté kern-orch est un CHANGEMENT DE CONTRAT, pas un détail
+  interne au moteur — toute liste de kinds valides côté consommateur (ici
+  `projection.validKinds`) doit être mise à jour dans la MÊME feature, pas découverte à
+  l'usage. Chercher `validKinds`/équivalent chez le consommateur dès qu'un `Kind` nouveau
+  apparaît côté producteur.
+
+## 2026-07-30 — C6 (front : bouton Arrêter, panneau d'approbation, chat vivant)
+
+**A fonctionné**
+- Remonter la sélection de mission dans `AppShell` plutôt que la garder locale à
+  `AgentsView` : la pierre de conversation en avait besoin pour savoir quelle mission
+  nudger, et un état possédé par le mauvais composant se découvre toujours à l'usage, pas
+  à la conception.
+- Un panneau à côté de la ruche plutôt que des boutons dans le SVG pour l'approbation : la
+  maquette n'a jamais dessiné d'entrée sur un nœud, et deviner un emplacement aurait été
+  plus risqué que de sortir du canevas.
+
+**Un troisième bug, trouvé en pilotant le vrai navigateur jusqu'au bout**
+- Après avoir corrigé le signal d'activité côté kern-orch (voir son propre retro), le
+  panneau d'approbation restait quand même invisible : `examples/steer.yaml` avait
+  l'approbation comme nœud d'ENTRÉE, et la topologie (donc savoir qu'un nœud est de type
+  `approval`) ne voyage que sur le premier step event — qui n'arrive jamais tant que rien
+  n'est décidé quand ce premier nœud EST l'approbation. Aucun test unitaire ne pouvait le
+  voir : chaque côté testait son propre bout du contrat, jamais la vraie séquence
+  événementielle qu'un humain regarde à l'écran.
+- Corrigé côté exemple (réordonné), pas côté protocole. Consigné comme limite connue plutôt
+  que résolu en profondeur : une approbation en tout premier nœud d'un graphe restera sans
+  chemin d'interface tant que le signal d'activité ne portera pas aussi le type du nœud.
+
+**Règle à retenir**
+- Trois bugs cette feature, tous invisibles en tests unitaires isolés, tous trouvés en
+  pilotant réellement les deux binaires ensemble jusqu'au clic final. Une fonctionnalité de
+  pilotage (C6) est exactement le genre de chemin qu'aucune suite de tests séparée ne peut
+  garantir de bout en bout — la vérifier au clavier n'est pas une option, c'est la seule
+  preuve qui compte ici.
+
+## 2026-07-30 — C8 (kern-memory + proxy + Rédaction)
+
+**A fonctionné**
+- Réutiliser tel quel le contrat C5/C6 (`Client` typé, `Enabled()`, erreurs typées, non
+  configuré lu comme 404) pour `internal/memory` : aucune surprise, aucun aller-retour —
+  troisième fois que cette forme sert, elle est maintenant le patron par défaut d'un client
+  vers une autre brique.
+- `relativeUpdate` gardé pur (retourne `{unit, count}`, jamais de texte) avec `fr.ts` qui
+  compose le français par-dessus : la règle du repo sur le vocabulaire tenue sans effort
+  parce que la fonction n'avait tout simplement pas la possibilité de contenir du texte.
+
+**Un piège, retrouvé et corrigé dans la foulée**
+- Le commit de la feature `c8-frontend` est parti directement sur `dev` : la branche
+  `feature/c8-frontend` n'avait jamais été créée avant l'édition des fichiers (contrairement
+  aux deux branches précédentes de cette même feature, où `git checkout -b` avait bien été
+  fait en premier). Repéré immédiatement après le commit, au moment du merge — corrigé en
+  créant la branche a posteriori sur ce commit, puis `git reset --hard` de `dev` juste avant,
+  puis un vrai merge `--no-ff`. Même catégorie d'oubli que celui du frontend C6 (voir le
+  retro de kern-orch, C6) : à chaque nouvelle feature, `git checkout -b` est la toute
+  première commande, avant le premier `Write`.
+
+## 2026-08-05 — hive-timeline-cards
+
+**A fonctionné**
+- Centraliser la traduction id→texte DANS les fonctions de `fr.ts` (`nodeInfo` appelé par
+  `selectNode`/`openNested`/etc, pas par les appelants) plutôt que de la faire faire aux
+  composants : les tests existants qui appellent ces fonctions avec l'id brut sont restés
+  corrects sans une seule modification, parce qu'ils traversent la même traduction que le
+  rendu réel. Un vrai bénéfice concret de la convention "tout le texte affiché est dans un
+  seul fichier" déjà en place — ce n'est pas la première fois qu'elle rapporte (voir
+  `vocabulaire-demo.md`).
+- Rejouer le bug réel (dispatch de `community-management-agency`, capturé dans une session
+  précédente) comme cas de test avant de toucher au layout : `hive.test.ts` reproduit la
+  forme exacte du graphe qui écrasait 6 nœuds sur un rang, donc la correction est vérifiée
+  contre le vrai bug, pas contre une intuition de ce qui le causait.
+
+**Un piège**
+- Un test (`does not repeat the legend inside a nested hive`) comptait tout le texte
+  "Actif" affiché — cassé par les nouvelles cartes qui montrent aussi leur propre statut en
+  texte. Le test testait une intention plus précise ("la légende ne se répète pas") que ce
+  qu'il vérifiait ("il n'y a qu'un seul Actif à l'écran") ; les deux coïncidaient par
+  accident tant qu'aucun autre élément n'affichait ce mot. Corrigé en scopant l'assertion à
+  la légende elle-même (`within(getByRole('list'))`). Piège générique : un test qui compte
+  du texte sur toute la page vérifie souvent moins que ce que son nom promet — quand
+  possible, scoper au conteneur dont le nom du test parle.

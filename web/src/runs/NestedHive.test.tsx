@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { HiveGraph } from './HiveGraph'
 import { fr } from '../i18n/fr'
 import type { Run } from './types'
@@ -82,10 +82,81 @@ it('offers nothing on a node that is not a subgraph', () => {
 })
 
 // The legend is a key to the colours, and one is enough on screen: repeating it inside
-// every nested hive turns a reading aid into clutter.
+// every nested hive turns a reading aid into clutter. Cards each carry their own status
+// text too now (readable without relying on colour alone), so the count that matters is
+// the legend's own list, not every "Actif" on screen.
 it('does not repeat the legend inside a nested hive', () => {
   render(<HiveGraph run={parent} runs={[parent, child]} />)
   fireEvent.click(screen.getByRole('button', { name: fr.hive.openNested('nested') }))
 
-  expect(screen.getAllByText(fr.hive.status.active)).toHaveLength(1)
+  expect(screen.getAllByRole('list')).toHaveLength(1)
+  expect(within(screen.getByRole('list')).getAllByText(fr.hive.status.active)).toHaveLength(1)
+})
+
+// A mission is not just coloured dots — clicking a node shows what it actually produced,
+// via the "display:<nodeId>" convention any node handler can opt into.
+it('shows a node\'s real output once clicked', () => {
+  const withOutput: Run = { ...parent, state: { 'display:prep': 'Bonjour, voici la fiche.' } }
+  render(<HiveGraph run={withOutput} runs={[withOutput, child]} />)
+
+  fireEvent.click(screen.getByRole('button', { name: fr.hive.selectNode('prep') }))
+
+  expect(screen.getByText('Bonjour, voici la fiche.')).toBeInTheDocument()
+})
+
+it('says a node has nothing to show yet, rather than nothing at all', () => {
+  render(<HiveGraph run={parent} runs={[parent, child]} />)
+
+  fireEvent.click(screen.getByRole('button', { name: fr.hive.selectNode('prep') }))
+
+  expect(screen.getByText(fr.hive.nodeOutputPending)).toBeInTheDocument()
+})
+
+it('closes the node detail again', () => {
+  const withOutput: Run = { ...parent, state: { 'display:prep': 'Bonjour, voici la fiche.' } }
+  render(<HiveGraph run={withOutput} runs={[withOutput, child]} />)
+
+  fireEvent.click(screen.getByRole('button', { name: fr.hive.selectNode('prep') }))
+  fireEvent.click(screen.getByRole('button', { name: fr.hive.closeNode('prep') }))
+
+  expect(screen.queryByText('Bonjour, voici la fiche.')).not.toBeInTheDocument()
+})
+
+// An agent's own output is markdown (headers, bold, lists — see any real strategiste
+// output). Showing it as literal asterisks and hashes is not the same as showing nothing;
+// it is showing the wrong thing.
+it("renders a node's output as formatted markdown, not literal markup characters", () => {
+  const withOutput: Run = {
+    ...parent,
+    state: { 'display:prep': '## Brief\n\n**Angle** : parler concret, pas de jargon.' },
+  }
+  render(<HiveGraph run={withOutput} runs={[withOutput, child]} />)
+
+  fireEvent.click(screen.getByRole('button', { name: fr.hive.selectNode('prep') }))
+
+  expect(screen.getByRole('heading', { name: 'Brief' })).toBeInTheDocument()
+  expect(screen.getByText('Angle').tagName).toBe('STRONG')
+  expect(screen.queryByText(/\*\*Angle\*\*/)).not.toBeInTheDocument()
+})
+
+// A card's own content is meant to take the reading space it needs — a fixed small box
+// under the timeline was not enough for a real agent output (see the LinkedIn strategy
+// brief from the live community-management-agency run).
+it('opens the node detail as a full-screen dialog', () => {
+  const withOutput: Run = { ...parent, state: { 'display:prep': 'Bonjour, voici la fiche.' } }
+  render(<HiveGraph run={withOutput} runs={[withOutput, child]} />)
+
+  fireEvent.click(screen.getByRole('button', { name: fr.hive.selectNode('prep') }))
+
+  expect(screen.getByRole('dialog', { name: fr.hive.nodeInfo('prep').name })).toBeInTheDocument()
+})
+
+it('closes the full-screen detail on Escape', () => {
+  const withOutput: Run = { ...parent, state: { 'display:prep': 'Bonjour, voici la fiche.' } }
+  render(<HiveGraph run={withOutput} runs={[withOutput, child]} />)
+
+  fireEvent.click(screen.getByRole('button', { name: fr.hive.selectNode('prep') }))
+  fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
+
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 })

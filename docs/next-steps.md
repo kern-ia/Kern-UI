@@ -5,6 +5,95 @@ Written 2026-07-26, updated 2026-07-27 when the skills registry shipped. Read th
 
 ---
 
+## Où j'en suis
+
+> Bloc court, tenu à jour **à chaque feature fusionnée** — pas seulement en fin de session.
+> Il existe pour qu'une reprise n'ait pas à relire le code. Le reste du fichier donne le
+> pourquoi ; celui-ci donne la position.
+
+**Dernier livré** — 2026-07-30 : **C6 v1 complet**, quatre branches à travers kern-orch et
+kern-ui, plus deux correctifs trouvés en vérifiant en réel :
+1. **Pilotage d'un run déjà lancé** (kern-orch) — `stop`/`nudge`/`decide` : un nœud
+   `type: approval` bloque réellement (réutilise le concurrency model existant), `nudge`
+   s'applique entre deux niveaux, `stop` annule le contexte du run. Chaque run porte
+   maintenant un `Requester` (vide = ouvert à tous, comme avant).
+2. **Lancement depuis le chat** (kern-orch) — `POST /api/v1/dispatch` : `/skill texte…`
+   invoque un tool directement (délègue à C5) ou lance un run à un nœud pour un skill
+   `type: agent` (le texte devient le prompt entier, aucun gabarit).
+3. **Proxy kern-ui** — quatre endpoints session-protégés qui présentent l'acteur de la
+   session, jamais celui du corps de la requête.
+4. **Front kern-ui** — bouton « Arrêter » sur la ruche (désactivé + expliqué si un autre
+   demandeur a lancé le run), panneau « Valider »/« Refuser » à côté du graphe, pierre de
+   conversation devenue vivante (`/skill` ou message simple qui nudge la mission ouverte).
+
+**Trois bugs réels, aucun visible en tests unitaires isolés, tous trouvés en pilotant les
+deux vrais binaires ensemble** (détails dans `docs/index/retro.md` des deux dépôts,
+2026-07-29/30) : `Requester` jamais ajouté pour de vrai au contrat `report.StepEvent` malgré
+le plan ; `projection.validKinds` côté kern-ui ignorait le nouveau `kind: approval` ;
+un run parqué sur une approbation ne rapportait rien à kern-ui avant d'être décidé (corrigé
+en réutilisant le signal d'activité C10). **Limite connue, non résolue** : une approbation
+en tout premier nœud d'un graphe n'a aucun chemin d'interface pour être décidée — le signal
+d'activité ne porte pas le type du nœud.
+
+`dev` à jour dans les deux dépôts, `main` toujours pas repositionné depuis le jalon
+2026-07-28. Avant ça : C12 (`kern-notify`) + C5 (Espace) livrés le 2026-07-29 ; avant ça,
+backend Linux réel pour `kern-exec` (`landlock` + espace de noms réseau), vérifié dans une
+vraie VM ; avant ça, le câblage `kern-exec` ↔ kern-orch sur macOS.
+
+**Asymétrie Linux à connaître** : `landlock` ne couvre que les fichiers (son propre contrôle
+réseau, ABI4+, ne restreint que TCP par port — UDP passerait). Le réseau se coupe par un
+espace de noms réseau vide à la place. Sans droits root, le créer exige un espace de noms
+utilisateur, qu'Ubuntu 24.04+ bloque par défaut — sur une telle machine sans root,
+**kern-exec refuse purement et simplement** de lancer une commande avec réseau interdit
+plutôt que de replier sur une garantie plus faible en silence. Vérifié dans les deux sens
+(root et non-root) sur la même VM.
+
+**La VM colima est arrêtée** après usage (elle consommait 8 Go de RAM alloués) ; `colima
+start` la relance en une commande si un futur travail sur le backend Linux en a besoin.
+
+**En cours** — rien. Le prochain point de la liste ci-dessous.
+
+**Ce que kern-exec débloque, et ce qu'il NE fait PAS**
+- Débloque : un agent kern-orch peut être confiné (dossiers, réseau, délai) — le trou le
+  plus ancien de la liste est enfin fermé, sur macOS.
+- Câblage prouvé le 2026-07-29, en A/B sur un vrai run kern-orch : un faux agent qui
+  lit un fichier hors périmètre y arrive en direct, échoue derrière kern-exec, le run se
+  termine proprement dans les deux cas, signal d'activité intact. **Correction au passage** :
+  `KERN_AGENT_CLI` ne porte qu'un chemin sans arguments — le câblage direct annoncé la
+  veille était inexact. La bonne forme est un script wrapper (`kern-exec/examples/wrap-agent-cli.sh`),
+  toujours sans changement de code kern-orch. Reste à décider quels dossiers autoriser pour
+  un agent donné en production — un choix produit, pas technique.
+- NE fait PAS : budgets, escalade, politique fine — ça reste `kern-policy`, non construit.
+- NE fonctionne PAS sur Linux ni Windows — refus explicite, pas une fausse protection.
+
+**Ce que le mode démon a débloqué** — une instance centralisée est possible (un process qui
+reste vivant), et c'était le prérequis de C5, livré depuis (voir ci-dessus).
+
+**Ensuite, dans l'ordre**
+1. ~~`kern-exec` — le bac à sable.~~ Fait, macOS + Linux, refus explicite sur Windows.
+2. ~~`kern-orch` en démon~~ Fait, 2026-07-28.
+3. ~~`C12` — la messagerie~~ Fait, 2026-07-29 (`kern-notify`, notifications seules).
+4. ~~C5 — les valeurs de l'Espace~~ Fait, 2026-07-29 (EPIC-03 + Espace kern-ui).
+5. ~~`C6` v1 — arrêter, valider/refuser, nudger un run en cours + lancer depuis le chat~~
+   Fait, 2026-07-30. `Requester` porté par chaque run (vide = ouvert à tous). Périmètre
+   volontairement pas couvert : `queue`/`replan` au sens large d'EPIC-05, l'interprétation
+   en langage naturel d'un message sans `/commande` (nommée comme direction future, pas
+   cadrée), et une approbation en tout premier nœud d'un graphe (limite technique connue,
+   voir `docs/retro.md`).
+6. **Prochain sujet à choisir.** Rien d'ordonné pour l'instant au-delà de C6 — voir
+   `docs/expected-contracts.md` pour les contrats encore manquants (C7 Cerveau/mémoire, C8
+   Rédaction, C9 Navigateur) et `docs/ROADMAP.md` de kern-orch pour le cercle de Willis
+   (kern-guard, EPIC-07) mis de côté le 2026-07-29.
+
+**Petites choses notées, non bloquantes**
+- Les identifiants d'étapes s'affichent bruts (`prep`, `nested`). Corriger en amont dans les
+  graphes, ou ajouter un libellé optionnel au contrat.
+- Le rendu mobile est vérifié depuis le 2026-07-28, par une page qui charge l'application
+  dans un cadre à largeur de téléphone (`resize_window` ne fonctionne toujours pas). Reste à
+  confirmer sur un **vrai** appareil : le tactile et les barres du système ne se simulent pas.
+
+---
+
 ## State
 
 **kern-ui** — `dev`, 14 features merged, 117 front tests + 4 Go packages green, `main` still
@@ -31,9 +120,9 @@ cd ../Kern-Orch && KERN_STEP_REPORT_URL=http://127.0.0.1:7777/api/v1/steps \
   what is running, dashed stub where a router decides at run time.
 - **Grimoire** draws the skills catalogue kern-orch publishes: competences left, sub-agents
   right, each sub-agent coloured by whether a run is exercising it right now.
-- The four unfed views name the brick or the contract they wait for. They render no data on
-  purpose, and a test enforces that. The Espace now names C5 rather than kern-orch: it has
-  the catalogue, it lacks the readings.
+- The three still-unfed views (Cerveau, Navigateur, Rédaction) name the capability they wait
+  for. They render no data on purpose, and a test enforces that. The Espace is live since
+  2026-07-29: one card per tool with no required param, read from kern-orch on demand.
 - Floating conversation on a draggable rune stone, dockable to either edge, position
   persisted. Inert: there is nothing to talk to yet.
 - Contracts `kern.step-event/v2`, `kern.registry/v1` and `kern.activity/v1` in use, with
@@ -89,23 +178,22 @@ piece of work where Rust is clearly the better tool.
 Belongs to `kern-exec` (⬜ in the roadmap), with `kern-guard` (blocking guardrail) and
 `kern-policy` (rules, budgets, escalation) beside it.
 
-### 2. Authentication on the kern-ui API · **decided, and it is our brick**
+### 2. Authentication · **done, 2026-07-28**
 
-No longer `_à décider_`: individual accounts, mandatory. Verified long ago that
-`KERN_UI_ADDR=0.0.0.0:7777` serves a remote kern-orch correctly — and that with no auth,
-anyone reachable reads every run and can inject fake ones.
+Two credentials, because there are two kinds of caller wanting opposite things. A producer
+presents a bearer token and may only post; a person opens a cookie session and may only read.
+Neither opens the other's doors — collapsing them would mean the token configured on every
+machine also reads everything.
 
-**This is the first item on this list that belongs to kern-ui itself**, which makes it the
-natural next piece of work here. Two things travel together and should not be split:
+The binary **refuses to listen** on a public address without a token and at least one
+account. A warning scrolls past; a process that will not start does not.
 
-- a caller must prove who it is, on both the ingestion endpoints and the read ones;
-- a run must carry **who asked for it**. That field does not exist, and every run recorded
-  without it is a run that can never be attributed. It costs one field today and a migration
-  later.
+**TLS shipped the same day.** A public address is served encrypted or not at all: kern-ui
+terminates it, or a declared reverse proxy does. The refusal replaced the warning, on the
+same reasoning that produced the refusal about credentials.
 
-One question surfaces at implementation rather than before: where identities come from —
-accounts owned by Kern, or the company's directory. Worth answering before writing, not
-before planning.
+Not built, deliberately: **who asked for a mission**. No mission is started from the
+interface yet, so the field could only be empty or false. It arrives with steering.
 
 ### 3. `C5` — tool invocation and readback · **unblocked by the daemon decision**
 
@@ -185,9 +273,9 @@ behind `v0.1.0` / `v0.4.0`.
 - **No persistence.** Restarting kern-ui empties the projection. Assumed: kern-orch stays
   authoritative. The day finished-run history matters, ask kern-orch for it — do not copy it
   here.
-- **Mobile never verified visually.** `resize_window` reports success and does not resize
-  the window — confirmed again on 2026-07-27. The one-column layouts rest on a media query
-  at 720 px. Check on a real phone.
+- **Mobile verified at 2026-07-28**, through a page that loads the app inside a
+  phone-width frame — `resize_window` still does nothing. Four defects found and fixed. What
+  a frame cannot show: touch targets, the system bars, and how a real device scrolls.
 - **The Grimoire has no avatars.** The mockup shows a generative avatar per sub-agent;
   nothing generates one, so the skill's rune stands in. A placeholder image would be
   decoration pretending to be data.

@@ -1,0 +1,173 @@
+/* Vigie: a two-tile control tower — consumption gauge, live behaviour feed. Same card and
+   notice tokens as EspaceView.module.css, laid out side by side rather than as a grid. */
+
+.vigie {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(320px, 2fr);
+  gap: var(--space-4);
+  padding: var(--space-6) 40px;
+  height: 100%;
+  overflow: auto;
+  align-items: start;
+}
+
+.card {
+  padding: var(--space-4);
+  background: var(--surface-veil);
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--gold);
+  border-radius: 12px;
+}
+
+.heading {
+  margin: 0 0 var(--space-4);
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 0.03em;
+  color: var(--gold-dim);
+  text-transform: uppercase;
+}
+
+.bar {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--surface-sunken, rgba(255, 255, 255, 0.06));
+  overflow: hidden;
+  margin-bottom: var(--space-2);
+}
+
+.barFill {
+  height: 100%;
+  width: calc(var(--fraction) * 100%);
+  background: var(--gold);
+}
+
+.spentLine {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.spentValue {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--gold-muted);
+}
+
+.limitValue {
+  margin-left: auto;
+}
+
+.counters {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-3);
+}
+
+.counter dt {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.counter dd {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 16px;
+  color: var(--gold-muted);
+}
+
+.resets {
+  margin: 0;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.feedHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.connection {
+  font-size: 10px;
+  letter-spacing: 0.03em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+.feed {
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-height: 60vh;
+  overflow: auto;
+}
+
+.feedItem {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-sunken, rgba(255, 255, 255, 0.04));
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.rule {
+  color: var(--gold-muted);
+  font-weight: 600;
+}
+
+.runId {
+  color: var(--text-dim);
+}
+
+.at {
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.notice {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: center;
+  align-content: center;
+  min-height: 55vh;
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+}
+
+.noticeCompact {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  text-align: center;
+}
+
+.noticeGlyph {
+  font-size: 34px;
+  line-height: 1;
+  color: var(--gold-faint);
+}
+
+.noticeMessage {
+  margin: 0;
+  max-width: 46ch;
+  color: var(--text-muted);
+}
+
+.noticeHint {
+  margin: 0;
+  max-width: 46ch;
+  font-size: 12px;
+  color: var(--text-dim);
+}
