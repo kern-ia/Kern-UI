@@ -358,3 +358,7 @@ make dist     # cross-compile every target
 
 Conventions, method and house rules live in [CLAUDE.md](CLAUDE.md). Per-feature context is
 in [docs/index/](docs/index/) — read those instead of re-reading the code.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
