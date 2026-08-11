@@ -6,6 +6,8 @@ import styles from './AgentsView.module.css'
 import { topLevelRuns } from '../runs/nested'
 import { nodeStatus } from '../runs/hive'
 import { decide, stopRun } from '../steer/api'
+import { parseInterpretation } from '../dossiers/interpretation'
+import { ExtractionDossierPanel } from '../dossiers/ExtractionDossierPanel'
 import type { Run } from '../runs/types'
 
 /**
@@ -119,11 +121,13 @@ export function ApprovalPanel({ run }: { run: Run }) {
     }
   }
 
-  const plan = planProposed(run)
+  const interpretation = parseInterpretation((run.state as Record<string, unknown> | undefined)?.interpretation)
+  const plan = interpretation ? null : planProposed(run)
 
   return (
     <div className={styles.approval}>
       <p>{fr.runs.awaitingDecision(node.id)}</p>
+      {interpretation && <ExtractionDossierPanel interpretation={interpretation} />}
       {plan && <p className={styles.approvalPlan}>{plan}</p>}
       <div className={styles.approvalActions}>
         <button type="button" disabled={deciding} onClick={() => answer('approve')}>
@@ -140,7 +144,9 @@ export function ApprovalPanel({ run }: { run: Run }) {
 
 /**
  * The plan an earlier agent node proposed, if the run's state carries one — approving a
- * decision a person cannot read is not a real review.
+ * decision a person cannot read is not a real review. Fallback text path: an approval
+ * whose state also carries a parseable `interpretation` (courtage-extraction's
+ * confirm_extraction) renders that structured dossier instead, via ExtractionDossierPanel.
  *
  * `run.state` on the wire is a FLAT map, not `graph.State`'s own `{step, frozen, data,
  * zones}` checkpoint shape: `report.flatten` (Kern-Orch's internal/report/http.go)

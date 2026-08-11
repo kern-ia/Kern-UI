@@ -397,6 +397,18 @@ export const kern = {
     refuse: 'Refuser',
     deciding: '…',
     decisionFailed: 'La décision n\'a pas pu être transmise.',
+    dossierExtraction: {
+      revenus: 'Revenus',
+      credits: 'Crédits en cours',
+      incidents: 'Incidents',
+      resteAVivre: 'Reste à vivre',
+      piecesManquantes: 'Pièces manquantes',
+      statutConfirme: 'Confirmé',
+      statutAVerifier: 'À vérifier',
+      source: (s: string) => `Source : ${s}`,
+      perMonth: (montant: string) => `${montant} / mois`,
+      capitalRestantDu: (montant: string) => `Capital restant dû : ${montant}`,
+    },
   },
 
   redaction: {
