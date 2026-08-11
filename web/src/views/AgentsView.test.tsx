@@ -136,6 +136,34 @@ it('shows the proposed plan text next to Valider/Refuser', () => {
   expect(screen.getByText('Créer le contact Dupont.')).toBeInTheDocument()
 })
 
+// confirm_extraction's real shape (courtage-extraction, state["interpretation"] —
+// see web/src/dossiers/interpretation.ts) — a structured dossier, not free text.
+it('shows a structured dossier instead of plan text when the state carries an interpretation', () => {
+  const parked = run({
+    frontier: ['confirm_extraction'],
+    topology: {
+      entry: 'confirm_extraction',
+      nodes: [{ id: 'confirm_extraction', kind: 'approval' }],
+    },
+    state: {
+      interpretation: JSON.stringify({
+        revenus: [
+          { source: 'Salaire', montant_mensuel: 2400, document_source: 'page 2', statut: 'confirmé' },
+        ],
+        credits_en_cours: [],
+        incidents: [],
+        reste_a_vivre: null,
+        pieces_manquantes: [],
+      }),
+      plan_propose: 'ne devrait pas être affiché',
+    },
+  })
+  render(<AgentsView runs={[parked]} />)
+
+  expect(screen.getByText('Salaire')).toBeInTheDocument()
+  expect(screen.queryByText('ne devrait pas être affiché')).not.toBeInTheDocument()
+})
+
 it('shows no plan text when the state carries none yet', () => {
   const parked = run({
     frontier: ['confirm'],
