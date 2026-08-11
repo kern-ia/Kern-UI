@@ -25,7 +25,7 @@ are statements of need. The one contract that exists is specified in [README.md]
 | C3 | Run failure | kern-orch ✅ | Agents node colours, failed runs | **in use** |
 | C4 | `kern.registry/v1` — skills & tools registry | kern-orch ✅ | Grimoire | **in use** |
 | C5 | Tool invocation and readback | kern-orch ✅ | Espace widget values | **in use** |
-| C6 | Steering channel | kern-pilot ⬜ | Conversation, sub-agent creation, accept/ignore | missing |
+| C6 | Steering channel | kern-orch ✅ (`stop`/`nudge`/`decide`/`dispatch`) | Conversation, stop, approve/refuse | **in use** |
 | C7 | Memory graph | kern-memory ⬜ | Cerveau | missing |
 | C8 | Documents and suggestions | kern-memory ✅ (storage slice) | Rédaction | **v1 shipped 2026-07-30; suggestion generation still missing** |
 | C9 | Browser session and approval queue | kern-exec ⬜ + kern-pilot ⬜ | Navigateur | missing |
@@ -194,24 +194,31 @@ between invocations — already matches where MCP is heading, not where it used 
 
 ---
 
-## C6 — Steering channel · missing
+## C6 — Steering channel · **in use, stale entry corrected 2026-08-11**
 
-**Producer** kern-pilot ⬜ (steer · queue · replan · nudge).
+**Producer** kern-orch ✅ — `POST /api/v1/runs/{id}/stop`, `/nudge`, `/nodes/{node}/decide`,
+`POST /api/v1/dispatch`. Not `kern-pilot`: that brick never shipped: the write path landed
+directly on kern-orch's existing HTTP surface, session-protected the same way every other
+route here is (the actor is read from the session, never sent by the client).
 
-**Confirmed scope on 2026-07-28**, not a hypothesis any more: stopping an agent, approving or
-refusing one of its decisions, and triggering a simple action are all wanted. Multi-user was
-decided in the same session, so this contract carries **who** is steering from the start —
-retrofitting an actor onto a write path is the expensive kind of change.
+**This entry was wrong**, not just outdated — the three items it named as inert were
+checked one by one before touching anything else:
 
-**Why** Three separate things in the mockup need it, and all three are inert today:
+- **the conversation bar** — fully wired since `c6-frontend.md` (2026-07-30):
+  `/skill-name texte…` dispatches, a plain message nudges the open mission, file
+  attachment and `-auto` skill confirmation both real (`web/src/shell/
+  ConversationStone.tsx`);
+- **`Accepter`/`Ignorer` in Rédaction** — wired since C8 v1 (2026-07-30):
+  `web/src/redaction/RedactionView.tsx` calls the real `resolveSuggestion`, backed by
+  `POST /api/v1/documents/{id}/suggestions/{sid}/{accept,ignore}`;
+- **`Nouveau sous-agent` in the Grimoire** — still disabled, but this is **not** C6's to
+  fix: it is C11 (skill/sub-agent authoring), explicitly deferred 2026-07-28 as a
+  separate, undecided, much larger direction (a no-code graph editor, not a write
+  endpoint) — see C11 below. Conflating the two in this row is what made C6 look
+  unstarted for two weeks after it shipped.
 
-- the conversation bar — the stone's bubble is disabled and says so;
-- `Nouveau sous-agent` in the Grimoire;
-- `Accepter` / `Ignorer` on the suggestions in Rédaction.
-
-**Needed** Send an instruction to a running graph, and receive what came back. This is the
-only contract on this list that is a *write* path — every other one is read-only. It deserves
-its own thinking about permissions, which is `kern-policy` ⬜ territory.
+Approving/refusing a decision (`ApprovalPanel`) and stopping a run (`StopButton`) are also
+real and tested, same fiche.
 
 ---
 
