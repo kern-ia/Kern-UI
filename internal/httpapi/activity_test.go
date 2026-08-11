@@ -72,6 +72,29 @@ func TestActivityShowsOnTheRun(t *testing.T) {
 	}
 }
 
+// A message reaches the run's own activity_log through the same ingestion route as the
+// rest of the contract — no separate endpoint to keep in sync.
+func TestActivityMessageShowsOnTheRunsActivityLog(t *testing.T) {
+	h := NewRouter(Config{})
+	body := `{"run_id":"r1","graph":"hello","node_id":"extraction","generating":false,` +
+		`"at":"2026-07-26T12:00:01Z","message":"3 pages traitées."}`
+	postActivity(t, h, []byte(body))
+
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/v1/runs/r1", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d", rec.Code)
+	}
+
+	var run projection.Run
+	if err := json.NewDecoder(rec.Body).Decode(&run); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if len(run.ActivityLog) != 1 || run.ActivityLog[0].Message != "3 pages traitées." {
+		t.Errorf("ActivityLog = %v, want the narrated message", run.ActivityLog)
+	}
+}
+
 func TestActivityRejectsAnInvalidEvent(t *testing.T) {
 	cases := map[string]string{
 		"no node id":    `{"run_id":"r1","graph":"hello","generating":true,"at":"2026-07-26T12:00:01Z"}`,

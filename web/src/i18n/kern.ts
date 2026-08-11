@@ -397,6 +397,9 @@ export const kern = {
     refuse: 'Refuser',
     deciding: '…',
     decisionFailed: 'La décision n\'a pas pu être transmise.',
+    activityLog: {
+      heading: 'Actions récentes de l\'agent',
+    },
     dossierExtraction: {
       revenus: 'Revenus',
       credits: 'Crédits en cours',

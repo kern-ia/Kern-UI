@@ -232,6 +232,11 @@ type Run struct {
 	// ActivityEvent, emptied when the run ends. It is what lets the beacon tell a run that
 	// is thinking from one that is merely in flight.
 	Generating []string `json:"generating,omitempty"`
+
+	// ActivityLog is what agents have narrated about themselves so far, newest first,
+	// bounded by maxActivityLogEntries. Unlike Generating it is not cleared when the run
+	// ends — a finished run's log is still worth reading back.
+	ActivityLog []ActivityLogEntry `json:"activity_log,omitempty"`
 }
 
 // terminal reports whether a run can still move.

@@ -8,6 +8,7 @@ import { nodeStatus } from '../runs/hive'
 import { decide, stopRun } from '../steer/api'
 import { parseInterpretation } from '../dossiers/interpretation'
 import { ExtractionDossierPanel } from '../dossiers/ExtractionDossierPanel'
+import { relativeUpdate } from '../redaction/relativeTime'
 import type { Run } from '../runs/types'
 
 /**
@@ -45,7 +46,10 @@ export function AgentsView({
         (selected.topology ? (
           <>
             <HiveGraph run={selected} runs={runs} />
-            <ApprovalPanel run={selected} />
+            <div className={styles.split2}>
+              <ApprovalPanel run={selected} />
+              <ActivityLogPanel run={selected} />
+            </div>
           </>
         ) : (
           // A run that has completed no level yet was opened by its activity signal: its
@@ -138,6 +142,36 @@ export function ApprovalPanel({ run }: { run: Run }) {
         </button>
       </div>
       {failed && <p className={styles.approvalError}>{fr.runs.decisionFailed}</p>}
+    </div>
+  )
+}
+
+/**
+ * What agents have narrated about themselves so far, newest first — mirrors the mockup's
+ * "Actions récentes de l'agent" panel. Only nodes that opted in by writing a
+ * state["display:<nodeID>"] output appear here (C14); a run with none logs nothing rather
+ * than an empty card.
+ */
+export function ActivityLogPanel({ run }: { run: Run }) {
+  const log = run.activity_log ?? []
+  if (log.length === 0) return null
+
+  return (
+    <div className={styles.activityLog}>
+      <p className={styles.activityLogLabel}>{fr.runs.activityLog.heading}</p>
+      <ul className={styles.activityLogList}>
+        {log.map((entry, i) => (
+          <li key={i} className={styles.activityLogLine}>
+            <span className={styles.activityLogDot} />
+            <div>
+              <div className={styles.activityLogTime}>
+                {fr.dossiers.updated(relativeUpdate(entry.at))}
+              </div>
+              <div className={styles.activityLogText}>{entry.message}</div>
+            </div>
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }

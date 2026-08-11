@@ -2,6 +2,7 @@ package projection
 
 import (
 	"errors"
+	"fmt"
 	"slices"
 	"testing"
 )
@@ -155,6 +156,95 @@ func TestAStepEventLeavesGeneratingAlone(t *testing.T) {
 
 	if !slices.Contains(run.Generating, "greet") {
 		t.Errorf("Generating = %v, want greet still there", run.Generating)
+	}
+}
+
+func narrating(runID, nodeID, message string, seconds int) ActivityEvent {
+	ev := generating(runID, nodeID, false, seconds)
+	ev.Message = message
+	return ev
+}
+
+func TestAMessageOnStopIsAddedToTheActivityLog(t *testing.T) {
+	p := New()
+
+	run, _, err := p.ApplyActivity(narrating("r1", "extraction", "3 pages traitées.", 1))
+	if err != nil {
+		t.Fatalf("ApplyActivity: %v", err)
+	}
+
+	if len(run.ActivityLog) != 1 {
+		t.Fatalf("ActivityLog = %v, want one entry", run.ActivityLog)
+	}
+	got := run.ActivityLog[0]
+	if got.NodeID != "extraction" || got.Message != "3 pages traitées." {
+		t.Errorf("entry = %+v, want node/message from the event", got)
+	}
+}
+
+// Most signals carry no message — a node starting to think, or one that opted out of
+// narrating itself. Neither belongs in a log meant to be read as prose.
+func TestASignalWithNoMessageLeavesTheLogAlone(t *testing.T) {
+	p := New()
+	_, _, _ = p.ApplyActivity(narrating("r1", "extraction", "3 pages traitées.", 1))
+
+	run, _, err := p.ApplyActivity(generating("r1", "extraction", true, 2))
+	if err != nil {
+		t.Fatalf("ApplyActivity: %v", err)
+	}
+
+	if len(run.ActivityLog) != 1 {
+		t.Errorf("ActivityLog = %v, want the earlier entry untouched, none added", run.ActivityLog)
+	}
+}
+
+// Newest first, so a reader displays the log as-is with no reversal of its own.
+func TestTheActivityLogReadsNewestFirst(t *testing.T) {
+	p := New()
+	_, _, _ = p.ApplyActivity(narrating("r1", "extraction", "Lecture du document.", 1))
+
+	run, _, _ := p.ApplyActivity(narrating("r1", "interpretation", "Analyse du dossier.", 2))
+
+	if len(run.ActivityLog) != 2 {
+		t.Fatalf("ActivityLog = %v, want two entries", run.ActivityLog)
+	}
+	if run.ActivityLog[0].Message != "Analyse du dossier." {
+		t.Errorf("first entry = %q, want the most recent one", run.ActivityLog[0].Message)
+	}
+}
+
+// A long-running run's log cannot grow without limit — the oldest entry is dropped first.
+func TestTheActivityLogIsBoundedAndDropsTheOldest(t *testing.T) {
+	p := New()
+	for i := 1; i <= maxActivityLogEntries+3; i++ {
+		_, _, _ = p.ApplyActivity(narrating("r1", "node", fmt.Sprintf("action %d", i), i))
+	}
+
+	run, _, _ := p.ApplyActivity(narrating("r1", "node", "action final", maxActivityLogEntries+10))
+
+	if len(run.ActivityLog) != maxActivityLogEntries {
+		t.Fatalf("ActivityLog has %d entries, want the cap of %d", len(run.ActivityLog), maxActivityLogEntries)
+	}
+	if run.ActivityLog[0].Message != "action final" {
+		t.Errorf("newest entry = %q, want the latest one", run.ActivityLog[0].Message)
+	}
+	if run.ActivityLog[len(run.ActivityLog)-1].Message == "action 1" {
+		t.Error("the oldest entry should have been dropped, not kept")
+	}
+}
+
+// A finished run's log is still worth reading back — unlike Generating, it is not an
+// ephemeral "who is thinking right now" fact.
+func TestTheActivityLogSurvivesTheRunEnding(t *testing.T) {
+	p := New()
+	_, _, _ = p.ApplyActivity(narrating("r1", "extraction", "3 pages traitées.", 1))
+
+	run, _, _ := p.Apply(StepEvent{
+		RunID: "r1", Graph: "hello", Step: 1, Frontier: []string{}, At: at(5),
+	})
+
+	if len(run.ActivityLog) != 1 {
+		t.Errorf("ActivityLog = %v, want the entry to survive the run finishing", run.ActivityLog)
 	}
 }
 

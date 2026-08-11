@@ -44,6 +44,12 @@ export interface ParentRef {
   node_id: string
 }
 
+export interface ActivityLogEntry {
+  node_id: string
+  message: string
+  at: string
+}
+
 export interface Run {
   id: string
   graph: string
@@ -61,6 +67,11 @@ export interface Run {
    * once the run is over — a run that is live is not necessarily one that is thinking.
    */
   generating?: string[]
+  /**
+   * What agents have narrated about themselves so far, newest first — opt-in, most nodes
+   * send none. Survives the run ending, unlike generating.
+   */
+  activity_log?: ActivityLogEntry[]
   topology?: Topology
   error?: Failure
   /** Set when this run is the nested graph of a subgraph node in another run. */
