@@ -94,3 +94,69 @@
   border: 1px dashed var(--border-soft);
   border-radius: var(--radius);
 }
+
+.split2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .split2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.activityLog {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+}
+
+.activityLogLabel {
+  margin: 0 0 var(--space-3);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.activityLogList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.activityLogLine {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--border-soft);
+}
+
+.activityLogLine:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.activityLogDot {
+  width: 6px;
+  height: 6px;
+  margin-top: 6px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--state-action);
+}
+
+.activityLogTime {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.activityLogText {
+  font-size: 12.5px;
+  color: var(--text-muted);
+}

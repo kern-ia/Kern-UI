@@ -1,7 +1,8 @@
 import { fr } from '../i18n/fr'
 import styles from './DossierDetailView.module.css'
 import { HiveGraph } from '../runs/HiveGraph'
-import { ApprovalPanel } from '../views/AgentsView'
+import { ApprovalPanel, ActivityLogPanel } from '../views/AgentsView'
+import shellStyles from '../views/AgentsView.module.css'
 import { dossierStatus, groupByDossier, type DossierStatus } from '../runs/dossiers'
 import type { Run } from '../runs/types'
 
@@ -51,7 +52,10 @@ export function DossierDetailView({ runs, dossierId }: { runs: Run[]; dossierId:
       {run.topology ? (
         <>
           <HiveGraph run={run} runs={runs} />
-          <ApprovalPanel run={run} />
+          <div className={shellStyles.split2}>
+            <ApprovalPanel run={run} />
+            <ActivityLogPanel run={run} />
+          </div>
         </>
       ) : (
         <p className={styles.noTopology}>

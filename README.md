@@ -182,6 +182,7 @@ is rejected.
 | `node_id` | string | yes | The node whose model started or stopped. |
 | `generating` | bool | yes | `true` when the model began working, `false` when it finished. |
 | `at` | RFC 3339 | yes | When the transition happened. |
+| `message` | string | no | Plain-language narration of what the node just did, on a stop signal only — set when the node's own output carries `state["display:<node_id>"]`. Absent (never an empty string) whenever a node opts out. |
 
 It is a sibling of `kern.step-event`, never a field of it: a step describes a level that has
 *completed*, while generation happens inside a level. Anything carried on a step event would
@@ -202,6 +203,12 @@ arrive long after the fact it describes stopped being true.
 - **`202 Accepted`** on success, **`400`** on a payload violating the schema.
 - The result rides the existing run stream: `generating` is a field of a run, so a browser
   already subscribed receives it with no second connection.
+- **`message` is opt-in, never invented.** It reuses a node's existing
+  `state["display:<node_id>"]` output — the same value the hive panel already shows for
+  that node — rather than a second, separate way for a skill to narrate itself. A node that
+  sets no display key reports no message. kern-ui accumulates messages received (bounded,
+  oldest dropped first) into `Run.activity_log`, distinct from `generating`'s
+  latest-word-wins semantics — a log is meant to be read back, not just overwritten.
 
 #### `Catalogue` — contract `kern.registry/v1`
 

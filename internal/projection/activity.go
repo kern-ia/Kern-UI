@@ -23,6 +23,23 @@ type ActivityEvent struct {
 	NodeID     string    `json:"node_id"`
 	Generating bool      `json:"generating"`
 	At         time.Time `json:"at"`
+
+	// Message narrates, in plain language, what the node just did — set on a stop signal
+	// only, when the node's own output carried state["display:<node_id>"]. Opt-in: most
+	// signals carry none, and that is a normal, silent outcome, not an omission to report.
+	Message string `json:"message,omitempty"`
+}
+
+// maxActivityLogEntries bounds Run.ActivityLog so a long-running run's log cannot grow
+// without limit. The oldest entry is dropped first — a reviewer cares about what an agent
+// is doing now, not a full audit trail this projection was never meant to be.
+const maxActivityLogEntries = 20
+
+// ActivityLogEntry is one narrated action, kept for as long as its run is known.
+type ActivityLogEntry struct {
+	NodeID  string    `json:"node_id"`
+	Message string    `json:"message"`
+	At      time.Time `json:"at"`
 }
 
 // Validate checks the event against the ingestion contract.
@@ -77,10 +94,27 @@ func (p *Projection) ApplyActivity(ev ActivityEvent) (Run, bool, error) {
 
 	run.Generating = withNode(run.Generating, ev.NodeID, ev.Generating)
 	run.UpdatedAt = ev.At
+	if ev.Message != "" {
+		run.ActivityLog = prependLogEntry(run.ActivityLog, ActivityLogEntry{
+			NodeID: ev.NodeID, Message: ev.Message, At: ev.At,
+		})
+	}
 
 	p.rememberActivity(ev)
 	p.runs[ev.RunID] = run
 	return run, true, nil
+}
+
+// prependLogEntry adds the newest entry to the front — a reader displays the log as-is,
+// most recent first, with no reversal of its own — and drops the oldest past the cap.
+func prependLogEntry(log []ActivityLogEntry, entry ActivityLogEntry) []ActivityLogEntry {
+	out := make([]ActivityLogEntry, 0, min(len(log)+1, maxActivityLogEntries))
+	out = append(out, entry)
+	out = append(out, log...)
+	if len(out) > maxActivityLogEntries {
+		out = out[:maxActivityLogEntries]
+	}
+	return out
 }
 
 // rememberActivity records when a node last spoke, so a later signal can be judged stale.

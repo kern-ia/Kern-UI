@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { AgentsView } from './AgentsView'
+import { AgentsView, ActivityLogPanel } from './AgentsView'
 import { fr } from '../i18n/fr'
 import type { Run } from '../runs/types'
 
@@ -190,4 +190,23 @@ it('shows no approval panel once the node is no longer active', () => {
   render(<AgentsView runs={[done]} />)
 
   expect(screen.queryByText(fr.runs.awaitingDecision('confirm'))).not.toBeInTheDocument()
+})
+
+it('renders nothing when the run has no narrated activity', () => {
+  const { container } = render(<ActivityLogPanel run={run()} />)
+  expect(container).toBeEmptyDOMElement()
+})
+
+it('shows each narrated action, most recent first, as the backend already ordered it', () => {
+  const withLog = run({
+    activity_log: [
+      { node_id: 'interpretation', message: 'Analyse du dossier.', at: '2026-07-27T12:00:00Z' },
+      { node_id: 'extraction', message: '3 pages traitées.', at: '2026-07-27T11:58:00Z' },
+    ],
+  })
+  render(<ActivityLogPanel run={withLog} />)
+
+  expect(screen.getByText(fr.runs.activityLog.heading)).toBeInTheDocument()
+  expect(screen.getByText('Analyse du dossier.')).toBeInTheDocument()
+  expect(screen.getByText('3 pages traitées.')).toBeInTheDocument()
 })
