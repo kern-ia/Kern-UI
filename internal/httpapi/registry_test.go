@@ -117,6 +117,33 @@ func TestRegistryServesAnEmptyCatalogue(t *testing.T) {
 	}
 }
 
+// custom/created_by (C11) must round-trip — without them the Grimoire cannot tell a
+// created skill apart from a shipped one.
+func TestRegistryAcceptsAndServesCustomFields(t *testing.T) {
+	h := NewRouter(Config{})
+	postRegistry(t, h, []byte(
+		`{"source":"kern-orch","at":"2026-07-27T12:00:00Z","skills":[`+
+			`{"name":"accueil","kind":"agent","custom":true,"created_by":"elise"},`+
+			`{"name":"planner","kind":"agent"}`+
+			`]}`))
+
+	rec := getRegistry(t, h)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200: %s", rec.Code, rec.Body)
+	}
+	var cat registry.Catalogue
+	_ = json.NewDecoder(rec.Body).Decode(&cat)
+
+	created := cat.Skills[0]
+	if !created.Custom || created.CreatedBy != "elise" {
+		t.Errorf("accueil = %+v, want Custom=true CreatedBy=elise", created)
+	}
+	shipped := cat.Skills[1]
+	if shipped.Custom || shipped.CreatedBy != "" {
+		t.Errorf("planner = %+v, want neither field set", shipped)
+	}
+}
+
 func TestRegistryRejectsAnInvalidCatalogue(t *testing.T) {
 	cases := map[string]string{
 		"unknown kind": `{"source":"kern-orch","at":"2026-07-27T12:00:00Z","skills":[{"name":"A","kind":"widget"}]}`,

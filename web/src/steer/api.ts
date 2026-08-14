@@ -29,8 +29,16 @@ export class SteerError extends Error {
 }
 
 async function post<T>(path: string, body: unknown): Promise<T> {
+  return send<T>('POST', path, body)
+}
+
+async function del<T>(path: string): Promise<T> {
+  return send<T>('DELETE', path, {})
+}
+
+async function send<T>(method: string, path: string, body: unknown): Promise<T> {
   const response = await fetch(path, {
-    method: 'POST',
+    method,
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   })
@@ -82,4 +90,31 @@ export async function uploadFile(file: File): Promise<string> {
   }
   const out = (await response.json()) as { path: string }
   return out.path
+}
+
+/** One instruction in a created sub-agent's chain (C11). */
+export interface SkillStep {
+  name: string
+  instructions: string
+}
+
+/** What POST /api/v1/skills answers with — mirrors kern-orch's skills.Skill, narrowed to
+ * what the Grimoire needs to draw the new entry without a full catalogue refetch. */
+export interface CreatedSkill {
+  Name: string
+  Description?: string
+  CreatedBy: string
+  Custom: boolean
+}
+
+/** Writes a new sub-agent: one node per step, chained in order. The actor never travels
+ * here — kern-ui's own session says who is asking. */
+export function createSkill(name: string, description: string, steps: SkillStep[]): Promise<CreatedSkill> {
+  return post<CreatedSkill>('/api/v1/skills', { name, description, steps })
+}
+
+/** Removes a created sub-agent. Refused (403) unless the caller's session is the account
+ * that created it — enforced server-side regardless of what the button shows. */
+export function deleteSkill(name: string): Promise<unknown> {
+  return del(`/api/v1/skills/${encodeURIComponent(name)}`)
 }

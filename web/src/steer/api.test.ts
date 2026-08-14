@@ -1,4 +1,4 @@
-import { decide, dispatch, nudge, stopRun, uploadFile } from './api'
+import { createSkill, decide, deleteSkill, dispatch, nudge, stopRun, uploadFile } from './api'
 
 function answer(status: number, body?: unknown) {
   return vi.fn().mockResolvedValue({
@@ -91,4 +91,32 @@ it('uploadFile throws a SteerError on failure', async () => {
   const file = new File(['x'], 'x.pdf')
 
   await expect(uploadFile(file)).rejects.toMatchObject({ status: 502 })
+})
+
+it('createSkill posts the name, description and steps', async () => {
+  const fetchMock = answer(201, { Name: 'accueil', CreatedBy: 'elise', Custom: true })
+  vi.stubGlobal('fetch', fetchMock)
+
+  const result = await createSkill('accueil', 'x', [{ name: 'a', instructions: 'b' }])
+
+  const [url, init] = fetchMock.mock.calls[0]
+  expect(url).toBe('/api/v1/skills')
+  expect(init.method).toBe('POST')
+  expect(JSON.parse(init.body as string)).toEqual({
+    name: 'accueil',
+    description: 'x',
+    steps: [{ name: 'a', instructions: 'b' }],
+  })
+  expect(result).toEqual({ Name: 'accueil', CreatedBy: 'elise', Custom: true })
+})
+
+it('deleteSkill sends a DELETE to the name-scoped endpoint', async () => {
+  const fetchMock = answer(200, { status: 'deleted' })
+  vi.stubGlobal('fetch', fetchMock)
+
+  await deleteSkill('accueil')
+
+  const [url, init] = fetchMock.mock.calls[0]
+  expect(url).toBe('/api/v1/skills/accueil')
+  expect(init.method).toBe('DELETE')
 })

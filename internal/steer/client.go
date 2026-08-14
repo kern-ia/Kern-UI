@@ -58,6 +58,21 @@ type DispatchResult struct {
 	RunID  string      `json:"run_id,omitempty"`
 }
 
+// SkillStep is one instruction in a created sub-agent's chain (C11).
+type SkillStep struct {
+	Name         string `json:"name"`
+	Instructions string `json:"instructions"`
+}
+
+// CreatedSkill mirrors kern-orch's skills.Skill — just the fields a browser needs to show
+// a created skill in the Grimoire (never Command/Params, which belong to tool skills).
+type CreatedSkill struct {
+	Name        string `json:"Name"`
+	Description string `json:"Description"`
+	CreatedBy   string `json:"CreatedBy"`
+	Custom      bool   `json:"Custom"`
+}
+
 // Client steers runs on one kern-orch daemon.
 type Client struct {
 	BaseURL string
@@ -118,6 +133,40 @@ func (c *Client) Dispatch(ctx context.Context, skill, text, actor, dossier strin
 	return result, nil
 }
 
+// CreateSkill writes a new agent sub-agent (C11): one node per step, chained in order.
+// *InvalidInputError covers a name already taken, an invalid name, or an empty step list
+// — kern-orch's own message is specific enough to show as-is.
+func (c *Client) CreateSkill(ctx context.Context, name, description, actor string, steps []SkillStep) (CreatedSkill, error) {
+	body, err := json.Marshal(map[string]any{
+		"name": name, "description": description, "actor": actor, "steps": steps,
+	})
+	if err != nil {
+		return CreatedSkill{}, fmt.Errorf("steer: marshal create skill: %w", err)
+	}
+
+	resp, err := c.post(ctx, "/api/v1/skills", body)
+	if err != nil {
+		return CreatedSkill{}, err
+	}
+
+	var sk CreatedSkill
+	if err := json.Unmarshal(resp, &sk); err != nil {
+		return CreatedSkill{}, fmt.Errorf("steer: decode created skill: %w", err)
+	}
+	return sk, nil
+}
+
+// DeleteSkill removes a created sub-agent. ErrNotFound if it is unknown or not a custom
+// skill, ErrForbidden if actor did not create it.
+func (c *Client) DeleteSkill(ctx context.Context, name, actor string) error {
+	body, err := json.Marshal(map[string]string{"actor": actor})
+	if err != nil {
+		return fmt.Errorf("steer: marshal delete skill: %w", err)
+	}
+	_, err = c.do(ctx, http.MethodDelete, "/api/v1/skills/"+url.PathEscape(name), body)
+	return err
+}
+
 // Upload streams content to kern-orch's real upload endpoint and returns the local path
 // it was saved under — the same "text IS the document path" convention Dispatch already
 // sends, just fed by a picked file instead of typed text.
@@ -160,12 +209,18 @@ func (c *Client) Upload(ctx context.Context, filename string, content io.Reader)
 	return out.Path, nil
 }
 
-// post sends body to kern-orch and returns the raw response body on success, translating
+// post sends body to kern-orch via POST — see do for the status-code translation every
+// steer endpoint shares.
+func (c *Client) post(ctx context.Context, path string, body []byte) ([]byte, error) {
+	return c.do(ctx, http.MethodPost, path, body)
+}
+
+// do sends body to kern-orch and returns the raw response body on success, translating
 // kern-orch's status codes the same way for every steer endpoint: 404 -> ErrNotFound
 // (or *UnknownSkillError when the body names known skills), 403 -> ErrForbidden, any other
 // non-2xx with a message -> *InvalidInputError.
-func (c *Client) post(ctx context.Context, path string, body []byte) ([]byte, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.BaseURL+path, bytes.NewReader(body))
+func (c *Client) do(ctx context.Context, method, path string, body []byte) ([]byte, error) {
+	req, err := http.NewRequestWithContext(ctx, method, c.BaseURL+path, bytes.NewReader(body))
 	if err != nil {
 		return nil, fmt.Errorf("steer: build request: %w", err)
 	}
@@ -185,7 +240,7 @@ func (c *Client) post(ctx context.Context, path string, body []byte) ([]byte, er
 	raw := json.NewDecoder(resp.Body)
 
 	switch resp.StatusCode {
-	case http.StatusOK, http.StatusAccepted:
+	case http.StatusOK, http.StatusAccepted, http.StatusCreated:
 		return decodeSuccessBody(resp)
 	case http.StatusNotFound:
 		_ = raw.Decode(&payload)

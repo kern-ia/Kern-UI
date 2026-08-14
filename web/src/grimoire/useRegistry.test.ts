@@ -19,6 +19,32 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
+// C11: creating or deleting a sub-agent changes the registry outside of kern-orch's own
+// next publication. Bumping refreshKey is the escape hatch — it must trigger a real
+// second fetch, not just a state update.
+it('refetches when refreshKey changes', async () => {
+  const fetchMock = vi
+    .fn()
+    .mockResolvedValueOnce({ ok: true, status: 200, json: async () => catalogue } as Response)
+    .mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({ ...catalogue, skills: [{ name: 'accueil', kind: 'agent' }] }),
+    } as Response)
+  vi.stubGlobal('fetch', fetchMock)
+
+  const { result, rerender } = renderHook(({ key }) => useRegistry('/api/v1/registry', key), {
+    initialProps: { key: 0 },
+  })
+
+  await waitFor(() => expect(result.current.status).toBe('ready'))
+  expect(fetchMock).toHaveBeenCalledTimes(1)
+
+  rerender({ key: 1 })
+
+  await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
+})
+
 it('starts out loading', () => {
   vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {})))
 

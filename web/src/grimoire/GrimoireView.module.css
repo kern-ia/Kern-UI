@@ -95,11 +95,37 @@
 }
 
 .agentCard {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: var(--space-2);
   text-align: center;
+}
+
+.agentDelete {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  font-size: 13px;
+  line-height: 1;
+  color: var(--text-dim);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-soft);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.agentDelete:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.agentDeleteError {
+  font-size: 10px;
+  color: var(--state-error);
 }
 
 .agentAvatar {
@@ -153,6 +179,7 @@
   background: none;
   border: 2px dashed var(--border-strong);
   border-radius: 50%;
+  cursor: pointer;
 }
 
 .agentAddLabel {

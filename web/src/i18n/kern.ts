@@ -329,11 +329,34 @@ export const kern = {
       repos: 'Repos',
       bloque: 'Bloqué',
     },
-    // Creating a skill or a sub-agent is a write path: it waits for kern-pilot, so the
-    // mockup's `+` is shown and disabled rather than dropped or left to lie.
+    // Creating a tool skill needs a Go command a no-code editor cannot author — the
+    // mockup's `+` stays shown and disabled for that column. Sub-agent creation (C11) is
+    // real: see the editor block below.
     newSubAgent: 'Nouveau sous-agent',
     newSkill: 'Nouvelle compétence',
-    creationUnavailable: 'La création d\'agents n\'est pas encore disponible.',
+    creationUnavailable: 'La création de compétences n\'est pas encore disponible.',
+    editor: {
+      title: 'Nouveau sous-agent',
+      nameLabel: 'Nom',
+      namePlaceholder: 'accueil-client',
+      descriptionLabel: 'Description',
+      descriptionPlaceholder: 'Ce que fait ce sous-agent, en une phrase.',
+      stepNameLabel: 'Nom de l\'étape',
+      stepInstructionsLabel: 'Instructions',
+      addStep: 'Ajouter une étape',
+      removeStep: (n: number) => `Supprimer l'étape ${n}`,
+      moveStepUp: (n: number) => `Monter l'étape ${n}`,
+      moveStepDown: (n: number) => `Descendre l'étape ${n}`,
+      cancel: 'Annuler',
+      submit: 'Créer',
+      creating: 'Création…',
+      nameRequired: 'Le nom est requis.',
+      createFailed: 'La création n\'a pas pu être transmise.',
+      close: 'Fermer',
+    },
+    deleteSkill: (name: string) => `Supprimer ${name}`,
+    deleting: 'Suppression…',
+    deleteFailed: 'La suppression a échoué.',
   },
 
   espace: {

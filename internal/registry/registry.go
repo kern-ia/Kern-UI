@@ -13,6 +13,9 @@
 //   - No "wired" flag. A producer publishes what it holds, so the field would read true on
 //     every row — a column carrying no information is a column to leave out.
 //
+// One deliberate exception (C11): Custom/CreatedBy do travel, because whether kern-ui may
+// ever offer to delete an entry is not something it can derive from anything else here.
+//
 // The origin of those three is in docs/expected-contracts.md, which records what the
 // contract was asked for and what it turned out to need.
 package registry
@@ -46,6 +49,14 @@ type Skill struct {
 	Name        string `json:"name"`
 	Kind        Kind   `json:"kind"`
 	Description string `json:"description,omitempty"`
+
+	// Custom is true for a skill created through C11's write path — false, and absent on
+	// the wire, for every skill the product ships. The Grimoire needs this: unlike the
+	// rest of this package's "nothing internal travels" rule, whether kern-ui may ever
+	// offer to delete an entry is not something it can derive from anything else.
+	Custom bool `json:"custom,omitempty"`
+	// CreatedBy names the account that created a custom skill; empty for a shipped one.
+	CreatedBy string `json:"created_by,omitempty"`
 }
 
 // Catalogue is a whole publication: every skill a producer holds, at one instant.
