@@ -26,7 +26,7 @@ are statements of need. The one contract that exists is specified in [README.md]
 | C4 | `kern.registry/v1` — skills & tools registry | kern-orch ✅ | Grimoire | **in use** |
 | C5 | Tool invocation and readback | kern-orch ✅ | Espace widget values | **in use** |
 | C6 | Steering channel | kern-orch ✅ (`stop`/`nudge`/`decide`/`dispatch`) | Conversation, stop, approve/refuse | **in use** |
-| C7 | Memory graph | kern-memory ⬜ | Cerveau | missing |
+| C7 | Memory graph | kern-memory ✅ (`kind: "graph"`, `POST /api/v1/memory/{write,query}`) | Cerveau | **producer ready, unconsumed** |
 | C8 | Documents and suggestions | kern-memory ✅ (storage slice) | Rédaction | **v1 shipped 2026-07-30; suggestion generation still missing** |
 | C9 | Browser session and approval queue | kern-exec ⬜ + kern-pilot ⬜ | Navigateur | missing |
 | C10 | `kern.activity/v1` — live activity signal | kern-orch ✅ | `Réflexion` beacon | **in use** |
@@ -222,17 +222,35 @@ real and tested, same fiche.
 
 ---
 
-## C7 — Memory graph · missing
+## C7 — Memory graph · **producer ready 2026-08-14, unconsumed**
 
-**Producer** kern-memory ⬜ (decided in the roadmap: `.okf` · RAG · DAG, chromem-go, pure Go).
+**Producer** kern-memory ✅ — `kern-memory`'s Epic 1 (`status: done`, 2026-08-10) shipped
+exactly this: `kind: "graph"` on the same `POST /api/v1/memory/write`/`query` kern-ui
+already calls for Critères banques (C13). A write is one directed edge between two
+existing memories (`from_kind`/`from_id`/`to_kind`/`to_id`/`relation`); a query with
+`depth` walks the graph server-side, capped at a hard maximum regardless of what the
+caller requests — see `../kern-memory/README.md`'s "Exposed — memory" section.
+
+**This entry was stale**, not missing a producer — found auditing kern-memory's contracts
+at the project owner's request (2026-08-14). The row said `kern-memory ⬜` two weeks after
+kern-memory shipped the graph layer specifically for this need.
 
 **Why** The Cerveau view is a navigable graph of memories — *Cerveau — 248 souvenirs actifs*,
 named nodes (`Idée produit`, `Lancement Q3`, `Recherche client`), *molette pour zoomer,
 double-clic pour plonger*.
 
-**Needed** Memory nodes with labels and links, an active count, and a way to fetch a
-neighbourhood rather than the whole graph — the mockup's zoom and dive only make sense if the
-interface can ask for a sub-graph.
+**What's still actually missing** — the producer, but not the consumer:
+
+- **kern-ui's own client** (`internal/memory/client.go`) has no `FromKind`/`FromID`/
+  `ToKind`/`ToID`/`Relation`/`Depth` fields — it cannot ask for a traversal today, even
+  though the daemon it talks to can already answer one.
+- **No way to resolve a node's own content.** A graph query returns *edges* (who is
+  connected to whom), never the text/tags of the memories at either end — kern-memory has
+  no batch "resolve these ids" call, only per-layer tag/similarity search. Confirmed by
+  reading `internal/memory/okf` and `internal/memory/vector` directly: neither exposes a
+  `Get(id)`. Rendering the mockup's *named* nodes needs this solved first, on one side or
+  the other — not attempted yet, no decision made.
+- **The Cerveau view itself** — zero frontend work started.
 
 ---
 
