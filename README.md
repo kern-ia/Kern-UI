@@ -237,6 +237,8 @@ arrive long after the fact it describes stopped being true.
 | `skills[].name` | string | yes | The key. Unique within a catalogue. |
 | `skills[].kind` | string | yes | `tool` (executed directly) or `agent` (backed by a model). |
 | `skills[].description` | string | no | One line, shown as-is. |
+| `skills[].custom` | bool | no | `true` for a skill created through C11's write path; absent for every shipped one. |
+| `skills[].created_by` | string | no | The account that created a custom skill; absent for a shipped one. kern-ui compares this against the signed-in account to decide whether to show a delete control — never the sole check, the same request is re-verified server-side by kern-orch on delete. |
 
 **Semantics a producer can rely on**
 
@@ -257,7 +259,9 @@ arrive long after the fact it describes stopped being true.
 **What deliberately does not travel.** The directory a skill lives in — a filesystem path is
 an internal, not a contract. Any "wired" flag — in kern-orch a loaded skill is by definition
 available, so the field would read true on every row. Glyphs, colours and labels — those are
-the interface's job, and a brick sending an icon name is a brick doing it.
+the interface's job, and a brick sending an icon name is a brick doing it. `custom`/
+`created_by` are the one exception: kern-ui genuinely cannot decide whether to offer
+deleting a skill without them.
 
 #### `GET /api/v1/stream` — SSE
 

@@ -10,8 +10,14 @@ import type { Catalogue, RegistryState } from './types'
  *
  * A 404 is not a failure. It is the server saying no producer has published yet, which is
  * a different screen from an empty catalogue — see `RegistryState`.
+ *
+ * refreshKey is an escape hatch for the one real exception (C11): creating or deleting a
+ * sub-agent does change the registry outside of a graph advancing, and kern-orch
+ * republishes synchronously before answering that request — bumping this re-runs the
+ * fetch to pick it up, without turning this hook into the subscription the comment above
+ * argues against.
  */
-export function useRegistry(url: string): RegistryState {
+export function useRegistry(url: string, refreshKey?: unknown): RegistryState {
   const [state, setState] = useState<RegistryState>({ status: 'loading' })
 
   useEffect(() => {
@@ -39,7 +45,7 @@ export function useRegistry(url: string): RegistryState {
     })()
 
     return () => controller.abort()
-  }, [url])
+  }, [url, refreshKey])
 
   return state
 }

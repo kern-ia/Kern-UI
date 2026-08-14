@@ -95,6 +95,62 @@ func (s *server) handleDispatch(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// handleCreateSkill proxies C11's write path: a new sub-agent, one node per step. actor
+// is never read from the body — kern-ui's own session says who is asking, same rule every
+// other steer endpoint already follows.
+func (s *server) handleCreateSkill(w http.ResponseWriter, r *http.Request) {
+	if !s.cfg.Steer.Enabled() {
+		writeError(w, http.StatusNotFound, "no steering source configured")
+		return
+	}
+	var body struct {
+		Name        string            `json:"name"`
+		Description string            `json:"description"`
+		Steps       []steer.SkillStep `json:"steps"`
+	}
+	if err := decodeSteerBody(r, &body); err != nil {
+		writeError(w, http.StatusBadRequest, "malformed body: want {\"name\":\"...\",\"steps\":[...]}")
+		return
+	}
+	if body.Name == "" {
+		writeError(w, http.StatusBadRequest, "name is required")
+		return
+	}
+	if len(body.Steps) == 0 {
+		writeError(w, http.StatusBadRequest, "at least one step is required")
+		return
+	}
+	actor, _ := s.currentUser(r)
+
+	sk, err := s.cfg.Steer.CreateSkill(r.Context(), body.Name, body.Description, actor, body.Steps)
+	if err != nil {
+		writeSteerError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, sk)
+}
+
+// handleDeleteSkill proxies C11's delete path. Same actor rule as handleCreateSkill.
+func (s *server) handleDeleteSkill(w http.ResponseWriter, r *http.Request) {
+	if !s.cfg.Steer.Enabled() {
+		writeError(w, http.StatusNotFound, "no steering source configured")
+		return
+	}
+	actor, _ := s.currentUser(r)
+
+	err := s.cfg.Steer.DeleteSkill(r.Context(), r.PathValue("name"), actor)
+	switch {
+	case errors.Is(err, steer.ErrNotFound):
+		writeError(w, http.StatusNotFound, "unknown skill")
+	case errors.Is(err, steer.ErrForbidden):
+		writeError(w, http.StatusForbidden, "not this skill's creator")
+	case err != nil:
+		writeSteerError(w, err)
+	default:
+		writeJSON(w, http.StatusOK, map[string]string{"status": "deleted"})
+	}
+}
+
 // writeSteerResult maps every steer client error the same way across stop/nudge/decide,
 // and answers okStatus/ok on success.
 func writeSteerResult(w http.ResponseWriter, okStatus int, ok map[string]string, err error) {

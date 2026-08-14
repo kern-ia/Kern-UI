@@ -208,6 +208,92 @@ func TestDispatchMapsAnUnknownSkillToUnknownSkillError(t *testing.T) {
 	}
 }
 
+func TestCreateSkillPostsNameDescriptionActorAndSteps(t *testing.T) {
+	var gotMethod, gotPath string
+	var gotBody struct {
+		Name        string      `json:"name"`
+		Description string      `json:"description"`
+		Actor       string      `json:"actor"`
+		Steps       []SkillStep `json:"steps"`
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotMethod, gotPath = r.Method, r.URL.Path
+		_ = json.NewDecoder(r.Body).Decode(&gotBody)
+		w.WriteHeader(http.StatusCreated)
+		_ = json.NewEncoder(w).Encode(CreatedSkill{Name: "accueil", Description: "x", CreatedBy: "elise", Custom: true})
+	}))
+	defer srv.Close()
+
+	c := &Client{BaseURL: srv.URL}
+	steps := []SkillStep{{Name: "premier contact", Instructions: "Présente-toi."}}
+	got, err := c.CreateSkill(context.Background(), "accueil", "x", "elise", steps)
+	if err != nil {
+		t.Fatalf("CreateSkill: %v", err)
+	}
+	if gotMethod != http.MethodPost || gotPath != "/api/v1/skills" {
+		t.Errorf("method/path = %s %s", gotMethod, gotPath)
+	}
+	if gotBody.Name != "accueil" || gotBody.Actor != "elise" || len(gotBody.Steps) != 1 {
+		t.Errorf("body = %+v", gotBody)
+	}
+	if got.Name != "accueil" || !got.Custom || got.CreatedBy != "elise" {
+		t.Errorf("result = %+v", got)
+	}
+}
+
+func TestCreateSkillSurfacesANameAlreadyTaken(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": `skills: "accueil" already exists`})
+	}))
+	defer srv.Close()
+
+	c := &Client{BaseURL: srv.URL}
+	_, err := c.CreateSkill(context.Background(), "accueil", "x", "elise", []SkillStep{{Name: "a", Instructions: "b"}})
+	var invalid *InvalidInputError
+	if !errors.As(err, &invalid) {
+		t.Fatalf("err = %v, want *InvalidInputError", err)
+	}
+}
+
+func TestDeleteSkillSendsActorAsDelete(t *testing.T) {
+	var gotMethod, gotPath, gotActor string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotMethod, gotPath = r.Method, r.URL.Path
+		var body struct {
+			Actor string `json:"actor"`
+		}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		gotActor = body.Actor
+		_ = json.NewEncoder(w).Encode(map[string]string{"status": "deleted"})
+	}))
+	defer srv.Close()
+
+	c := &Client{BaseURL: srv.URL}
+	if err := c.DeleteSkill(context.Background(), "accueil", "elise"); err != nil {
+		t.Fatalf("DeleteSkill: %v", err)
+	}
+	if gotMethod != http.MethodDelete || gotPath != "/api/v1/skills/accueil" {
+		t.Errorf("method/path = %s %s", gotMethod, gotPath)
+	}
+	if gotActor != "elise" {
+		t.Errorf("actor = %q", gotActor)
+	}
+}
+
+func TestDeleteSkillMapsA403ToErrForbidden(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+	}))
+	defer srv.Close()
+
+	c := &Client{BaseURL: srv.URL}
+	err := c.DeleteSkill(context.Background(), "accueil", "quelquun-dautre")
+	if !errors.Is(err, ErrForbidden) {
+		t.Errorf("err = %v, want ErrForbidden", err)
+	}
+}
+
 func TestUploadPostsMultipartAndReturnsThePath(t *testing.T) {
 	var gotPath, gotAuth, gotContentType string
 	var gotFilename string

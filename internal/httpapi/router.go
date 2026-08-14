@@ -156,6 +156,8 @@ func NewRouterWithDeps(cfg *Config) http.Handler {
 	mux.HandleFunc("POST /api/v1/runs/{id}/nodes/{node}/decide", s.requireSession(s.handleDecide))
 	mux.HandleFunc("POST /api/v1/dispatch", s.requireSession(s.handleDispatch))
 	mux.HandleFunc("POST /api/v1/uploads", s.requireSession(s.handleUpload))
+	mux.HandleFunc("POST /api/v1/skills", s.requireSession(s.handleCreateSkill))
+	mux.HandleFunc("DELETE /api/v1/skills/{name}", s.requireSession(s.handleDeleteSkill))
 	mux.HandleFunc("GET /api/v1/documents", s.requireSession(s.handleListDocuments))
 	mux.HandleFunc("GET /api/v1/documents/{id}", s.requireSession(s.handleGetDocument))
 	mux.HandleFunc("POST /api/v1/documents/{id}/suggestions/{sid}/accept", s.requireSession(s.handleResolveSuggestion(true)))

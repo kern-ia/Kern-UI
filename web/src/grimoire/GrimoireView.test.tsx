@@ -1,8 +1,21 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { GrimoireView } from './GrimoireView'
 import { fr } from '../i18n/fr'
 import type { Catalogue } from './types'
 import type { Run } from '../runs/types'
+
+function answer(status: number, body?: unknown) {
+  return vi.fn().mockResolvedValue({
+    ok: status >= 200 && status < 300,
+    status,
+    statusText: 'error',
+    json: async () => body,
+  } as Response)
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
 
 const catalogue: Catalogue = {
   source: 'kern-orch',
@@ -97,12 +110,65 @@ it('reports a failed load without pretending the registry is empty', () => {
   expect(screen.queryByText(fr.grimoire.empty)).not.toBeInTheDocument()
 })
 
-// Creating a skill or a sub-agent is a write path and waits for kern-pilot. The mockup's
-// affordance is kept, disabled and explained — never a button that quietly does nothing.
-it('offers creation as disabled, naming the brick it waits for', () => {
+// A tool skill needs a Go command a no-code editor cannot author — that `+` stays
+// disabled and explained, unlike the sub-agent one (C11).
+it('keeps the competence + disabled, naming why', () => {
+  render(<GrimoireView registry={{ status: 'ready', catalogue }} runs={[]} />)
+
+  const create = screen.getByRole('button', { name: fr.grimoire.newSkill })
+  expect(create).toBeDisabled()
+  expect(create).toHaveAccessibleDescription(fr.grimoire.creationUnavailable)
+})
+
+it('opens the no-code editor from the sub-agent +', () => {
   render(<GrimoireView registry={{ status: 'ready', catalogue }} runs={[]} />)
 
   const create = screen.getByRole('button', { name: fr.grimoire.newSubAgent })
-  expect(create).toBeDisabled()
-  expect(create).toHaveAccessibleDescription(fr.grimoire.creationUnavailable)
+  expect(create).not.toBeDisabled()
+
+  fireEvent.click(create)
+
+  expect(screen.getByRole('dialog', { name: fr.grimoire.editor.title })).toBeInTheDocument()
+})
+
+it('shows no delete control on a shipped skill', () => {
+  render(<GrimoireView registry={{ status: 'ready', catalogue }} runs={[]} user="elise" />)
+  expect(screen.queryByLabelText(fr.grimoire.deleteSkill('Scribe'))).not.toBeInTheDocument()
+})
+
+it('shows a delete control only to the account that created the skill', () => {
+  const withCustom: Catalogue = {
+    ...catalogue,
+    skills: [...catalogue.skills, { name: 'accueil', kind: 'agent', custom: true, created_by: 'elise' }],
+  }
+
+  const { rerender } = render(
+    <GrimoireView registry={{ status: 'ready', catalogue: withCustom }} runs={[]} user="pas-elise" />,
+  )
+  expect(screen.queryByLabelText(fr.grimoire.deleteSkill('accueil'))).not.toBeInTheDocument()
+
+  rerender(<GrimoireView registry={{ status: 'ready', catalogue: withCustom }} runs={[]} user="elise" />)
+  expect(screen.getByLabelText(fr.grimoire.deleteSkill('accueil'))).toBeInTheDocument()
+})
+
+it('deletes an owned skill and reports it changed', async () => {
+  vi.stubGlobal('fetch', answer(200, { status: 'deleted' }))
+  const onSkillsChanged = vi.fn()
+  const withCustom: Catalogue = {
+    ...catalogue,
+    skills: [...catalogue.skills, { name: 'accueil', kind: 'agent', custom: true, created_by: 'elise' }],
+  }
+
+  render(
+    <GrimoireView
+      registry={{ status: 'ready', catalogue: withCustom }}
+      runs={[]}
+      user="elise"
+      onSkillsChanged={onSkillsChanged}
+    />,
+  )
+
+  fireEvent.click(screen.getByLabelText(fr.grimoire.deleteSkill('accueil')))
+
+  await waitFor(() => expect(onSkillsChanged).toHaveBeenCalled())
 })

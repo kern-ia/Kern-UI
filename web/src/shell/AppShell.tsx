@@ -274,7 +274,7 @@ function ViewBody({
     return <DossierDetailView runs={runs} dossierId={dossierId} />
   }
   if (view === 'automatisations') {
-    return <GrimoireBody runs={runs} />
+    return <GrimoireBody runs={runs} user={user} />
   }
   if (view === 'criteres') {
     return <CriteriaBody />
@@ -283,7 +283,7 @@ function ViewBody({
     return <TeamBody />
   }
   if (view === 'grimoire') {
-    return <GrimoireBody runs={runs} />
+    return <GrimoireBody runs={runs} user={user} />
   }
   if (view === 'espace') {
     return <EspaceBody />
@@ -303,8 +303,19 @@ function ViewBody({
  * Keeping the hook here rather than in AppShell means a browser sitting on the Agents view
  * never asks for a registry it is not drawing.
  */
-function GrimoireBody({ runs }: { runs: Run[] }) {
-  return <GrimoireView registry={useRegistry(REGISTRY_URL)} runs={runs} />
+function GrimoireBody({ runs, user }: { runs: Run[]; user: string }) {
+  // Bumped after a create/delete succeeds (C11) — the one case this registry legitimately
+  // changes outside of kern-orch's own next publication, see useRegistry's own comment.
+  const [refreshKey, setRefreshKey] = useState(0)
+  const registry = useRegistry(REGISTRY_URL, refreshKey)
+  return (
+    <GrimoireView
+      registry={registry}
+      runs={runs}
+      user={user}
+      onSkillsChanged={() => setRefreshKey((k) => k + 1)}
+    />
+  )
 }
 
 /** Same reasoning as GrimoireBody: fetched only while Critères banques is open. */

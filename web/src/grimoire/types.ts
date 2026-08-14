@@ -5,6 +5,10 @@ export interface Skill {
   name: string
   kind: SkillKind
   description?: string
+  /** True for a skill created through the no-code editor (C11) — false for a shipped one. */
+  custom?: boolean
+  /** The account that created a custom skill; absent for a shipped one. */
+  created_by?: string
 }
 
 export interface Catalogue {
