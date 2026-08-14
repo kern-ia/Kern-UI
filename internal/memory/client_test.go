@@ -204,6 +204,49 @@ func TestQueryMemoryPostsTheQueryAndDecodesRecalls(t *testing.T) {
 	}
 }
 
+// C7: the graph traversal and node-resolution fields must round-trip — kern-ui's Cerveau
+// view is the first real caller of either.
+func TestQueryMemoryPostsGraphAndResolveFields(t *testing.T) {
+	var gotBody map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewDecoder(r.Body).Decode(&gotBody)
+		_ = json.NewEncoder(w).Encode([]Recall{
+			{Memory: Memory{ID: "e1", Kind: "graph", FromKind: "okf", FromID: "a", ToKind: "vector", ToID: "b", Relation: "supports"}, Similarity: 1},
+		})
+	}))
+	defer srv.Close()
+
+	c := &Client{BaseURL: srv.URL}
+	got, err := c.QueryMemory(context.Background(), MemoryQuery{Kind: "graph", FromKind: "okf", FromID: "a", Depth: 2})
+	if err != nil {
+		t.Fatalf("QueryMemory: %v", err)
+	}
+	if gotBody["from_kind"] != "okf" || gotBody["from_id"] != "a" || gotBody["depth"] != float64(2) {
+		t.Errorf("body = %+v", gotBody)
+	}
+	if got[0].Memory.ToID != "b" || got[0].Memory.Relation != "supports" {
+		t.Errorf("got %+v, want edge fields decoded", got)
+	}
+}
+
+func TestQueryMemoryPostsIDs(t *testing.T) {
+	var gotBody map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewDecoder(r.Body).Decode(&gotBody)
+		_ = json.NewEncoder(w).Encode([]Recall{})
+	}))
+	defer srv.Close()
+
+	c := &Client{BaseURL: srv.URL}
+	if _, err := c.QueryMemory(context.Background(), MemoryQuery{Kind: "okf", IDs: []string{"a", "b"}}); err != nil {
+		t.Fatalf("QueryMemory: %v", err)
+	}
+	ids, _ := gotBody["ids"].([]any)
+	if len(ids) != 2 || ids[0] != "a" || ids[1] != "b" {
+		t.Errorf("ids = %v, want [a b]", gotBody["ids"])
+	}
+}
+
 func TestQueryMemorySurfacesAnUpstreamFailure(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)

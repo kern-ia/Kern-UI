@@ -99,7 +99,10 @@ it('switches view on click', () => {
     'aria-selected',
     'true',
   )
-  expect(screen.getByText(fr.missing.awaiting.memoire)).toBeInTheDocument()
+  // Cerveau is live (C7) — it fetches for real, so the switch itself is proven by the
+  // tab state above; the content assertion is just "it started fetching, not the missing
+  // notice a not-yet-built view would show".
+  expect(screen.getByText(fr.cerveau.loading)).toBeInTheDocument()
 })
 
 it('draws the catalogue kern-orch published in the Grimoire', async () => {
