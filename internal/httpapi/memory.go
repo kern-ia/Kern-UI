@@ -3,6 +3,7 @@ package httpapi
 import (
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/yoann/kern-ui/internal/memory"
 )
@@ -54,6 +55,36 @@ func (s *server) handleListCriteria(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, recalls)
+}
+
+// handleCerveau proxies C7's memory graph: the broad initial view (every graph root and
+// its neighbourhood) with no query string, or one node's neighbourhood via
+// ?from=<kind>:<id> — the "double-clic pour plonger" dive, a fresh view centered there.
+// The browser never talks to kern-memory's traversal semantics itself; this is the one
+// place kern-ui's backend does real fetch-and-assemble rather than a 1:1 proxy, since
+// building one navigable graph needs several kern-memory calls merged together (see
+// internal/memory/cerveau.go).
+func (s *server) handleCerveau(w http.ResponseWriter, r *http.Request) {
+	if !s.cfg.Memory.Enabled() {
+		writeError(w, http.StatusNotFound, "no memory source configured")
+		return
+	}
+	focusKind, focusID := "", ""
+	if from := r.URL.Query().Get("from"); from != "" {
+		parts := strings.SplitN(from, ":", 2)
+		if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+			writeError(w, http.StatusBadRequest, "from must be \"<kind>:<id>\"")
+			return
+		}
+		focusKind, focusID = parts[0], parts[1]
+	}
+
+	cerveau, err := s.cfg.Memory.BuildCerveau(r.Context(), focusKind, focusID)
+	if err != nil {
+		writeError(w, http.StatusBadGateway, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, cerveau)
 }
 
 // handleResolveSuggestion proxies accept/ignore for one suggestion.

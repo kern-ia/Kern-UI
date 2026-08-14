@@ -166,6 +166,7 @@ func NewRouterWithDeps(cfg *Config) http.Handler {
 	mux.HandleFunc("GET /api/v1/marketing/items", s.requireSession(s.handleListMarketingItems))
 	mux.HandleFunc("GET /api/v1/criteria", s.requireSession(s.handleListCriteria))
 	mux.HandleFunc("GET /api/v1/accounts", s.requireSession(s.handleListAccounts))
+	mux.HandleFunc("GET /api/v1/cerveau", s.requireSession(s.handleCerveau))
 
 	if cfg.WebDir != "" {
 		mux.Handle("GET /", http.FileServer(http.Dir(cfg.WebDir)))

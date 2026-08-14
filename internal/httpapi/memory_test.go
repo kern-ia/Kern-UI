@@ -23,6 +23,61 @@ func resolveSuggestion(t *testing.T, h http.Handler, path string) *httptest.Resp
 	return rec
 }
 
+func TestCerveauWithNoSourceConfiguredIs404(t *testing.T) {
+	h := NewRouter(Config{})
+	rec := getDocuments(t, h, "/api/v1/cerveau")
+	if rec.Code != http.StatusNotFound {
+		t.Errorf("status = %d, want 404", rec.Code)
+	}
+}
+
+func TestCerveauRejectsAMalformedFrom(t *testing.T) {
+	km := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Error("kern-memory should never be called for a malformed from")
+	}))
+	defer km.Close()
+
+	h := NewRouter(Config{Memory: &memory.Client{BaseURL: km.URL}})
+	rec := getDocuments(t, h, "/api/v1/cerveau?from=pasdedeuxpoints")
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("status = %d, want 400", rec.Code)
+	}
+}
+
+func TestCerveauBuildsAGraphFromRealRoots(t *testing.T) {
+	km := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var q memory.MemoryQuery
+		_ = json.NewDecoder(r.Body).Decode(&q)
+		switch {
+		case len(q.Tags) == 1 && q.Tags[0] == "cerveau-racine":
+			_ = json.NewEncoder(w).Encode([]memory.Recall{
+				{Memory: memory.Memory{ID: "root-1", Kind: "okf", Text: "Idée produit"}, Similarity: 1},
+			})
+		case q.Kind == "graph":
+			_ = json.NewEncoder(w).Encode([]memory.Recall{})
+		case q.Kind == "okf" && len(q.IDs) == 1 && q.IDs[0] == "root-1":
+			_ = json.NewEncoder(w).Encode([]memory.Recall{
+				{Memory: memory.Memory{ID: "root-1", Kind: "okf", Text: "Idée produit"}, Similarity: 1},
+			})
+		default:
+			_ = json.NewEncoder(w).Encode([]memory.Recall{})
+		}
+	}))
+	defer km.Close()
+
+	h := NewRouter(Config{Memory: &memory.Client{BaseURL: km.URL}})
+	rec := getDocuments(t, h, "/api/v1/cerveau")
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200: %s", rec.Code, rec.Body)
+	}
+	var out memory.Cerveau
+	_ = json.NewDecoder(rec.Body).Decode(&out)
+	if len(out.Nodes) != 1 || out.Nodes[0].ID != "okf:root-1" || out.Nodes[0].Label != "Idée produit" {
+		t.Errorf("got %+v", out)
+	}
+}
+
 func TestListingDocumentsWithNoSourceConfiguredIs404(t *testing.T) {
 	h := NewRouter(Config{})
 	rec := getDocuments(t, h, "/api/v1/documents")

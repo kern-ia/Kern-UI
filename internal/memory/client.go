@@ -157,20 +157,37 @@ func (c *Client) Resolve(ctx context.Context, docID, suggestionID string, accept
 // Memory mirrors kern-memory's EPIC-13 wire shape (POST /api/v1/memory/write, /query) —
 // distinct from Document/Suggestion above, which are the older C8 v1 slice of the same
 // daemon (see kern-memory/CLAUDE.md for the split).
+//
+// FromKind/FromID/ToKind/ToID/Relation are only meaningful when Kind == "graph" (Epic 1):
+// one directed edge between two existing memories, referenced by the (kind, id)
+// composite each layer's ids need to be disambiguated by.
 type Memory struct {
 	ID       string            `json:"id"`
 	Kind     string            `json:"kind"`
 	Text     string            `json:"text"`
 	Tags     []string          `json:"tags,omitempty"`
 	Metadata map[string]string `json:"metadata,omitempty"`
+	FromKind string            `json:"from_kind,omitempty"`
+	FromID   string            `json:"from_id,omitempty"`
+	ToKind   string            `json:"to_kind,omitempty"`
+	ToID     string            `json:"to_id,omitempty"`
+	Relation string            `json:"relation,omitempty"`
 }
 
-// MemoryQuery mirrors kern-memory's query request body.
+// MemoryQuery mirrors kern-memory's query request body. FromKind/FromID/Depth are only
+// meaningful when Kind == "graph" (a traversal); IDs is only meaningful when Kind ==
+// "okf" or "vector" (kern-memory decision 16) — resolves exactly those memories instead
+// of a tag/text search, which is how a caller gets a label for a node a traversal
+// reached (a traversal answers edges only, never the content at either end).
 type MemoryQuery struct {
-	Text  string   `json:"text,omitempty"`
-	Kind  string   `json:"kind,omitempty"`
-	Tags  []string `json:"tags,omitempty"`
-	Limit int      `json:"limit,omitempty"`
+	Text     string   `json:"text,omitempty"`
+	FromKind string   `json:"from_kind,omitempty"`
+	FromID   string   `json:"from_id,omitempty"`
+	Depth    int      `json:"depth,omitempty"`
+	IDs      []string `json:"ids,omitempty"`
+	Kind     string   `json:"kind,omitempty"`
+	Tags     []string `json:"tags,omitempty"`
+	Limit    int      `json:"limit,omitempty"`
 }
 
 // Recall mirrors kern-memory's query response entry.
