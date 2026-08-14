@@ -27,6 +27,8 @@ import { CriteriaView } from '../criteres/CriteriaView'
 import { useCriteria } from '../criteres/useCriteria'
 import { TeamView } from '../equipe/TeamView'
 import { useTeam } from '../equipe/useTeam'
+import { CerveauView } from '../cerveau/CerveauView'
+import { useCerveau } from '../cerveau/useCerveau'
 import type { Connection, Run } from '../runs/types'
 
 const STREAM_URL = '/api/v1/stream'
@@ -37,6 +39,7 @@ const VIGIE_BUDGET_URL = '/api/v1/vigie/budget'
 const VIGIE_DECISIONS_URL = '/api/v1/vigie/decisions'
 const CRITERIA_URL = '/api/v1/criteria'
 const ACCOUNTS_URL = '/api/v1/accounts'
+const CERVEAU_URL = '/api/v1/cerveau'
 
 /** Colours come from the mockup's stateMap; tokens.css holds the values. */
 const stateColour: Record<SystemState, string> = {
@@ -294,6 +297,9 @@ function ViewBody({
   if (view === 'redaction') {
     return <RedactionBody runs={runs} />
   }
+  if (view === 'cerveau') {
+    return <CerveauBody />
+  }
   return <AgentsView runs={runs} user={user} selectedId={selectedId} onSelect={onSelect} />
 }
 
@@ -326,6 +332,23 @@ function CriteriaBody() {
 /** Same reasoning as GrimoireBody: fetched only while Équipe is open. */
 function TeamBody() {
   return <TeamView team={useTeam(ACCOUNTS_URL)} />
+}
+
+/**
+ * Owns the current focus ("kind:id" or null for the broad overview) — a double-click dive
+ * (C7) is a fresh fetch centered on that node, not a client-side filter of what useCerveau
+ * already holds, so the focus itself is the thing that changes and re-triggers the hook.
+ */
+function CerveauBody() {
+  const [focus, setFocus] = useState<string | null>(null)
+  return (
+    <CerveauView
+      cerveau={useCerveau(CERVEAU_URL, focus)}
+      focus={focus}
+      onDive={setFocus}
+      onBackToOverview={() => setFocus(null)}
+    />
+  )
 }
 
 /** Same reasoning as GrimoireBody: the catalogue is fetched only while the Espace is open. */

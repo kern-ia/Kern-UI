@@ -57,8 +57,9 @@ export interface ViewDef {
 }
 
 export const VIEWS: ViewDef[] = [
-  // kern-memory is decided in the roadmap but not built.
-  { id: 'cerveau', glyph: '◎', source: { kind: 'awaiting', capability: 'memoire' }, onMobile: true },
+  // kern-memory's graph layer (Epic 1) + the roots convention (decision 15) answer this
+  // for real now — GET /api/v1/cerveau (C7).
+  { id: 'cerveau', glyph: '◎', source: { kind: 'live' }, onMobile: true },
 
   { id: 'agents', glyph: '⬡', source: { kind: 'live' }, onMobile: true },
 

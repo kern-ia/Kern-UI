@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -55,6 +56,57 @@ func TestBuildCerveauFromRootsThenTraversesAndResolvesLabels(t *testing.T) {
 	}
 	if len(got.Edges) != 1 || got.Edges[0].From != "okf:root-1" || got.Edges[0].To != "vector:vec-1" || got.Edges[0].Relation != "mène-à" {
 		t.Errorf("edges = %+v", got.Edges)
+	}
+}
+
+// A frontend lays a graph out around its real starting point(s) — re-deriving "which
+// node is a root" from the edge list alone would be a guess on a graph that can have
+// cycles or incoming edges into a root from elsewhere.
+func TestBuildCerveauNamesTheRealRoots(t *testing.T) {
+	km := fakeKernMemory(t, func(q MemoryQuery) []Recall {
+		switch {
+		case len(q.Tags) == 1 && q.Tags[0] == "cerveau-racine":
+			return []Recall{
+				{Memory: Memory{ID: "root-1", Kind: "okf", Text: "A"}, Similarity: 1},
+				{Memory: Memory{ID: "root-2", Kind: "okf", Text: "B"}, Similarity: 1},
+			}
+		case q.Kind == "okf" && len(q.IDs) == 2:
+			return []Recall{
+				{Memory: Memory{ID: "root-1", Kind: "okf", Text: "A"}, Similarity: 1},
+				{Memory: Memory{ID: "root-2", Kind: "okf", Text: "B"}, Similarity: 1},
+			}
+		}
+		return nil
+	})
+	defer km.Close()
+
+	c := &Client{BaseURL: km.URL}
+	got, err := c.BuildCerveau(context.Background(), "", "")
+	if err != nil {
+		t.Fatalf("BuildCerveau: %v", err)
+	}
+	want := map[string]bool{"okf:root-1": true, "okf:root-2": true}
+	if len(got.Roots) != 2 || !want[got.Roots[0]] || !want[got.Roots[1]] {
+		t.Errorf("roots = %v, want okf:root-1 and okf:root-2", got.Roots)
+	}
+}
+
+func TestBuildCerveauOnAFocusDiveNamesItAsTheOnlyRoot(t *testing.T) {
+	km := fakeKernMemory(t, func(q MemoryQuery) []Recall {
+		if q.Kind == "vector" && len(q.IDs) == 1 {
+			return []Recall{{Memory: Memory{ID: "vec-1", Kind: "vector", Text: "x"}, Similarity: 1}}
+		}
+		return nil
+	})
+	defer km.Close()
+
+	c := &Client{BaseURL: km.URL}
+	got, err := c.BuildCerveau(context.Background(), "vector", "vec-1")
+	if err != nil {
+		t.Fatalf("BuildCerveau: %v", err)
+	}
+	if len(got.Roots) != 1 || got.Roots[0] != "vector:vec-1" {
+		t.Errorf("roots = %v, want [vector:vec-1]", got.Roots)
 	}
 }
 
@@ -125,6 +177,34 @@ func TestBuildCerveauFallsBackToTheRawIDWhenAReferencedMemoryCannotBeResolved(t 
 	}
 	if !found {
 		t.Error("the unresolved node is missing entirely, want it kept with a fallback label")
+	}
+}
+
+// A nil Go slice and an empty one both report len() == 0, but only a list survives the
+// JSON round trip to the browser unambiguously — a nil Edges serializes as `null`, which
+// crashes a frontend that does edges.map(...) expecting an array. Caught live diving into
+// a leaf node before this test existed.
+func TestBuildCerveauNeverMarshalsANilEdgesList(t *testing.T) {
+	km := fakeKernMemory(t, func(q MemoryQuery) []Recall {
+		if q.Kind == "vector" && len(q.IDs) == 1 {
+			return []Recall{{Memory: Memory{ID: "leaf", Kind: "vector", Text: "x"}, Similarity: 1}}
+		}
+		return nil // a leaf: no outgoing edges at all
+	})
+	defer km.Close()
+
+	c := &Client{BaseURL: km.URL}
+	got, err := c.BuildCerveau(context.Background(), "vector", "leaf")
+	if err != nil {
+		t.Fatalf("BuildCerveau: %v", err)
+	}
+
+	raw, err := json.Marshal(got)
+	if err != nil {
+		t.Fatalf("Marshal: %v", err)
+	}
+	if strings.Contains(string(raw), `"edges":null`) {
+		t.Errorf("edges serialized as null, want an empty array: %s", raw)
 	}
 }
 

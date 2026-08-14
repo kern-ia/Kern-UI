@@ -359,6 +359,21 @@ export const kern = {
     deleteFailed: 'La suppression a échoué.',
   },
 
+  cerveau: {
+    label: 'Cerveau',
+    loading: 'Chargement des souvenirs…',
+    // No memory source configured on kern-ui — distinct from kern-memory answering with none.
+    unconfigured: 'Aucune mémoire n\'est connectée pour le moment.',
+    unconfiguredHint: 'Le cerveau apparaîtra ici dès qu\'une mémoire sera branchée.',
+    empty: 'Aucun souvenir enregistré pour le moment.',
+    emptyHint: 'Un souvenir apparaîtra ici dès qu\'un agent en écrira un, marqué comme racine.',
+    error: 'Les souvenirs n\'ont pas pu être chargés.',
+    activeCount: (n: number) => (n === 1 ? '1 souvenir actif' : `${n} souvenirs actifs`),
+    diveInto: (label: string) => `Plonger dans « ${label} »`,
+    backToOverview: 'Revenir à la vue d\'ensemble',
+    hint: 'Double-clic sur un souvenir pour y plonger',
+  },
+
   espace: {
     label: 'Espace des outils connectés',
     loading: 'Chargement des outils…',

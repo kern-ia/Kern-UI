@@ -35,9 +35,16 @@ type CerveauEdge struct {
 
 // Cerveau is a ready-to-render neighbourhood — real content only, kern-ui's Cerveau view
 // (C7) draws exactly this, never talking to kern-memory's traversal semantics itself.
+//
+// Roots names which node ids (the "kind:id" composite CerveauNode.ID uses) were the
+// traversal's actual starting points — every graph root, or the one focus node on a dive.
+// A frontend needs this to lay a graph out around its real center(s); re-deriving it from
+// Edges alone (e.g. "a node with no incoming edge") would be a guess, not a fact, on a
+// graph that can have cycles or a root with an incoming edge from something else entirely.
 type Cerveau struct {
 	Nodes []CerveauNode `json:"nodes"`
 	Edges []CerveauEdge `json:"edges"`
+	Roots []string      `json:"roots"`
 }
 
 // BuildCerveau assembles a neighbourhood: from every graph root (kern-memory decision 15
@@ -51,11 +58,19 @@ func (c *Client) BuildCerveau(ctx context.Context, focusKind, focusID string) (C
 	}
 
 	touched := make(map[string]string, len(starts)) // "kind:id" -> kind
-	for _, s := range starts {
-		touched[nodeKey(s.Kind, s.ID)] = s.Kind
+	roots := make([]string, len(starts))
+	for i, s := range starts {
+		key := nodeKey(s.Kind, s.ID)
+		touched[key] = s.Kind
+		roots[i] = key
 	}
 
-	var edges []CerveauEdge
+	// A list, not nil, even when empty — an absent list and an empty one mean the same
+	// thing here, but only a list survives the JSON round trip to the browser
+	// unambiguously (the exact gotcha internal/registry.Store.Replace already documents;
+	// a real crash was hit live diving into a leaf node with no outgoing edges before
+	// this fix, "edges is not iterable" against a bare `null`).
+	edges := []CerveauEdge{}
 	seenEdges := make(map[string]bool)
 	for _, s := range starts {
 		recalls, err := c.QueryMemory(ctx, MemoryQuery{Kind: "graph", FromKind: s.Kind, FromID: s.ID, Depth: maxCerveauDepth})
@@ -79,7 +94,7 @@ func (c *Client) BuildCerveau(ctx context.Context, focusKind, focusID string) (C
 	if err != nil {
 		return Cerveau{}, err
 	}
-	return Cerveau{Nodes: nodes, Edges: edges}, nil
+	return Cerveau{Nodes: nodes, Edges: edges, Roots: roots}, nil
 }
 
 // cerveauStarts returns the traversal's starting points: the one focus node if given, or
